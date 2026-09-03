@@ -1,0 +1,154 @@
+{
+  "name": "Randevox — Waitlist Welcome Email",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Waitlist Email Received",
+      "type": "n8n-nodes-base.webhook",
+      "position": [208, 304],
+      "webhookId": "randevox-waitlist",
+      "parameters": {
+        "path": "randevox-waitlist",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "responseData": "{\"ok\":true}",
+        "options": {}
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "extract-data",
+      "name": "Extract Email",
+      "type": "n8n-nodes-base.set",
+      "position": [400, 304],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "email-field",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $json.body.email }}"
+            },
+            {
+              "id": "name-field",
+              "name": "firstName",
+              "type": "string",
+              "value": "={{ $json.body.email.split('@')[0] }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "client-checklist",
+      "name": "Onboarding Checklist",
+      "type": "n8n-nodes-base.set",
+      "position": [656, 304],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "checklist-field",
+              "name": "Checklist",
+              "type": "string",
+              "value": "Randevox erken erişim listesine katıldınız. Sırada:\n1. Hesabınız hazırlanıyor\n2. Kliniğinize özel ajan kurulumu\n3. Kısa bir demo/keşif görüşmesi\n4. Telefon hattınızın bağlanması\n5. Canlıya alma"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "gemini-model",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [960, 500],
+      "parameters": {
+        "options": {},
+        "modelName": "models/gemini-2.0-flash"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "personalize",
+      "name": "Personalize Using Gemini",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [848, 304],
+      "parameters": {
+        "text": "=Bana bir hoş geldin e-postası gövdesi yaz (sadece e-posta metni, \"İşte e-postanız:\" gibi ekstra açıklama yazma). Türkçe, sıcak ve profesyonel bir tonda.\n\nŞununla başla:\nMerhaba,\n\nŞununla bitir:\nSevgiler,\nRandevox Ekibi\n\nAşağıdaki bilgiyi kullan — Randevox, kliniklerin kaçırdığı randevu aramalarını yanıtlayan bir AI telefon ajanı. Kullanıcı erken erişim listesine e-postasıyla kaydoldu.\n\nSıradaki adımlar:\n{{ $json.Checklist }}",
+        "promptType": "define"
+      },
+      "typeVersion": 1.5
+    },
+    {
+      "id": "send-email",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [1344, 224],
+      "webhookId": "randevox-waitlist-send",
+      "parameters": {
+        "sendTo": "={{ $('Extract Email').item.json.email }}",
+        "message": "={{ $json.text }}",
+        "emailType": "text",
+        "options": {},
+        "subject": "Randevox'a Hoş Geldiniz 👋"
+      },
+      "typeVersion": 2.1
+    },
+    {
+      "id": "execution-completed",
+      "name": "Execution Completed",
+      "type": "n8n-nodes-base.noOp",
+      "position": [1344, 464],
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "error-handler",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.errorTrigger",
+      "position": [1264, 1456],
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "execution-failure",
+      "name": "Execution Failure",
+      "type": "n8n-nodes-base.noOp",
+      "position": [1456, 1456],
+      "parameters": {},
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Waitlist Email Received": {
+      "main": [[{ "node": "Extract Email", "type": "main", "index": 0 }]]
+    },
+    "Extract Email": {
+      "main": [[{ "node": "Onboarding Checklist", "type": "main", "index": 0 }]]
+    },
+    "Onboarding Checklist": {
+      "main": [[{ "node": "Personalize Using Gemini", "type": "main", "index": 0 }]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "Personalize Using Gemini", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Personalize Using Gemini": {
+      "main": [
+        [
+          { "node": "Send Welcome Email", "type": "main", "index": 0 },
+          { "node": "Execution Completed", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [[{ "node": "Execution Failure", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

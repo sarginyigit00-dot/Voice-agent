@@ -1,0 +1,154 @@
+{
+  "name": "Randevox — CRM Call Sync",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Call Completed",
+      "type": "n8n-nodes-base.webhook",
+      "position": [208, 304],
+      "webhookId": "randevox-crm",
+      "notes": "Path'i tahmin edilemez bir slug ile değiştir (openssl rand -hex 6) ve aynısını .env.local'deki CRM_WEBHOOK_URL'e yaz. Respond: Immediately — crm.ts bu isteği await ediyor, 5sn timeout'u var.",
+      "parameters": {
+        "path": "randevox-crm-REPLACE-ME",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "responseData": "{\"ok\":true}",
+        "options": {}
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "normalize-call",
+      "name": "Normalize Call",
+      "type": "n8n-nodes-base.set",
+      "position": [432, 304],
+      "notes": "crm.ts { source, event, call } gönderiyor — webhook node'unda gövde $json.body altında.",
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            { "id": "f-callid", "name": "callId", "type": "string", "value": "={{ $json.body.call.callId }}" },
+            { "id": "f-agent", "name": "agentName", "type": "string", "value": "={{ $json.body.call.agentName }}" },
+            { "id": "f-caller", "name": "caller", "type": "string", "value": "={{ $json.body.call.caller }}" },
+            { "id": "f-number", "name": "number", "type": "string", "value": "={{ $json.body.call.number }}" },
+            { "id": "f-started", "name": "startedAt", "type": "string", "value": "={{ $json.body.call.startedAt }}" },
+            { "id": "f-duration", "name": "durationSec", "type": "number", "value": "={{ $json.body.call.durationSec }}" },
+            { "id": "f-outcome", "name": "outcome", "type": "string", "value": "={{ $json.body.call.outcome }}" },
+            { "id": "f-summary", "name": "summary", "type": "string", "value": "={{ $json.body.call.summary }}" },
+            { "id": "f-transcript", "name": "transcriptText", "type": "string", "value": "={{ ($json.body.call.transcript || []).map(t => t.speaker + ': ' + t.text).join('\\n') }}" }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "route-outcome",
+      "name": "Route By Outcome",
+      "type": "n8n-nodes-base.switch",
+      "position": [672, 304],
+      "notes": "Şimdilik üç dal da aynı yere gidebilir; sıcak lead'lere ayrı davranmak istediğimde hazır dursun diye ayrıldı.",
+      "parameters": {
+        "options": { "fallbackOutput": "extra" },
+        "rules": {
+          "values": [
+            {
+              "outputKey": "booked",
+              "conditions": {
+                "options": { "version": 2, "caseSensitive": true, "typeValidation": "strict" },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-booked",
+                    "operator": { "type": "string", "operation": "equals" },
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "booked"
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "qualified",
+              "conditions": {
+                "options": { "version": 2, "caseSensitive": true, "typeValidation": "strict" },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-qualified",
+                    "operator": { "type": "string", "operation": "equals" },
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "qualified"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.2
+    },
+    {
+      "id": "target-booked",
+      "name": "Booked Target",
+      "type": "n8n-nodes-base.noOp",
+      "position": [944, 160],
+      "notes": "DEĞİŞTİR: Google Sheets → Append Row (startedAt, agentName, caller, number, outcome, durationSec, summary, transcriptText) + Slack → Post Message (sıcak randevu bildirimi).",
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "target-qualified",
+      "name": "Qualified Target",
+      "type": "n8n-nodes-base.noOp",
+      "position": [944, 304],
+      "notes": "DEĞİŞTİR: Google Sheets → Append Row. HubSpot kullanılacaksa: contact'ı `number` ile upsert, aramayı Call activity olarak logla.",
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "target-other",
+      "name": "Other Target",
+      "type": "n8n-nodes-base.noOp",
+      "position": [944, 448],
+      "notes": "DEĞİŞTİR: Google Sheets → Append Row. missed/voicemail gibi sonuçlar burada toplanır.",
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "error-handler",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.errorTrigger",
+      "position": [208, 720],
+      "notes": "Ateşlenmesi için bu workflow'un Settings → Error Workflow ayarının bu workflow'a set edilmesi gerekir.",
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "execution-failure",
+      "name": "Execution Failure",
+      "type": "n8n-nodes-base.noOp",
+      "position": [432, 720],
+      "parameters": {},
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Call Completed": {
+      "main": [[{ "node": "Normalize Call", "type": "main", "index": 0 }]]
+    },
+    "Normalize Call": {
+      "main": [[{ "node": "Route By Outcome", "type": "main", "index": 0 }]]
+    },
+    "Route By Outcome": {
+      "main": [
+        [{ "node": "Booked Target", "type": "main", "index": 0 }],
+        [{ "node": "Qualified Target", "type": "main", "index": 0 }],
+        [{ "node": "Other Target", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Handler": {
+      "main": [[{ "node": "Execution Failure", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

@@ -73,8 +73,8 @@ function earlierCalls(today: Date, lang: Lang): CrmRecord[] {
     {
       callId: "c1-b",
       agentId: "ag1",
-      callerName: "Maria Gomez",
-      callerNumber: "+1 (415) 555-0182",
+      callerName: "Ayşe Yıldırım",
+      callerNumber: "+90 532 555 0241",
       startedAt: daysAgo(6, 11, 5),
       durationSec: 134,
       outcome: "resolved",
@@ -95,8 +95,8 @@ function earlierCalls(today: Date, lang: Lang): CrmRecord[] {
     {
       callId: "c1-c",
       agentId: "ag1",
-      callerName: "Maria Gomez",
-      callerNumber: "+1 (415) 555-0182",
+      callerName: "Ayşe Yıldırım",
+      callerNumber: "+90 532 555 0241",
       startedAt: daysAgo(13, 18, 42),
       durationSec: 21,
       outcome: "voicemail",
@@ -115,8 +115,8 @@ function earlierCalls(today: Date, lang: Lang): CrmRecord[] {
     {
       callId: "c4-b",
       agentId: "ag3",
-      callerName: "Aisha Rahman",
-      callerNumber: "+1 (646) 555-0199",
+      callerName: "Hakan Aksoy",
+      callerNumber: "+90 535 555 0472",
       startedAt: daysAgo(9, 9, 30),
       durationSec: 96,
       outcome: "booked",

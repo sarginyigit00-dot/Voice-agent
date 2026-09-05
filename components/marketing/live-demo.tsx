@@ -44,12 +44,12 @@ interface DemoAgent {
 const DEMO_AGENTS: DemoAgent[] = [
   {
     tab: { tr: "Randevu", en: "Appointment" },
-    voice: "Nova · sıcak kadın sesi",
-    caller: "+90 (532) 555-0182",
+    voice: "Defne · sıcak kadın sesi",
+    caller: "+90 532 555 0182",
     outcome: { tr: "Randevu oluşturuldu", en: "Appointment booked" },
     detail: { tr: "Salı 14:00 · saç analizi · onay SMS'i gönderildi", en: "Tue 14:00 · hair analysis · confirmation SMS sent" },
     turns: [
-      { who: "agent", text: { tr: "Estetenova Saç Ekim Merkezi, ben Nova. Size nasıl yardımcı olabilirim?", en: "Estetenova Hair Clinic, this is Nova. How can I help you?" } },
+      { who: "agent", text: { tr: "Estetenova Saç Ekim Merkezi, ben Defne. Size nasıl yardımcı olabilirim?", en: "Estetenova Hair Clinic, this is Defne. How can I help you?" } },
       { who: "caller", text: { tr: "Saç ekimi düşünüyorum, önce bir görüşme yapabilir miyim?", en: "I'm considering a transplant — can I book a consultation first?" } },
       { who: "agent", text: { tr: "Tabii ki. Ücretsiz saç analizi için Salı 14:00 uygun olur mu?", en: "Of course. Would Tuesday at 14:00 work for a free hair analysis?" } },
       { who: "caller", text: { tr: "Evet, salı olur.", en: "Yes, Tuesday works." } },
@@ -64,12 +64,12 @@ const DEMO_AGENTS: DemoAgent[] = [
   },
   {
     tab: { tr: "Fiyat & greft", en: "Price & grafts" },
-    voice: "Atlas · güven veren erkek sesi",
-    caller: "+90 (216) 555-0143",
+    voice: "Kerem · güven veren erkek sesi",
+    caller: "+90 216 555 0143",
     outcome: { tr: "Bilgi verildi · randevuya döndü", en: "Informed · converted to booking" },
     detail: { tr: "Greft aralığı paylaşıldı · Perşembe 11:00", en: "Graft range shared · Thu 11:00" },
     turns: [
-      { who: "agent", text: { tr: "Estetenova, ben Atlas. Buyurun.", en: "Estetenova, this is Atlas. How can I help?" } },
+      { who: "agent", text: { tr: "Estetenova, ben Kerem. Buyurun.", en: "Estetenova, this is Kerem. How can I help?" } },
       { who: "caller", text: { tr: "Saç ekimi ne kadar tutuyor?", en: "How much does a hair transplant cost?" } },
       { who: "agent", text: { tr: "Fiyat greft sayısına göre değişiyor. Ekilecek alan görülmeden net rakam vermek doğru olmaz — analiz ücretsiz.", en: "It depends on the graft count. Quoting a firm number without seeing the area wouldn't be right — the analysis is free." } },
       { who: "caller", text: { tr: "Anladım, aşağı yukarı bir aralık var mı?", en: "I see — is there a rough range?" } },
@@ -84,12 +84,12 @@ const DEMO_AGENTS: DemoAgent[] = [
   },
   {
     tab: { tr: "Yurtdışı hasta", en: "International" },
-    voice: "Sage · sakin, çok dilli",
+    voice: "Deniz · sakin, çok dilli",
     caller: "+44 20 7946 0321",
     outcome: { tr: "Yurtdışı hasta · pakete yönlendirildi", en: "International · routed to package" },
     detail: { tr: "İngilizce görüşme · konaklama dahil paket · Pzt 10:00", en: "Handled in English · stay-included package · Mon 10:00" },
     turns: [
-      { who: "agent", text: { tr: "Estetenova Hair Clinic, this is Sage. How can I help you today?", en: "Estetenova Hair Clinic, this is Sage. How can I help you today?" } },
+      { who: "agent", text: { tr: "Estetenova Hair Clinic, this is Deniz. How can I help you today?", en: "Estetenova Hair Clinic, this is Deniz. How can I help you today?" } },
       { who: "caller", text: { tr: "Hi — I'm flying from London. Do you arrange the hotel as well?", en: "Hi — I'm flying from London. Do you arrange the hotel as well?" } },
       { who: "agent", text: { tr: "We do. Our package covers the transfer, four nights and the aftercare visit.", en: "We do. Our package covers the transfer, four nights and the aftercare visit." } },
       { who: "caller", text: { tr: "That sounds good. Can we speak on Monday?", en: "That sounds good. Can we speak on Monday?" } },

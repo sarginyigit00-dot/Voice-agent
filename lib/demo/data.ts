@@ -96,7 +96,7 @@ const wC = [0.3, 0.6, 0.4, 0.7, 0.5, 0.9, 0.6, 0.8, 0.4, 0.7, 0.5, 0.6, 0.3];
 
 export const CALLS: CallRow[] = [
   {
-    id: "c1", caller: "Maria Gomez", number: "+1 (415) 555-0182", agentId: "ag1",
+    id: "c1", caller: "Ayşe Yıldırım", number: "+90 532 555 0241", agentId: "ag1",
     time: "14:32", duration: "3:12", durationSec: 192, outcome: "booked", sentiment: "positive", wave: wA, recordingUrl: null,
     summary: { tr: "Salı 10:00 için temizlik randevusu aldı, adres doğrulandı.", en: "Booked a cleaning appointment for Tue 10:00, address confirmed." },
     actions: [
@@ -115,7 +115,7 @@ export const CALLS: CallRow[] = [
     ],
   },
   {
-    id: "c2", caller: "James Okoro", number: "+1 (212) 555-0143", agentId: "ag2",
+    id: "c2", caller: "Emre Doğan", number: "+90 533 555 0316", agentId: "ag2",
     time: "14:18", duration: "1:54", durationSec: 114, outcome: "resolved", sentiment: "positive", wave: wB, recordingUrl: null,
     summary: { tr: "Sıcak aday — 50+ koltuk, bu çeyrek bütçesi var. Satışa iletildi.", en: "Hot lead — 50+ seats, budget this quarter. Forwarded to sales." },
     actions: [
@@ -133,7 +133,7 @@ export const CALLS: CallRow[] = [
     ],
   },
   {
-    id: "c3", caller: "Unknown", number: "+44 20 7946 0321", agentId: "ag1",
+    id: "c3", caller: "Unknown", number: "+90 216 555 0187", agentId: "ag1",
     time: "13:55", duration: "0:48", durationSec: 48, outcome: "transferred", sentiment: "neutral", wave: wC, recordingUrl: null,
     summary: { tr: "Faturalandırma sorusu — ajan canlı temsilciye transfer etti.", en: "Billing question — agent warm-transferred to a live rep." },
     actions: [{ tr: "Faturalandırma ekibine transfer", en: "Transferred to billing team" }],
@@ -144,7 +144,7 @@ export const CALLS: CallRow[] = [
     ],
   },
   {
-    id: "c4", caller: "Aisha Rahman", number: "+1 (646) 555-0199", agentId: "ag3",
+    id: "c4", caller: "Hakan Aksoy", number: "+90 535 555 0472", agentId: "ag3",
     time: "13:40", duration: "2:21", durationSec: 141, outcome: "booked", sentiment: "positive", wave: wA, recordingUrl: null,
     summary: { tr: "Diş kontrolü için Perşembe 15:30 randevusu aldı.", en: "Booked a dental check-up for Thursday 15:30." },
     actions: [
@@ -160,7 +160,7 @@ export const CALLS: CallRow[] = [
     ],
   },
   {
-    id: "c5", caller: "Tom Reilly", number: "+1 (305) 555-0117", agentId: "ag2",
+    id: "c5", caller: "Kaan Erdem", number: "+90 542 555 0523", agentId: "ag2",
     time: "13:12", duration: "0:32", durationSec: 32, outcome: "voicemail", sentiment: "neutral", wave: wB, recordingUrl: null,
     summary: { tr: "Arayan mesaj bıraktı — geri arama talep etti.", en: "Caller left a message — requested a callback." },
     actions: [{ tr: "Geri arama görevi oluşturuldu", en: "Callback task created" }],
@@ -170,7 +170,7 @@ export const CALLS: CallRow[] = [
     ],
   },
   {
-    id: "c6", caller: "Nadia Park", number: "+1 (917) 555-0164", agentId: "ag3",
+    id: "c6", caller: "Merve Çetin", number: "+90 536 555 0619", agentId: "ag3",
     time: "12:48", duration: "4:05", durationSec: 245, outcome: "resolved", sentiment: "positive", wave: wC, recordingUrl: null,
     summary: { tr: "Reçete yenileme talebini ajan kendi başına çözdü.", en: "Agent resolved a prescription-refill request end to end." },
     actions: [
@@ -186,7 +186,7 @@ export const CALLS: CallRow[] = [
     ],
   },
   {
-    id: "c7", caller: "Diego Santos", number: "+34 91 555 0142", agentId: "ag1",
+    id: "c7", caller: "Onur Bilgin", number: "+90 505 555 0744", agentId: "ag1",
     time: "12:20", duration: "1:38", durationSec: 98, outcome: "missed", sentiment: "negative", wave: wA, recordingUrl: null,
     summary: { tr: "Arayan beklemede kaldı ve kapattı — geri arama için işaretlendi.", en: "Caller dropped while on hold — flagged for callback." },
     actions: [{ tr: "Acil geri arama olarak işaretlendi", en: "Flagged as priority callback" }],
@@ -196,7 +196,7 @@ export const CALLS: CallRow[] = [
     ],
   },
   {
-    id: "c8", caller: "Emma Wright", number: "+1 (503) 555-0188", agentId: "ag2",
+    id: "c8", caller: "Ceren Aydın", number: "+90 545 555 0852", agentId: "ag2",
     time: "11:54", duration: "2:57", durationSec: 177, outcome: "booked", sentiment: "positive", wave: wB, recordingUrl: null,
     summary: { tr: "Emlak görüntüleme randevusu aldı — Cumartesi 11:00.", en: "Booked a property viewing — Saturday 11:00." },
     actions: [
@@ -224,8 +224,8 @@ export interface LiveCall {
 }
 
 export const LIVE_CALLS: LiveCall[] = [
-  { id: "l1", caller: "Incoming", number: "+1 (415) 555-0207", agentId: "ag1", elapsed: "0:42", stage: { tr: "Uygunluk kontrol ediliyor", en: "Checking availability" } },
-  { id: "l2", caller: "Incoming", number: "+1 (718) 555-0233", agentId: "ag2", elapsed: "1:18", stage: { tr: "Aday nitelendiriliyor", en: "Qualifying the lead" } },
+  { id: "l1", caller: "Incoming", number: "+90 532 555 0907", agentId: "ag1", elapsed: "0:42", stage: { tr: "Uygunluk kontrol ediliyor", en: "Checking availability" } },
+  { id: "l2", caller: "Incoming", number: "+90 507 555 0163", agentId: "ag2", elapsed: "1:18", stage: { tr: "Aday nitelendiriliyor", en: "Qualifying the lead" } },
 ];
 
 /* ════════════════════════════ AGENTS ════════════════════════════ */
@@ -251,7 +251,7 @@ export interface Agent {
 
 export const AGENTS: Agent[] = [
   {
-    id: "ag1", name: "Reception", voice: "Nova · warm female", active: true, callsToday: 142,
+    id: "ag1", name: "Reception", voice: "Defne · warm female", active: true, callsToday: 142,
     purpose: { tr: "Gelen aramaları karşılar, randevu alır, yönlendirir.", en: "Greets inbound calls, books appointments and routes." },
     greeting: { tr: "Briteline'a hoş geldiniz, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Thanks for calling Brightline, this is Randevox. How can I help?" },
     actionIds: ["book", "transfer", "sms"],
@@ -260,7 +260,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag2", name: "Sales SDR", voice: "Atlas · confident male", active: true, callsToday: 98,
+    id: "ag2", name: "Sales SDR", voice: "Kerem · confident male", active: true, callsToday: 98,
     purpose: { tr: "Müşteri adaylarını nitelendirir ve satışa iletir.", en: "Qualifies leads and forwards them to sales." },
     greeting: { tr: "Randevox'a hoş geldiniz! Hangi konuda yardımcı olabilirim?", en: "Welcome to Randevox! What can I help you with today?" },
     actionIds: ["qualify", "crm"],
@@ -269,7 +269,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag3", name: "Clinic Desk", voice: "Sage · calm neutral", active: true, callsToday: 67,
+    id: "ag3", name: "Clinic Desk", voice: "Deniz · calm neutral", active: true, callsToday: 67,
     purpose: { tr: "Hasta randevuları ve rutin talepleri yönetir.", en: "Handles patient bookings and routine requests." },
     greeting: { tr: "Cedar Klinik, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Cedar Clinic, this is Randevox. How can I help you today?" },
     actionIds: ["book", "sms"],
@@ -278,7 +278,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag4", name: "After Hours", voice: "Echo · soft female", active: false, callsToday: 35,
+    id: "ag4", name: "After Hours", voice: "Ada · soft female", active: false, callsToday: 35,
     purpose: { tr: "Mesai dışı mesaj alır ve acil olanları yönlendirir.", en: "Takes after-hours messages and escalates urgent ones." },
     greeting: { tr: "Şu an kapalıyız. Mesajınızı bırakın, sabah ilk iş dönüş yapalım.", en: "We're closed right now. Leave a message and we'll call back first thing." },
     actionIds: ["sms", "transfer"],
@@ -301,7 +301,7 @@ export const AGENTS: Agent[] = [
 ];
 
 /* The available voices for the agent-builder preview. */
-export const VOICES = ["Nova · warm female", "Atlas · confident male", "Sage · calm neutral", "Echo · soft female", "Ridge · deep male"];
+export const VOICES = ["Defne · warm female", "Kerem · confident male", "Deniz · calm neutral", "Ada · soft female", "Poyraz · deep male"];
 
 /* The action toggles in the agent-builder preview — built from the shared registry. */
 export const BUILDER_ACTIONS: { id: ActionId; label: L; on: boolean }[] = ACTION_IDS.map((id) => ({
@@ -393,12 +393,12 @@ export interface Testimonial {
 }
 
 export const TESTIMONIALS: Testimonial[] = [
-  { quote: { tr: "Randevox geceleri gelen aramaların hepsini karşılıyor. İlk ay randevularımız %34 arttı.", en: "Randevox answers every after-hours call. Bookings jumped 34% in the first month." }, name: "Dr. Lena Hart", role: { tr: "Cedar Diş Kliniği", en: "Cedar Dental" }, initials: "LH" },
-  { quote: { tr: "Artık hiçbir sıcak aday sesli mesaja düşmüyor. Satış ekibim sadece nitelikli aramaları alıyor.", en: "No hot lead drops to voicemail anymore. My sales team only gets qualified calls." }, name: "Marcus Bell", role: { tr: "Satış Direktörü, Parable", en: "Head of Sales, Parable" }, initials: "MB" },
-  { quote: { tr: "Sesi o kadar doğal ki müşterilerimiz bot olduğunu fark etmiyor. Kurulum 10 dakika sürdü.", en: "The voice is so natural our clients don't realize it's a bot. Setup took 10 minutes." }, name: "Priya Nair", role: { tr: "Kurucu, Harborline Emlak", en: "Founder, Harborline Realty" }, initials: "PN" },
-  { quote: { tr: "Bir resepsiyonist işe almak yerine Randevox'u açtık. Üç kişilik bir ekibin işini yapıyor.", en: "Instead of hiring a receptionist we switched on Randevox. It does the work of a three-person desk." }, name: "Owen Frost", role: { tr: "Operasyon, Brightline", en: "Ops, Brightline" }, initials: "OF" },
-  { quote: { tr: "Çok dilli olması bizim için kritikti. Arayanın diline anında geçiyor.", en: "Multi-language was critical for us. It switches to the caller's language instantly." }, name: "Sofia Marin", role: { tr: "CX Lideri, Lumen", en: "CX Lead, Lumen" }, initials: "SM" },
-  { quote: { tr: "Her aramanın transkripti ve özeti CRM'imize düşüyor. Manuel not almak tarih oldu.", en: "Every call's transcript and summary lands in our CRM. Manual notes are history." }, name: "David Cho", role: { tr: "Kurucu, Formwork", en: "Founder, Formwork" }, initials: "DC" },
+  { quote: { tr: "Randevox geceleri gelen aramaların hepsini karşılıyor. İlk ay randevularımız %34 arttı.", en: "Randevox answers every after-hours call. Bookings jumped 34% in the first month." }, name: "Dr. Elif Şahin", role: { tr: "Cedar Diş Kliniği", en: "Cedar Dental" }, initials: "EŞ" },
+  { quote: { tr: "Artık hiçbir sıcak aday sesli mesaja düşmüyor. Satış ekibim sadece nitelikli aramaları alıyor.", en: "No hot lead drops to voicemail anymore. My sales team only gets qualified calls." }, name: "Mert Aydın", role: { tr: "Satış Direktörü, Parable", en: "Head of Sales, Parable" }, initials: "MA" },
+  { quote: { tr: "Sesi o kadar doğal ki müşterilerimiz bot olduğunu fark etmiyor. Kurulum 10 dakika sürdü.", en: "The voice is so natural our clients don't realize it's a bot. Setup took 10 minutes." }, name: "Pınar Koç", role: { tr: "Kurucu, Harborline Emlak", en: "Founder, Harborline Realty" }, initials: "PK" },
+  { quote: { tr: "Bir resepsiyonist işe almak yerine Randevox'u açtık. Üç kişilik bir ekibin işini yapıyor.", en: "Instead of hiring a receptionist we switched on Randevox. It does the work of a three-person desk." }, name: "Ozan Kılıç", role: { tr: "Operasyon, Brightline", en: "Ops, Brightline" }, initials: "OK" },
+  { quote: { tr: "Çok dilli olması bizim için kritikti. Arayanın diline anında geçiyor.", en: "Multi-language was critical for us. It switches to the caller's language instantly." }, name: "Sena Barış", role: { tr: "CX Lideri, Lumen", en: "CX Lead, Lumen" }, initials: "SB" },
+  { quote: { tr: "Her aramanın transkripti ve özeti CRM'imize düşüyor. Manuel not almak tarih oldu.", en: "Every call's transcript and summary lands in our CRM. Manual notes are history." }, name: "Deniz Çelik", role: { tr: "Kurucu, Formwork", en: "Founder, Formwork" }, initials: "DÇ" },
 ];
 
 /**

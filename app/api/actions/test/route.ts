@@ -55,8 +55,8 @@ export async function POST(req: Request) {
     callId: `test-${Date.now()}`,
     agentId: "ag1",
     agentName: "Reception",
-    caller: "Test Caller",
-    number: "+1 (415) 555-0100",
+    caller: "Test Arayan",
+    number: "+90 532 555 0100",
     startedAt: new Date().toISOString(),
     // The post-call `book` net refuses to book without a slot (it no longer
     // falls back to the call's own start time, which is always in the past),

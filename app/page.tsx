@@ -21,6 +21,7 @@ import { Icon } from "@/components/ui/icon";
 import { LogoMark } from "@/components/ui/logo";
 import { Waveform } from "@/components/app/waveform";
 import { LanguageToggle } from "@/components/ui/language-toggle";
+import { HeroCallDemo } from "@/components/marketing/hero-call-demo";
 import { useLang } from "@/components/i18n/language-provider";
 import type { L } from "@/lib/i18n/config";
 import { ForceLightRoute } from "./force-light";
@@ -118,7 +119,10 @@ function Hero() {
     // `isolate` is load-bearing: without its own stacking context the -z-10
     // children escape and paint behind `.ed-light`'s opaque page background,
     // which makes both the wash and the motif invisible.
-    <section className="relative isolate overflow-hidden">
+    // The hero is sized to the first screen: from `lg` it fills exactly the
+    // viewport minus the 64px sticky nav and centres itself, so the badge,
+    // headline, demo and stat row all land above the fold without scrolling.
+    <section className="relative isolate flex flex-col justify-center overflow-hidden lg:min-h-[calc(100dvh-4rem)]">
       {/* The wash as a -z-10 CHILD (the marketing hero's idiom) — putting the
           background on the section itself would paint over anything behind it.
           A poster-scale waveform was tried here and cut: at 1152px the bars read
@@ -126,32 +130,45 @@ function Hero() {
           it earned nothing. The type and the wash carry this hero. */}
       <div className="pointer-events-none absolute inset-0 -z-10" style={{ background: "var(--grad-hero)" }} />
 
-      <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-7 px-5 py-24 text-center lg:py-32">
-        {/* Deliberately not "we sell AI" — this is the badge, so it carries the
-            outcome (a call that would've been lost, wasn't) rather than the
-            mechanism. The product name/category never appears here. */}
-        <span className="inline-flex items-center gap-2.5 rounded-full border border-cyan px-4 py-2 text-[13px] text-foreground/80">
-          <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-cyan" />
-          {lang === "tr" ? "Kaçan arama, kaçan hastadır." : "A missed call is a missed patient."}
-        </span>
+      <div className="relative mx-auto w-full max-w-6xl px-5 py-16 text-center lg:py-10 lg:text-left">
+        {/* Two columns from `lg`: the argument on the left, a call you can
+            actually start on the right. Below that the stat row still spans
+            the full width, so the hero keeps one baseline to land on. */}
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_minmax(0,360px)] lg:gap-14">
+          <div className="flex flex-col items-center gap-5 lg:items-start">
+            {/* Deliberately not "we sell AI" — this is the badge, so it carries the
+                outcome (a call that would've been lost, wasn't) rather than the
+                mechanism. The product name/category never appears here. */}
+            <span className="inline-flex items-center gap-2.5 rounded-full border border-cyan px-4 py-2 text-[13px] text-foreground/80">
+              <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-cyan" />
+              {lang === "tr" ? "Kaçan arama, kaçan hastadır." : "A missed call is a missed patient."}
+            </span>
 
-        <h1 className="font-editorial ed-display max-w-5xl text-pretty">
-          {lang === "tr" ? "Randevu için arayan hastayı" : "The patient calling to book"}
-          <br />
-          <em className="ed-accent">{lang === "tr" ? "bir daha kaçırmayın." : "never reaches voicemail again."}</em>
-        </h1>
+            {/* ed-h1, not ed-display: at half width the display scale broke the
+                headline into ragged fragments. */}
+            <h1 className="font-editorial ed-h1 max-w-2xl text-pretty">
+              {lang === "tr" ? "Randevu için arayan hastayı" : "The patient calling to book"}
+              <br />
+              <em className="ed-accent">{lang === "tr" ? "bir daha kaçırmayın." : "never reaches voicemail again."}</em>
+            </h1>
 
-        <p className="ed-body max-w-2xl text-pretty text-muted-foreground">
-          {lang === "tr"
-            ? "Randevox kliniğinizin telefonunu ilk çalışta açar: randevu alır, greft ve fiyat sorularını sizin verdiğiniz bilgiyle yanıtlar, yurtdışından arayan hastayla kendi dilinde konuşur. Gece, hafta sonu, siz ameliyattayken bile."
-            : "Randevox answers your clinic's phone on the first ring: books appointments, answers graft and pricing questions from the information you provide, and speaks to international patients in their own language. Nights, weekends, even while you're operating."}
-        </p>
+            <p className="ed-body max-w-xl text-pretty text-muted-foreground">
+              {lang === "tr"
+                ? "Randevox kliniğinizin telefonunu ilk çalışta açar: randevu alır, greft ve fiyat sorularını sizin verdiğiniz bilgiyle yanıtlar, yurtdışından arayan hastayla kendi dilinde konuşur. Gece, hafta sonu, siz ameliyattayken bile."
+                : "Randevox answers your clinic's phone on the first ring: books appointments, answers graft and pricing questions from the information you provide, and speaks to international patients in their own language. Nights, weekends, even while you're operating."}
+            </p>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Link href="/signup" className="ed-pill ed-pill-primary px-8 text-[15px]" style={{ height: 52 }}>
-            <Icon name="phone" className="h-4 w-4" />
-            {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
-          </Link>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href="/signup" className="ed-pill ed-pill-primary px-8 text-[15px]" style={{ height: 52 }}>
+                <Icon name="phone" className="h-4 w-4" />
+                {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex justify-center lg:justify-end">
+            <HeroCallDemo />
+          </div>
         </div>
 
         {/* Unboxed: four cards were visually heavier than the headline above
@@ -159,7 +176,7 @@ function Hero() {
             hairlines only from `sm`, where the four sit on one line. */}
         {/* max-w-5xl + tight cell padding so "İlk çalışta" holds one line — the
             four values have to share a baseline for the row to read as a row. */}
-        <div className="mt-8 grid w-full max-w-5xl grid-cols-2 gap-y-8 sm:grid-cols-4 sm:gap-y-0">
+        <div className="mx-auto mt-14 grid w-full max-w-5xl grid-cols-2 gap-y-8 border-t border-border pt-8 sm:grid-cols-4 sm:gap-y-0 lg:mt-10">
           {specs.map((s, i) => (
             <div
               key={s.value.en}

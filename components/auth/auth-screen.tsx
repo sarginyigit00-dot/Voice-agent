@@ -10,7 +10,7 @@ import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { LanguageToggle } from "@/components/ui/language-toggle";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { getSupabaseBrowser, getSessionPersistence, setSessionPersistence } from "@/lib/supabase/client";
 import { useSession } from "@/components/auth/session";
 
 /**
@@ -37,6 +37,16 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
   // "enter the code we emailed you" step instead of the password form.
   const [step, setStep] = useState<"form" | "verify">("form");
   const [pendingEmail, setPendingEmail] = useState("");
+  // Whether the session outlives the browser window. On by default — the whole
+  // point is that a clinic's staff type their password once, not every morning
+  // — and remembered from the visitor's last choice on this browser.
+  // Read from storage in the initializer, not an effect — the box must be
+  // right on the first paint. The server renders the `true` default, so the
+  // input suppresses the hydration warning it gets from a visitor who last
+  // chose otherwise; React corrects the checkbox on hydration either way.
+  const [remember, setRemember] = useState(() =>
+    typeof window === "undefined" ? true : getSessionPersistence(),
+  );
 
   function handleDemo(e?: React.FormEvent) {
     e?.preventDefault();
@@ -58,6 +68,9 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
     setLoading(true);
     setError(null);
     setNotice(null);
+
+    // Has to run BEFORE sign-in: it decides which store the new token lands in.
+    setSessionPersistence(remember);
 
     const res = mode === "login"
       ? await supabase.auth.signInWithPassword({ email, password })
@@ -251,6 +264,24 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
                   <Label htmlFor="password">{ui.password}</Label>
                   <Input id="password" name="password" type="password" autoComplete={isLogin ? "current-password" : "new-password"} required minLength={6} placeholder="••••••••" />
                 </div>
+                {isLogin && (
+                  <label
+                    htmlFor="remember"
+                    title={ui.rememberMeHint}
+                    className="flex cursor-pointer items-center gap-2.5 text-sm text-muted-foreground select-none"
+                  >
+                    <input
+                      id="remember"
+                      name="remember"
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.currentTarget.checked)}
+                      suppressHydrationWarning
+                      className="h-4 w-4 cursor-pointer rounded border-input accent-[var(--color-primary)]"
+                    />
+                    {ui.rememberMe}
+                  </label>
+                )}
                 <Button type="submit" disabled={loading} className="w-full gap-2">
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   {isLogin ? ui.signIn : ui.getStarted}

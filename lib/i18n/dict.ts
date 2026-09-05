@@ -32,6 +32,8 @@ export const ui = {
     codeResent: "Kod tekrar gönderildi.",
     invalidCode: "Kod hatalı veya süresi dolmuş. Tekrar dene.",
     backToForm: "← E-postayı değiştir",
+    rememberMe: "Beni hatırla",
+    rememberMeHint: "Bu tarayıcıda giriş yapmış kal — ortak bilgisayarda kapat.",
     // dashboard chrome
     search: "Ara…",
     recentActivity: "Son hareketler",
@@ -110,6 +112,8 @@ export const ui = {
     codeResent: "Code resent.",
     invalidCode: "Wrong or expired code. Try again.",
     backToForm: "← Change email",
+    rememberMe: "Remember me",
+    rememberMeHint: "Stay signed in on this browser — turn it off on a shared computer.",
     search: "Search…",
     recentActivity: "Recent activity",
     export: "Export",

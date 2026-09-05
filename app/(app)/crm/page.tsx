@@ -40,10 +40,11 @@ export default function CrmPage() {
 
   const demoRecords = useMemo(() => demoCrmRecords(lang), [lang]);
 
-  // An empty real table still shows the demo book, badged — an empty grid
-  // teaches nothing about what this page is for.
-  const isDemo = !live || fetched?.length === 0;
-  const records = !live ? demoRecords : fetched === null ? null : fetched.length ? fetched : demoRecords;
+  // A real account never borrows the demo book, not even when its own table
+  // is still empty — sample contacts under a real login read as that clinic's
+  // actual patients. The empty state (L.emptyNoData) explains the page instead.
+  const isDemo = !live;
+  const records = !live ? demoRecords : fetched;
 
   const contacts = useMemo(() => groupCallsIntoContacts(records ?? []), [records]);
 

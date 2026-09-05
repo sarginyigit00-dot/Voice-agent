@@ -104,6 +104,21 @@ export function useSession() {
 }
 
 /**
+ * True when this cockpit is allowed to render `lib/demo/data.ts` sample rows:
+ * either the visitor came through the /demo bypass, or the workspace has no
+ * Supabase keys at all so there is nothing real to show.
+ *
+ * A real signed-in account must NEVER see sample data — not even for the few
+ * hundred milliseconds a fetch takes, which is what this exists to prevent.
+ * Read it at first render and seed state from it instead of defaulting to the
+ * demo arrays.
+ */
+export function useSampleData(): boolean {
+  const { demo } = useSession();
+  return !isSupabaseConfigured || demo;
+}
+
+/**
  * Keeps the cockpit behind a session once Supabase is wired. The demo bypass
  * still gets through — this kit is meant to be clickable without an account.
  */

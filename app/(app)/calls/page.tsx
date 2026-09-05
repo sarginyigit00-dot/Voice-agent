@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchCalls } from "@/lib/calls/queries";
 import { fetchAgents } from "@/lib/agents/queries";
-import { useSession } from "@/components/auth/session";
+import { useSession, useSampleData } from "@/components/auth/session";
 
 const SENTIMENT_TINT: Record<string, string> = {
   positive: "var(--color-booked)",
@@ -47,12 +47,13 @@ export default function CallsPage() {
 function CallsView() {
   const { lang, t } = useLang();
   const { demo } = useSession();
+  const sample = useSampleData();
   const searchParams = useSearchParams();
   const [filter, setFilter] = useState<Outcome | "all">("all");
   const [query, setQuery] = useState("");
   const [openCall, setOpenCall] = useState<CallRow | null>(null);
-  const [calls, setCalls] = useState<CallRow[]>(CALLS);
-  const [agents, setAgents] = useState<Agent[]>(AGENTS);
+  const [calls, setCalls] = useState<CallRow[]>(sample ? CALLS : []);
+  const [agents, setAgents] = useState<Agent[]>(sample ? AGENTS : []);
 
   // Real data once Supabase is connected — the demo arrays above stay as the
   // initial render and as the fallback when Supabase isn't configured, or

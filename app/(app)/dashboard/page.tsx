@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchCalls } from "@/lib/calls/queries";
 import { fetchAgents, saveAgent } from "@/lib/agents/queries";
-import { useSession } from "@/components/auth/session";
+import { useSession, useSampleData } from "@/components/auth/session";
 import { usePrefs } from "@/lib/prefs";
 
 const SENTIMENT_TINT: Record<string, string> = {
@@ -50,15 +50,18 @@ function formatAvgDuration(totalSec: number, count: number): string {
 export default function DashboardPage() {
   const { lang, t } = useLang();
   const { demo } = useSession();
+  // A real account starts empty and fills in from Supabase — never from the
+  // demo arrays, which used to flash for the length of the first fetch.
+  const sample = useSampleData();
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [openCall, setOpenCall] = useState<CallRow | null>(null);
   const [livePlaying, setLivePlaying] = useState(true);
   const { prefs } = usePrefs();
   useEffect(() => { setLivePlaying(prefs.liveTicker); }, [prefs.liveTicker]);
-  const [calls, setCalls] = useState<CallRow[]>(CALLS);
-  const [liveCalls, setLiveCalls] = useState<LiveCall[]>(LIVE_CALLS);
-  const [agents, setAgents] = useState<Agent[]>(AGENTS);
-  const [live, setLive] = useState(false); // true once real (possibly empty) Supabase data has loaded
+  const [calls, setCalls] = useState<CallRow[]>(sample ? CALLS : []);
+  const [liveCalls, setLiveCalls] = useState<LiveCall[]>(sample ? LIVE_CALLS : []);
+  const [agents, setAgents] = useState<Agent[]>(sample ? AGENTS : []);
+  const [live, setLive] = useState(!sample); // renders real rows (empty until the fetch lands) rather than the demo constants
 
   useEffect(() => {
     if (!isSupabaseConfigured || demo) return; // demo bypass stays fully local — never touches Supabase

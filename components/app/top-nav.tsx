@@ -9,7 +9,7 @@ import { Icon } from "@/components/ui/icon";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 import { useAppTheme } from "@/components/app/app-theme";
 import { useLang } from "@/components/i18n/language-provider";
-import { useSession } from "@/components/auth/session";
+import { useSession, useSampleData } from "@/components/auth/session";
 import { usePrefs } from "@/lib/prefs";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchCalls } from "@/lib/calls/queries";
@@ -62,10 +62,11 @@ export function TopNav() {
   const alertsRef = useRef<HTMLDivElement>(null);
   const [navOpen, setNavOpen] = useState(false);
   const { profile, session, demo, signOut } = useSession();
+  const sample = useSampleData();
   const { prefs } = usePrefs();
   // The bell mirrors the same call log the cockpit shows: real rows once
   // Supabase is connected, the sample log inside the demo bypass.
-  const [notifications, setNotifications] = useState<Notification[]>(() => toNotifications(CALLS));
+  const [notifications, setNotifications] = useState<Notification[]>(() => (sample ? toNotifications(CALLS) : []));
 
   useEffect(() => {
     if (!isSupabaseConfigured || demo) return;

@@ -12,6 +12,7 @@ import { Input, Label } from "@/components/ui/input";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 import { getSupabaseBrowser, getSessionPersistence, setSessionPersistence } from "@/lib/supabase/client";
 import { useSession } from "@/components/auth/session";
+import { GoogleButton } from "@/components/auth/google-button";
 
 /**
  * Login / signup against Supabase Auth when it's configured, with a DEMO
@@ -295,6 +296,10 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
                   <p className="rounded-lg bg-booked/10 px-3 py-2 text-center text-xs text-booked">{notice}</p>
                 )}
               </form>
+
+              {/* Signup has no remember box of its own — a brand-new account
+                  is always remembered, same as the password path's default. */}
+              <GoogleButton remember={isLogin ? remember : true} disabled={loading} />
 
               <p className="text-center text-sm text-muted-foreground">
                 {isLogin ? ui.noAccount : ui.haveAccount}{" "}

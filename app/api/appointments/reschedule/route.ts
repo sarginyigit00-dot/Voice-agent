@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { calcomConfig, rescheduleBooking, toInstant } from "@/lib/calcom/client";
-import { requireUser } from "@/lib/auth/require-user";
+import { calcomConfigFor, rescheduleBooking, toInstant } from "@/lib/calcom/client";
+import { requireMember } from "@/lib/clinics/server";
 
 /**
  * Reschedules an appointment from /randevular. Staff-only, panel-side —
@@ -19,15 +19,16 @@ import { requireUser } from "@/lib/auth/require-user";
  * clinic a slot changed if it didn't actually change on the real calendar.
  */
 export async function POST(req: Request) {
-  const user = await requireUser(req);
-  if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+  const member = await requireMember(req);
+  if (!member.ok) return NextResponse.json({ error: member.error }, { status: member.status });
+  const { user, clinic } = member;
 
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json({ error: "Supabase yapılandırılmamış." }, { status: 503 });
   }
 
-  const cfg = calcomConfig();
+  const cfg = await calcomConfigFor(clinic);
   if (!cfg) {
     return NextResponse.json({ error: "Cal.com yapılandırılmamış." }, { status: 503 });
   }
@@ -51,6 +52,8 @@ export async function POST(req: Request) {
     .from("appointments")
     .select("id, booking_uid, status")
     .eq("id", id)
+    // Scoped to the caller's clinic — see the same line in ../cancel/route.ts.
+    .eq("clinic_id", clinic.id)
     .maybeSingle();
 
   if (readError || !appointment) {
@@ -74,7 +77,8 @@ export async function POST(req: Request) {
   const { error: writeError } = await supabase
     .from("appointments")
     .update({ booking_uid: rescheduled.data.uid, starts_at: newStart.toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("clinic_id", clinic.id);
 
   if (writeError) {
     // Cal.com already moved the appointment — the reschedule genuinely

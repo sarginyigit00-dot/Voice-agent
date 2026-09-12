@@ -68,12 +68,22 @@ export async function fetchAgents(): Promise<Agent[] | null> {
   return (data as AgentRow[]).map(agentFromRow);
 }
 
-/** Seeds a brand-new (empty) workspace with the starter agents, once. */
-export async function seedAgents(agents: Agent[]): Promise<void> {
+/**
+ * Seeds a brand-new (empty) clinic with the starter agents, once, and returns
+ * them as stored.
+ *
+ * Fresh ids every time: `agents.id` is unique across ALL clinics, so reusing
+ * the demo ids ("ag1"…) would make every clinic after the first collide with
+ * the first one's rows and fail to seed. `clinic_id` is left to the column
+ * default — the signed-in user's clinic (supabase/schema.sql).
+ */
+export async function seedAgents(agents: Agent[]): Promise<Agent[]> {
+  const seeded = agents.map((a) => ({ ...a, id: `ag-${crypto.randomUUID()}` }));
   const supabase = getSupabaseBrowser();
-  if (!supabase) return;
-  const { error } = await supabase.from("agents").insert(agents.map(toRow));
+  if (!supabase) return seeded;
+  const { error } = await supabase.from("agents").insert(seeded.map(toRow));
   if (error) console.error("[agents] failed to seed agents:", error.message);
+  return seeded;
 }
 
 export async function insertAgent(agent: Agent): Promise<void> {

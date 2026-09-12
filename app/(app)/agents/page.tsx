@@ -61,8 +61,7 @@ export default function AgentsPage() {
       fetchAgents().then(async (loaded) => {
         if (loaded === null) return; // request failed — keep the AGENTS default
         if (loaded.length === 0) {
-          await seedAgents(AGENTS);
-          loaded = AGENTS;
+          loaded = await seedAgents(AGENTS);
         }
         setAgents(loaded);
         setSelectedId(loaded[0].id);

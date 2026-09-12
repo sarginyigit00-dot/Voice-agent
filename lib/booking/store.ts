@@ -22,6 +22,8 @@ export interface AppointmentRecord {
   attendeeEmail: string | null;
   attendeePhone: string | null;
   agentId: string | null;
+  /** Null only in demo mode — the column is NOT NULL, so a real write needs it. */
+  clinicId: string | null;
   source: "in-call" | "post-call";
 }
 
@@ -46,6 +48,7 @@ export async function findByCall(callId: string): Promise<AppointmentRecord | nu
     attendeeEmail: data.attendee_email,
     attendeePhone: data.attendee_phone,
     agentId: data.agent_id,
+    clinicId: data.clinic_id ?? null,
     source: data.source,
   };
 }
@@ -68,6 +71,7 @@ export async function record(appointment: AppointmentRecord): Promise<void> {
       attendee_email: appointment.attendeeEmail,
       attendee_phone: appointment.attendeePhone,
       agent_id: appointment.agentId,
+      clinic_id: appointment.clinicId,
       source: appointment.source,
     },
     { onConflict: "call_id" },

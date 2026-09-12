@@ -6,8 +6,9 @@ import { getSupabaseServer } from "@/lib/supabase/server";
  * (supabase/schema.sql) — that's what powers the /crm page. Falls back to
  * "demo" when Supabase isn't configured, same as the other executors.
  *
- * If CRM_WEBHOOK_URL is also set, the record is additionally forwarded there
- * (Zapier/Make/n8n or a CRM's own incoming webhook) — that stays optional.
+ * If the clinic has a `crm_webhook_url`, the record is additionally forwarded
+ * there (Zapier/Make/n8n or a CRM's own incoming webhook) — that stays
+ * optional, and it is per clinic: one clinic's calls never reach another's CRM.
  *
  * Note the `actions` column is deliberately left empty here: runAgentActions
  * runs every executor in parallel and logCall happens after them (see
@@ -24,6 +25,7 @@ export async function runCrm(payload: CallActionPayload): Promise<ActionResult> 
   const { error } = await supabase.from("crm_records").upsert(
     {
       call_id: payload.callId,
+      clinic_id: payload.clinic?.id ?? null,
       agent_id: payload.agentId,
       agent_name: payload.agentName,
       caller_name: payload.caller,
@@ -46,15 +48,23 @@ export async function runCrm(payload: CallActionPayload): Promise<ActionResult> 
 }
 
 async function forwardToWebhook(payload: CallActionPayload) {
-  const url = process.env.CRM_WEBHOOK_URL;
+  // The deploy-wide CRM_WEBHOOK_URL is only for the no-Supabase demo setup —
+  // with real clinics it would ship every clinic's calls to the same place.
+  const url = payload.clinic ? payload.clinic.crmWebhookUrl : process.env.CRM_WEBHOOK_URL;
   if (!url) return;
+  const { clinic, ...call } = payload;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source: "randevox", event: "call.completed", call: payload }),
+      body: JSON.stringify({
+        source: "randevox",
+        event: "call.completed",
+        clinic: clinic ? { id: clinic.id, name: clinic.name } : null,
+        call,
+      }),
       signal: controller.signal,
     });
     clearTimeout(timeout);

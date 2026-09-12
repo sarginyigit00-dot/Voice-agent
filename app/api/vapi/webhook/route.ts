@@ -1,34 +1,10 @@
 import { NextResponse } from "next/server";
-import { AGENTS, type Agent } from "@/lib/demo/data";
 import { runAgentActions } from "@/lib/actions/run";
 import type { CallActionPayload } from "@/lib/actions/types";
-import { getSupabaseServer } from "@/lib/supabase/server";
 import { logCall } from "@/lib/calls/log";
 import { isBookingTool, runBookingTool, type ToolContext } from "@/lib/booking/tools";
-import { normalizeWorkingHours } from "@/lib/agents/hours";
 import { computeSentiment } from "@/lib/calls/sentiment";
-
-/** Real agents when Supabase is configured, otherwise the demo set. */
-async function loadAgents(): Promise<Agent[]> {
-  const supabase = getSupabaseServer();
-  if (!supabase) return AGENTS;
-
-  const { data, error } = await supabase.from("agents").select("*");
-  if (error || !data?.length) return AGENTS;
-
-  return data.map((r) => ({
-    id: r.id,
-    name: r.name,
-    voice: r.voice,
-    purpose: r.purpose,
-    greeting: r.greeting,
-    active: r.active,
-    callsToday: r.calls_today,
-    actionIds: r.action_ids,
-    systemPrompt: r.system_prompt ?? "",
-    workingHours: normalizeWorkingHours(r.working_hours),
-  }));
-}
+import { resolveCallOwner } from "@/lib/clinics/server";
 
 /**
  * Vapi's server URL. Point your assistant (or a phone number's serverUrl) here
@@ -152,25 +128,41 @@ async function handleToolCalls(message: VapiToolCallsMessage) {
     [];
 
   const call = message.call ?? {};
-  // Resolve the agent so the tools know this line's working hours — an agent
-  // must not offer a slot the clinic's phone line is closed for.
-  const agents = await loadAgents();
-  const agent = agents.find((a) => a.id === call.assistantId) ?? agents[0];
+  // Resolve the agent — and through it the clinic — so the tools book into
+  // THIS clinic's calendar, inside this line's working hours.
+  const owner = await resolveCallOwner(call.assistantId);
+  if (!owner) {
+    console.error(`[vapi] tool-calls from unknown assistant ${call.assistantId ?? "(none)"} — refused`);
+  }
 
-  const ctx: ToolContext = {
-    callId: call.id ?? "unknown",
-    callerNumber: call.customer?.number ?? "",
-    callerName: call.customer?.name ?? "Unknown",
-    agentId: agent.id,
-    workingHours: agent.workingHours,
-  };
+  // Every tool call still gets an answer, or the model stalls mid-sentence —
+  // so an unknown line or a suspended clinic hands the caller to a person
+  // instead of touching any calendar.
+  const refusal = !owner
+    ? "Sistemde bir sorun oldu. Sizi bir yetkiliye aktarayım."
+    : owner.clinic?.status === "suspended"
+      ? "Şu anda randevu alamıyorum. Sizi bir yetkiliye aktarayım."
+      : null;
+
+  const ctx: ToolContext | null = owner
+    ? {
+        clinic: owner.clinic,
+        callId: call.id ?? "unknown",
+        callerNumber: call.customer?.number ?? "",
+        callerName: call.customer?.name ?? "Unknown",
+        agentId: owner.agent.id,
+        workingHours: owner.agent.workingHours,
+      }
+    : null;
 
   const results = await Promise.all(
     list.map(async (toolCall) => {
       const args = toolCall.arguments ?? toolCall.parameters ?? {};
       let result: string;
 
-      if (isBookingTool(toolCall.name)) {
+      if (refusal || !ctx) {
+        result = JSON.stringify({ ok: false, spoken: refusal });
+      } else if (isBookingTool(toolCall.name)) {
         try {
           result = await runBookingTool(toolCall.name, args, ctx);
         } catch (e) {
@@ -212,8 +204,15 @@ function extracted(message: VapiEndOfCallMessage): { requestedStart?: string; ca
 
 async function handleEndOfCall(message: VapiEndOfCallMessage) {
   const call = message.call ?? {};
-  const agents = await loadAgents();
-  const agent = agents.find((a) => a.id === call.assistantId) ?? agents[0];
+  const owner = await resolveCallOwner(call.assistantId);
+  if (!owner) {
+    // 200, not an error: Vapi retries a non-200, and no retry will ever make
+    // this call belong to a clinic. Logged so the operator can spot an
+    // assistant pointed at this URL that was never linked to an agent.
+    console.error(`[vapi] end-of-call-report from unknown assistant ${call.assistantId ?? "(none)"} — not logged`);
+    return NextResponse.json({ ok: true, ignored: "unknown assistant" });
+  }
+  const { agent, clinic } = owner;
 
   const transcript = (message.messages ?? []).map((m: { role: string; message: string; time?: number }) => ({
     speaker: m.role,
@@ -222,6 +221,7 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
   }));
 
   const payload: CallActionPayload = {
+    clinic,
     callId: call.id ?? "unknown",
     agentId: agent.id,
     agentName: agent.name,
@@ -239,8 +239,11 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
 
   // Runs alongside the action pipeline, not before it — an LLM call must
   // never add latency to whatever Vapi is waiting on for this response.
+  // A suspended clinic's calls are still logged — usage is what the invoice
+  // is cut from — but none of its actions (booking, CRM, messages) run.
+  const actionIds = clinic?.status === "suspended" ? [] : agent.actionIds;
   const [results, sentiment] = await Promise.all([
-    runAgentActions(agent.actionIds, payload),
+    runAgentActions(actionIds, payload),
     computeSentiment(transcript),
   ]);
   payload.sentiment = sentiment;

@@ -9,6 +9,8 @@ import type { AdminAction } from "@/lib/admin/actions";
 import { MIN_PASSWORD_LENGTH } from "@/lib/admin/constants";
 import type { AdminOverview, AdminUser, WaitlistEntry } from "@/lib/admin/queries";
 import type { EnvCheck, SystemHealth } from "@/lib/admin/health";
+import { ClinicsTab } from "./clinics-tab";
+import { ActionButton, EmptyRow } from "./controls";
 
 /**
  * Operator view over Randevox's own accounts and leads.
@@ -26,7 +28,7 @@ import type { EnvCheck, SystemHealth } from "@/lib/admin/health";
 export function AdminPanel({ data, health }: { data: AdminOverview; health: SystemHealth }) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
-  const [tab, setTab] = useState<"users" | "waitlist" | "health">("users");
+  const [tab, setTab] = useState<"clinics" | "users" | "waitlist" | "health">("clinics");
   const [flash, setFlash] = useState<{ ok: boolean; message: string } | null>(null);
 
   async function logout() {
@@ -55,7 +57,7 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
     router.refresh();
   }
 
-  const { totals, users, waitlist, connected } = data;
+  const { totals, users, waitlist, clinics, connected } = data;
   // Badge on the Sistem tab: unreachable tables plus missing non-optional keys
   // that aren't already covered by an integration's own "not connected" row.
   const problems =
@@ -107,7 +109,8 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
         </p>
       )}
 
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-6">
+        <Stat label="Klinik" value={clinics.length} />
         <Stat label="Toplam kullanıcı" value={totals.users} />
         <Stat label="Bugün kaydolan" value={totals.newToday} />
         <Stat label="Doğrulanmamış" value={totals.unconfirmed} />
@@ -116,6 +119,9 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
       </div>
 
       <div className="mt-4 flex items-center gap-1 border-b border-border">
+        <Tab active={tab === "clinics"} onClick={() => setTab("clinics")}>
+          Klinikler ({clinics.length})
+        </Tab>
         <Tab active={tab === "users"} onClick={() => setTab("users")}>
           Kullanıcılar
         </Tab>
@@ -127,6 +133,14 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
         </Tab>
       </div>
 
+      {tab === "clinics" && (
+        <ClinicsTab
+          clinics={clinics}
+          users={users}
+          connected={connected}
+          onAct={(body) => post("/api/admin/clinics", body)}
+        />
+      )}
       {tab === "users" && (
         <UsersTab
           users={users}
@@ -146,9 +160,10 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
       {tab === "health" && <HealthTab health={health} />}
 
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        Bu panel yalnızca hesap ve ön kayıt bilgilerini gösterir. Kliniklerin çağrı kayıtları,
-        transkriptleri ve arayan bilgileri — gizlilik politikasının 2. maddesi gereği veri işleyen
-        sıfatıyla tuttuğumuz veriler — buradan görüntülenmez.
+        Bu panel yalnızca hesap, klinik ve ön kayıt bilgilerini gösterir; klinik kullanımı yalnızca
+        toplam dakika ve arama sayısı olarak görünür. Kliniklerin çağrı kayıtları, transkriptleri ve
+        arayan bilgileri — gizlilik politikasının 2. maddesi gereği veri işleyen sıfatıyla
+        tuttuğumuz veriler — buradan görüntülenmez.
       </p>
     </div>
   );
@@ -691,40 +706,6 @@ function SearchInput({
   );
 }
 
-function EmptyRow({ text }: { text: string }) {
-  return <p className="px-3 py-8 text-center text-sm text-muted-foreground">{text}</p>;
-}
-
-function ActionButton({
-  children,
-  onClick,
-  disabled,
-  destructive,
-  type = "button",
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  destructive?: boolean;
-  /** Defaults to "button" so instances inside a <form> don't submit it. */
-  type?: "button" | "submit";
-}) {
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "cursor-pointer rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50",
-        destructive
-          ? "border-missed/30 text-missed hover:bg-missed/10"
-          : "border-border text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
 
 function Stat({ label, value }: { label: string; value: number | null }) {
   return (

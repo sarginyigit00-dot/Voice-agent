@@ -62,7 +62,7 @@ const EXTRA_VARS: EnvCheck[] = [
 ];
 
 /** The tables supabase/schema.sql defines — a missing one means schema drift. */
-const TABLES = ["agents", "calls", "crm_records", "appointments", "waitlist_emails"];
+const TABLES = ["clinics", "agents", "calls", "crm_records", "appointments", "waitlist_emails"];
 
 export async function getSystemHealth(): Promise<SystemHealth> {
   const integrations: IntegrationHealth[] = appConfig.integrations.map((i) => {

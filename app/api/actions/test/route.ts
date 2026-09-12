@@ -3,8 +3,8 @@ import { runAgentActions } from "@/lib/actions/run";
 import type { ActionId } from "@/lib/actions/registry";
 import { ACTION_IDS } from "@/lib/actions/registry";
 import type { CallActionPayload } from "@/lib/actions/types";
-import { calcomConfig, getSlots, toInstant } from "@/lib/calcom/client";
-import { requireUser } from "@/lib/auth/require-user";
+import { calcomConfigFor, getSlots, toInstant } from "@/lib/calcom/client";
+import { requireMember, type ClinicContext } from "@/lib/clinics/server";
 
 /**
  * Settings → Integrations → "Test webhook" button hits this route with a
@@ -27,8 +27,8 @@ import { requireUser } from "@/lib/auth/require-user";
  * path, not the primary one). A guessed slot on a closed day gets a real,
  * correct 409 from Cal.com — this just picks a slot that won't.
  */
-async function nextAvailableSlot(): Promise<string> {
-  const cfg = calcomConfig();
+async function nextAvailableSlot(clinic: ClinicContext): Promise<string> {
+  const cfg = await calcomConfigFor(clinic);
   const timeZone = cfg?.timeZone ?? "Europe/Istanbul";
   const fallback = toInstant(
     new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(
@@ -45,13 +45,14 @@ async function nextAvailableSlot(): Promise<string> {
 }
 
 export async function POST(req: Request) {
-  const user = await requireUser(req);
-  if (!user) return NextResponse.json({ status: "error", note: "Oturum gerekli." }, { status: 401 });
+  const member = await requireMember(req);
+  if (!member.ok) return NextResponse.json({ status: "error", note: member.error }, { status: member.status });
 
   const body = await req.json().catch(() => ({}));
   const actionId: ActionId = ACTION_IDS.includes(body.actionId) ? body.actionId : "crm";
 
   const payload: CallActionPayload = {
+    clinic: member.clinic,
     callId: `test-${Date.now()}`,
     agentId: "ag1",
     agentName: "Reception",
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
     // so the test supplies one to exercise the whole path. Note this only
     // covers the safety net — real bookings go through the mid-call tools in
     // lib/booking/tools.ts, which need a live call to fire.
-    requestedStart: await nextAvailableSlot(),
+    requestedStart: await nextAvailableSlot(member.clinic),
     sentiment: "neutral",
     durationSec: 42,
     outcome: "booked",

@@ -11,6 +11,9 @@
  * timezone (UTC on Vercel) — three hours off for an Istanbul clinic.
  */
 
+import { getSupabaseServer } from "@/lib/supabase/server";
+import type { ClinicContext } from "@/lib/clinics/server";
+
 const SLOTS_API_VERSION = "2024-09-04";
 const BOOKINGS_API_VERSION = "2024-08-13";
 const CANCEL_API_VERSION = "2026-02-25";
@@ -23,8 +26,44 @@ export interface CalcomConfig {
   fallbackEmail: string | null;
 }
 
-/** Null when Cal.com isn't configured — callers degrade to demo mode. */
-export function calcomConfig(): CalcomConfig | null {
+/**
+ * A clinic's Cal.com connection. The key lives in `clinic_secrets`, which no
+ * signed-in user can read (supabase/schema.sql) — only server code holding
+ * the service-role key. Null when the clinic has none, and callers degrade to
+ * the same "calendar unavailable" path they always had.
+ *
+ * Deliberately NO fallback to the CALCOM_API_KEY env var for a real clinic:
+ * with more than one clinic, a deploy-wide calendar means a clinic without
+ * its own keys would silently book patients into someone else's diary. The
+ * env keys are only read when there is no clinic at all — no Supabase, the
+ * single-workspace demo setup.
+ */
+export async function calcomConfigFor(clinic: ClinicContext | null): Promise<CalcomConfig | null> {
+  if (!clinic) return envConfig();
+
+  const supabase = getSupabaseServer();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("clinic_secrets")
+    .select("calcom_api_key, calcom_event_type_id")
+    .eq("clinic_id", clinic.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[calcom] failed to read clinic secrets:", error.message);
+    return null;
+  }
+
+  const apiKey = data?.calcom_api_key as string | null | undefined;
+  const eventTypeId = Number(data?.calcom_event_type_id);
+  if (!apiKey || !Number.isFinite(eventTypeId) || eventTypeId <= 0) return null;
+
+  return { apiKey, eventTypeId, timeZone: clinic.timeZone, fallbackEmail: clinic.notifyEmail };
+}
+
+/** The pre-multi-tenant config, from env — only for a deploy with no Supabase. */
+function envConfig(): CalcomConfig | null {
   const apiKey = process.env.CALCOM_API_KEY;
   const eventTypeId = Number(process.env.CALCOM_EVENT_TYPE_ID);
   if (!apiKey || !Number.isFinite(eventTypeId) || eventTypeId <= 0) return null;

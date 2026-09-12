@@ -1,4 +1,5 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { listClinics, type AdminClinic } from "@/lib/admin/clinics";
 
 /**
  * Everything the /admin panel shows, read with the service-role client.
@@ -39,6 +40,7 @@ export interface AdminOverview {
   connected: boolean;
   users: AdminUser[];
   waitlist: WaitlistEntry[];
+  clinics: AdminClinic[];
   totals: {
     users: number;
     newToday: number;
@@ -52,6 +54,7 @@ const EMPTY: AdminOverview = {
   connected: false,
   users: [],
   waitlist: [],
+  clinics: [],
   totals: { users: 0, newToday: 0, unconfirmed: 0, appointments: null },
 };
 
@@ -119,15 +122,17 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [appointments, waitlist] = await Promise.all([
+  const [appointments, waitlist, clinics] = await Promise.all([
     countRows(supabase, "appointments"),
     listWaitlist(supabase),
+    listClinics(supabase, new Map(users.map((u) => [u.id, u.email]))),
   ]);
 
   return {
     connected: true,
     users,
     waitlist,
+    clinics,
     totals: {
       users: users.length,
       newToday: users.filter((u) => new Date(u.createdAt) >= startOfToday).length,

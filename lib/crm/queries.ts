@@ -1,14 +1,19 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { CrmRecord } from "@/lib/crm/types";
 
-/** Most recent CRM records, newest first. Returns [] when Supabase isn't configured (demo mode). */
-export async function listCrmRecords(limit = 100): Promise<CrmRecord[]> {
+/**
+ * One clinic's most recent CRM records, newest first. Returns [] when Supabase
+ * isn't configured (demo mode). Reads with the service-role key, so the
+ * clinic filter below is the whole of the tenant boundary here.
+ */
+export async function listCrmRecords(clinicId: string, limit = 100): Promise<CrmRecord[]> {
   const supabase = getSupabaseServer();
   if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("crm_records")
     .select("*")
+    .eq("clinic_id", clinicId)
     .order("created_at", { ascending: false })
     .limit(limit);
 

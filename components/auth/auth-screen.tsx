@@ -304,7 +304,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
               <p className="text-center text-sm text-muted-foreground">
                 {isLogin ? ui.noAccount : ui.haveAccount}{" "}
                 <Link
-                  href={isLogin ? "/signup" : "/login"}
+                  href={isLogin ? "/on-kayit" : "/login"}
                   className="font-medium text-primary hover:underline underline-offset-4"
                 >
                   {isLogin ? ui.getStarted : ui.signIn}

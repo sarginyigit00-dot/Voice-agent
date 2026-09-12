@@ -1,5 +1,5 @@
 import {
-  calcomConfig,
+  calcomConfigFor,
   createBooking,
   getSlots,
   speakInstant,
@@ -7,6 +7,7 @@ import {
 } from "@/lib/calcom/client";
 import { findByCall, record } from "@/lib/booking/store";
 import { hoursForDate, isWithinHours, summarizeHours, type WorkingHours } from "@/lib/agents/hours";
+import type { ClinicContext } from "@/lib/clinics/server";
 
 /**
  * The two tools the voice agent calls **while the caller is still on the
@@ -32,6 +33,8 @@ export function isBookingTool(name: string): name is BookingToolName {
 
 /** Who is on the phone — taken from the Vapi call object, never from the model. */
 export interface ToolContext {
+  /** The clinic whose calendar this call books into — from the Vapi assistant, never from the model. */
+  clinic: ClinicContext | null;
   callId: string;
   callerNumber: string;
   callerName: string;
@@ -63,7 +66,7 @@ function str(args: ToolArgs, key: string): string | null {
  * omitted for "the next opening you have".
  */
 export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promise<string> {
-  const cfg = calcomConfig();
+  const cfg = await calcomConfigFor(ctx.clinic);
   if (!cfg) {
     return JSON.stringify({
       ok: false,
@@ -153,7 +156,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
  * a slot can be taken by someone else between the two calls.
  */
 export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise<string> {
-  const cfg = calcomConfig();
+  const cfg = await calcomConfigFor(ctx.clinic);
   if (!cfg) {
     return JSON.stringify({
       ok: false,
@@ -249,6 +252,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     attendeeEmail: email,
     attendeePhone: ctx.callerNumber || null,
     agentId: ctx.agentId,
+    clinicId: ctx.clinic?.id ?? null,
     source: "in-call",
   });
 

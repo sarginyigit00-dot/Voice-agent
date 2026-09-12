@@ -1,5 +1,13 @@
+import type { ClinicContext } from "@/lib/clinics/server";
+
 /** What a finished call looks like by the time actions run against it. */
 export interface CallActionPayload {
+  /**
+   * The clinic this call belongs to — resolved from the Vapi assistant, never
+   * from anything the caller or the model said. Null only in demo mode (no
+   * Supabase), where nothing is persisted.
+   */
+  clinic: ClinicContext | null;
   callId: string;
   agentId: string;
   agentName: string;

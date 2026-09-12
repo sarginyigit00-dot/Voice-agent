@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { listCrmRecords } from "@/lib/crm/queries";
-import { requireUser } from "@/lib/auth/require-user";
+import { requireMember } from "@/lib/clinics/server";
 
 const DEFAULT_LIMIT = 500;
 const MAX_LIMIT = 1000;
@@ -16,12 +16,12 @@ const MAX_LIMIT = 1000;
  * and full transcript. Without this check it was exactly that.
  */
 export async function GET(request: Request) {
-  const user = await requireUser(request);
-  if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+  const member = await requireMember(request);
+  if (!member.ok) return NextResponse.json({ error: member.error }, { status: member.status });
 
   const raw = Number(new URL(request.url).searchParams.get("limit"));
   const limit = Number.isFinite(raw) && raw > 0 ? Math.min(Math.trunc(raw), MAX_LIMIT) : DEFAULT_LIMIT;
 
-  const records = await listCrmRecords(limit);
+  const records = await listCrmRecords(member.clinic.id, limit);
   return NextResponse.json({ records });
 }

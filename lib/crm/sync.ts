@@ -43,7 +43,7 @@ export async function syncCallsToCrm(): Promise<CrmSyncResult> {
 
   const { data: calls, error: callsError } = await supabase
     .from("calls")
-    .select("id,agent_id,caller_name,caller_number,started_at,duration_sec,outcome,summary,transcript,actions,created_at,agents(name)")
+    .select("id,clinic_id,agent_id,caller_name,caller_number,started_at,duration_sec,outcome,summary,transcript,actions,created_at,agents(name)")
     .gt("started_at", since)
     .order("started_at", { ascending: true })
     .limit(BATCH_LIMIT);
@@ -57,6 +57,7 @@ export async function syncCallsToCrm(): Promise<CrmSyncResult> {
 
   const rows = calls.map((call) => ({
     call_id: String(call.id),
+    clinic_id: call.clinic_id,
     agent_id: call.agent_id ?? "unknown",
     agent_name: agentNameOf(call.agents) ?? "Bilinmeyen Asistan",
     caller_name: call.caller_name || "Unknown",

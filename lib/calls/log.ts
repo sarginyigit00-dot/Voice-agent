@@ -17,6 +17,7 @@ export async function logCall(payload: CallActionPayload, results: ActionResult[
   const { error } = await supabase.from("calls").upsert(
     {
       id: payload.callId,
+      clinic_id: payload.clinic?.id ?? null,
       agent_id: payload.agentId,
       caller_name: payload.caller,
       caller_number: payload.number,

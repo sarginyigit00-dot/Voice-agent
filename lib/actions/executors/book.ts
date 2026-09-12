@@ -1,5 +1,5 @@
 import type { ActionResult, CallActionPayload } from "@/lib/actions/types";
-import { calcomConfig, createBooking, speakInstant, toInstant } from "@/lib/calcom/client";
+import { calcomConfigFor, createBooking, speakInstant, toInstant } from "@/lib/calcom/client";
 import { findByCall, record } from "@/lib/booking/store";
 
 /**
@@ -21,13 +21,12 @@ import { findByCall, record } from "@/lib/booking/store";
  * Cal.com's fault rather than a missing slot.
  */
 export async function runBook(payload: CallActionPayload): Promise<ActionResult> {
-  const cfg = calcomConfig();
+  const cfg = await calcomConfigFor(payload.clinic);
   if (!cfg) {
-    const missing = !process.env.CALCOM_API_KEY ? "CALCOM_API_KEY" : "CALCOM_EVENT_TYPE_ID";
     return {
       actionId: "book",
       status: "demo",
-      note: `${missing} yok — ${payload.callId} için randevu demo modda kaydedildi.`,
+      note: `Bu klinik için Cal.com bağlı değil — ${payload.callId} için randevu demo modda kaydedildi.`,
     };
   }
 
@@ -87,6 +86,7 @@ export async function runBook(payload: CallActionPayload): Promise<ActionResult>
     attendeeEmail: payload.callerEmail ?? null,
     attendeePhone: payload.number || null,
     agentId: payload.agentId,
+    clinicId: payload.clinic?.id ?? null,
     source: "post-call",
   });
 

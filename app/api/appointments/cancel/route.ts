@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { calcomConfig, cancelBooking } from "@/lib/calcom/client";
-import { requireUser } from "@/lib/auth/require-user";
+import { calcomConfigFor, cancelBooking } from "@/lib/calcom/client";
+import { requireMember } from "@/lib/clinics/server";
 
 /**
  * Cancels an appointment from /randevular.
@@ -16,8 +16,9 @@ import { requireUser } from "@/lib/auth/require-user";
  * appointment the clinic believes is gone.
  */
 export async function POST(req: Request) {
-  const user = await requireUser(req);
-  if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+  const member = await requireMember(req);
+  if (!member.ok) return NextResponse.json({ error: member.error }, { status: member.status });
+  const { user, clinic } = member;
 
   const supabase = getSupabaseServer();
   if (!supabase) {
@@ -34,6 +35,9 @@ export async function POST(req: Request) {
     .from("appointments")
     .select("id, booking_uid, status")
     .eq("id", id)
+    // Scoped to the caller's clinic: this client bypasses RLS, and another
+    // clinic's appointment id must read as "not found", never as cancellable.
+    .eq("clinic_id", clinic.id)
     .maybeSingle();
 
   if (readError || !appointment) {
@@ -44,7 +48,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, alreadyCancelled: true });
   }
 
-  const cfg = calcomConfig();
+  const cfg = await calcomConfigFor(clinic);
   if (!cfg) {
     return NextResponse.json({ error: "Cal.com yapılandırılmamış." }, { status: 503 });
   }
@@ -58,7 +62,8 @@ export async function POST(req: Request) {
   const { error: writeError } = await supabase
     .from("appointments")
     .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("clinic_id", clinic.id);
 
   if (writeError) {
     // Cal.com is already cancelled, so the appointment really is gone — say so

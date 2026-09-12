@@ -39,6 +39,29 @@ behind it. "Continue with demo" still bypasses auth entirely (sets
 — this kit is meant to be clickable without an account. Without the two env
 vars, every form submit silently falls back to the demo bypass too.
 
+## Multi-tenant: clinics (read before touching data code)
+
+Randevox is sold **turnkey** to clinics: the operator creates each clinic and
+its staff accounts from `/admin` (Klinikler tab, `lib/admin/clinics.ts`);
+there is no self-serve sign-up (`/signup` redirects to `/on-kayit`). Every
+operational table — `agents`, `calls`, `crm_records`, `appointments` —
+carries a NOT NULL `clinic_id`, and RLS lets a signed-in user see only the
+clinics they're in (`clinic_members`, via `my_clinic_ids()`). A signed-in
+account with no clinic gets a "not linked to a clinic" screen from
+`AuthGate`.
+
+**Server code runs with the service-role key, which bypasses RLS** — so it
+must scope itself: panel routes call `requireMember(req)` (not bare
+`requireUser`) and filter by `clinic.id`; the Vapi webhook finds the clinic
+through `resolveCallOwner(assistantId)` (`lib/clinics/server.ts`) and writes
+**nothing** for an assistant it can't place — never fall back to "the first
+agent". Per-clinic credentials (Cal.com key + event type) live in
+`clinic_secrets` (no RLS policies = unreadable to users) and are read with
+`calcomConfigFor(clinic)`; there is deliberately no env fallback for a real
+clinic. Per-clinic settings (transfer number, notify email, CRM webhook
+URL, quota, status) are columns on `clinics`. A `suspended` clinic's calls
+are still logged but its tools and actions don't run.
+
 ## Data model & demo mode
 
 With no Supabase keys in `.env.local`, the cockpit renders from
@@ -49,8 +72,9 @@ static either way). Once Supabase is configured, `/agents`, `/calls` and the
 dashboard read/write the real `agents` and `calls` tables instead
 (`lib/agents/queries.ts`, `lib/calls/queries.ts`, both browser-side —
 `supabase-js` attaches the signed-in user's token to every request, and RLS
-does the rest, see `supabase/schema.sql`). A brand-new (empty) `agents` table
-is auto-seeded with the four starter agents on first load of `/agents`. KPIs,
+does the rest, see `supabase/schema.sql`). A brand-new clinic's (empty) agent
+list is auto-seeded with the four starter agents on first load of `/agents`,
+under fresh ids (`agents.id` is unique across all clinics). KPIs,
 the outcomes donut and the call-volume chart on the dashboard are computed
 live from the real `calls` rows once any exist; "live calls" (in-progress)
 has no real source yet — it just goes empty, since that needs a real-time
@@ -69,9 +93,9 @@ once Supabase is connected. CRM is the one action with a real implementation —
 `lib/actions/executors/crm.ts` inserts the call (caller, summary, full transcript) into the
 `crm_records` table in Supabase (schema in `supabase/schema.sql`, client in
 `lib/supabase/server.ts`), viewable at `/crm` (`app/(app)/crm/page.tsx`, backed by
-`app/api/crm/route.ts` → `lib/crm/queries.ts`). If `CRM_WEBHOOK_URL` is also set, the same
+`app/api/crm/route.ts` → `lib/crm/queries.ts`). If the clinic has a `crm_webhook_url`, the same
 call is additionally forwarded there for an external CRM (Zapier/Make/n8n etc.) — that part
-stays optional. As a safety net for calls the webhook path missed, `app/api/cron/crm-sync`
+stays optional (the env `CRM_WEBHOOK_URL` is only used without Supabase). As a safety net for calls the webhook path missed, `app/api/cron/crm-sync`
 (`lib/crm/sync.ts`, scheduled every 5 minutes in `vercel.json`, protected by `CRON_SECRET`)
 re-scans the `calls` table and upserts anything not yet in `crm_records` — `crm_records.call_id`
 is uniquely indexed, so both paths are idempotent. The other four actions report a `"demo"` result until a project wires their

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { calcomConfig, getSlots, speakInstant } from "@/lib/calcom/client";
-import { requireUser } from "@/lib/auth/require-user";
+import { calcomConfigFor, getSlots, speakInstant } from "@/lib/calcom/client";
+import { requireMember } from "@/lib/clinics/server";
 
 /**
  * Real open slots for the /randevular reschedule picker — the panel
@@ -9,10 +9,10 @@ import { requireUser } from "@/lib/auth/require-user";
  * rather than guessing a time and finding out it's taken on submit.
  */
 export async function GET(req: Request) {
-  const user = await requireUser(req);
-  if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+  const member = await requireMember(req);
+  if (!member.ok) return NextResponse.json({ error: member.error }, { status: member.status });
 
-  const cfg = calcomConfig();
+  const cfg = await calcomConfigFor(member.clinic);
   if (!cfg) return NextResponse.json({ error: "Cal.com yapılandırılmamış." }, { status: 503 });
 
   const days = Math.min(Number(new URL(req.url).searchParams.get("days")) || 7, 30);

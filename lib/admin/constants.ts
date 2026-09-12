@@ -14,3 +14,19 @@
  * it starts stronger.
  */
 export const MIN_PASSWORD_LENGTH = 8;
+
+/**
+ * The packages sold (app.config.ts pricing): id → label and included minutes
+ * per month. Choosing a plan when a clinic is created sets its quota to
+ * this; the quota stays editable per clinic for custom deals.
+ */
+export const PLANS = {
+  klinik: { label: "Klinik", minutes: 1000 },
+  klinik_pro: { label: "Klinik Pro", minutes: 2500 },
+} as const;
+
+export type PlanId = keyof typeof PLANS;
+
+export function isPlan(v: unknown): v is PlanId {
+  return typeof v === "string" && Object.hasOwn(PLANS, v);
+}

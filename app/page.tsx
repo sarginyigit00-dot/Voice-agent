@@ -88,7 +88,7 @@ function Nav() {
           >
             {lang === "tr" ? "Giriş yap" : "Sign in"}
           </Link>
-          <Link href="/signup" className="ed-pill ed-pill-primary h-11 px-5 text-[14.5px]">
+          <Link href="/demo-talep" className="ed-pill ed-pill-primary h-11 px-5 text-[14.5px]">
             {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
           </Link>
         </div>
@@ -159,7 +159,7 @@ function Hero() {
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/signup" className="ed-pill ed-pill-primary px-8 text-[15px]" style={{ height: 52 }}>
+              <Link href="/demo-talep" className="ed-pill ed-pill-primary px-8 text-[15px]" style={{ height: 52 }}>
                 <Icon name="phone" className="h-4 w-4" />
                 {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
               </Link>
@@ -297,7 +297,7 @@ function CostCalculator() {
                 ? "Haftalık kaçan arama × 4,33 hafta × dönüşüm oranınız × ortalama operasyon değeriniz."
                 : "Missed calls per week × 4.33 weeks × your conversion rate × your average procedure value."}
             </p>
-            <Link href="/signup" className="ed-pill ed-pill-primary mt-2 w-full" style={{ height: 48 }}>
+            <Link href="/demo-talep" className="ed-pill ed-pill-primary mt-2 w-full" style={{ height: 48 }}>
               {lang === "tr" ? "Bu aramaları karşılayın" : "Start answering them"}
             </Link>
           </div>
@@ -681,7 +681,7 @@ function FinalCta() {
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Link href="/signup" className="ed-pill ed-pill-primary px-8 text-[15px]" style={{ height: 52 }}>
+          <Link href="/demo-talep" className="ed-pill ed-pill-primary px-8 text-[15px]" style={{ height: 52 }}>
             {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
           </Link>
           <Link href="/demo" className="ed-pill ed-pill-ghost px-7 text-[15px]" style={{ height: 52 }}>

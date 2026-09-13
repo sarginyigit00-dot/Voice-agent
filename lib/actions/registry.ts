@@ -20,8 +20,8 @@ export const ACTION_LABEL: Record<ActionId, L> = {
 /**
  * "transfer" isn't executed by a webhook after the call — Vapi performs it
  * live, mid-call, via a `transferCall` tool declared on the assistant. Its
- * executor (lib/actions/executors/transfer.ts) reports that instead of
- * calling an API, and the builder UI surfaces this note next to the toggle.
+ * executor (lib/actions/executors/transfer.ts) only reports whether the call
+ * was handed over, and the builder UI surfaces this note next to the toggle.
  */
 export const ACTION_HINT: Partial<Record<ActionId, L>> = {
   transfer: {

@@ -195,6 +195,7 @@ function ClinicEditor({
   return (
     <div className="space-y-3 border-t border-border/60 bg-muted/40 px-3 py-3">
       <SettingsForm clinic={clinic} busy={busy} act={act} />
+      <PhoneForm clinic={clinic} busy={busy} act={act} />
       <CalendarForm clinic={clinic} busy={busy} act={act} />
       <Members clinic={clinic} users={users} busy={busy} act={act} />
     </div>
@@ -211,6 +212,7 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
     transferNumber: clinic.transferNumber ?? "",
     crmWebhookUrl: clinic.crmWebhookUrl ?? "",
     timeZone: clinic.timeZone,
+    vapiPhoneNumberId: clinic.vapiPhoneNumberId ?? "",
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((prev) => ({ ...prev, [k]: e.target.value }));
@@ -252,11 +254,85 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
           <Field label="Saat dilimi">
             <input value={f.timeZone} onChange={set("timeZone")} className={inputClass} />
           </Field>
+          <Field label="Vapi numara ID">
+            <input
+              value={f.vapiPhoneNumberId}
+              onChange={set("vapiPhoneNumberId")}
+              placeholder="Vapi → Phone Numbers → ID"
+              className={inputClass}
+            />
+          </Field>
         </div>
         <ActionButton type="submit" disabled={busy}>
           Ayarları kaydet
         </ActionButton>
       </form>
+    </Block>
+  );
+}
+
+/**
+ * The line: agents are provisioned onto Vapi from here (or from the clinic's
+ * own /agents saves), and the Netgsm number — added to Vapi once, by hand —
+ * is pointed at one of them. Steps: TELEFON-KURULUMU.md.
+ */
+function PhoneForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
+  const provisioned = clinic.agents.filter((a) => a.vapiAssistantId);
+  const inbound = clinic.agents.find((a) => a.id === clinic.phone?.inboundAgentId);
+  const [agentId, setAgentId] = useState(clinic.phone?.inboundAgentId ?? "");
+
+  return (
+    <Block
+      title="Telefon (Vapi)"
+      hint="Numara Vapi panelinde bir kez eklenir (TELEFON-KURULUMU.md). Ajanlar buradan kurulur, numarayı hangisinin açacağını buradan seçersin."
+    >
+      <p className="text-xs">
+        {!clinic.vapiPhoneNumberId ? (
+          <span className="text-missed">{"Numara yok — Ayarlar'a Vapi numara ID'sini yaz."}</span>
+        ) : clinic.phone?.error ? (
+          <span className="text-missed">{clinic.phone.error}</span>
+        ) : (
+          <>
+            <span className="font-mono">{clinic.phone?.number ?? "—"}</span>
+            <span className="text-muted-foreground"> → </span>
+            {inbound ? (
+              <span className="text-booked">{inbound.name}</span>
+            ) : (
+              <span className="text-missed">hiçbir ajana bağlı değil — aramalar cevapsız kalır</span>
+            )}
+          </>
+        )}
+      </p>
+      <p className="text-[11px] text-muted-foreground">
+        {`Vapi'de kurulu: ${provisioned.length}/${clinic.agents.length} ajan`}
+      </p>
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-full max-w-[240px]">
+          <Field label="Gelen aramaları karşılayan ajan">
+            <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className={inputClass}>
+              <option value="">— hiçbiri —</option>
+              {provisioned.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                  {a.active ? "" : " (duraklatılmış)"}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <ActionButton
+          disabled={busy || !clinic.vapiPhoneNumberId}
+          onClick={() => void act({ action: "assignNumber", clinicId: clinic.id, agentId })}
+        >
+          Numaraya bağla
+        </ActionButton>
+        <ActionButton
+          disabled={busy || clinic.agents.length === 0}
+          onClick={() => void act({ action: "syncAgents", clinicId: clinic.id })}
+        >
+          {"Ajanları Vapi'ye kur"}
+        </ActionButton>
+      </div>
     </Block>
   );
 }

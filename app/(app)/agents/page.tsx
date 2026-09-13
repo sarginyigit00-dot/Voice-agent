@@ -8,7 +8,7 @@ import { AGENTS, VOICES, BUILDER_ACTIONS, type Agent } from "@/lib/demo/data";
 import { ACTION_HINT } from "@/lib/actions/registry";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { fetchAgents, seedAgents, insertAgent, saveAgent, deleteAgent } from "@/lib/agents/queries";
+import { fetchAgents, seedAgents, insertAgent, saveAgent, removeAgent, syncAgent } from "@/lib/agents/queries";
 import { useSession } from "@/components/auth/session";
 import { DAY_KEYS, DAY_LABEL, defaultWorkingHours, normalizeWorkingHours, type DayKey, type WorkingHours } from "@/lib/agents/hours";
 
@@ -26,6 +26,10 @@ export default function AgentsPage() {
   const [actions, setActions] = useState(BUILDER_ACTIONS);
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  // The last Vapi push, shown under the save button of the agent it was for.
+  const [vapiSync, setVapiSync] = useState<
+    { agentId: string; state: "pending" | "ok" | "error"; message: string; warning?: string } | null
+  >(null);
   const greetingRef = useRef<HTMLTextAreaElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const purposeRef = useRef<HTMLTextAreaElement>(null);
@@ -141,6 +145,20 @@ export default function AgentsPage() {
         : "The agent never books outside these hours — even if the calendar looks free.",
     closed: lang === "tr" ? "Kapalı" : "Closed",
     timezone: lang === "tr" ? "Saat dilimi" : "Timezone",
+    vapiPending: lang === "tr" ? "Vapi'ye gönderiliyor…" : "Sending to Vapi…",
+    vapiOk: lang === "tr" ? "Vapi'ye eşitlendi" : "Synced to Vapi",
+    vapiLinked: lang === "tr" ? "Vapi'de kurulu" : "Live on Vapi",
+  };
+
+  // Runs after the row is saved: mirrors it onto the agent's Vapi assistant.
+  const pushToVapi = (id: string) => {
+    setVapiSync({ agentId: id, state: "pending", message: "" });
+    syncAgent(id).then((r) => {
+      setVapiSync({ agentId: id, state: r.ok ? "ok" : "error", message: r.message, warning: r.warning });
+      if (r.ok && r.vapiAssistantId) {
+        setAgents((list) => list.map((x) => (x.id === id ? { ...x, vapiAssistantId: r.vapiAssistantId } : x)));
+      }
+    });
   };
 
   const handleNewAgent = () => {
@@ -182,7 +200,7 @@ export default function AgentsPage() {
     setAgents((list) => list.map((x) => (x.id === selected.id ? updated : x)));
     setJustSaved(true);
     window.setTimeout(() => setJustSaved(false), 1600);
-    if (live) saveAgent(updated);
+    if (live) saveAgent(updated).then((saved) => saved && pushToVapi(updated.id));
   };
 
   const handleDeleteAgent = (id: string) => {
@@ -195,7 +213,7 @@ export default function AgentsPage() {
       setVoice(next.voice);
       setHours(next.workingHours);
     }
-    if (live) deleteAgent(id);
+    if (live) void removeAgent(id);
   };
 
   return (
@@ -242,7 +260,10 @@ export default function AgentsPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13.5px] font-semibold leading-tight">{a.name}</p>
-                  <p className="truncate font-mono text-[10.5px] text-muted-foreground">{a.voice}</p>
+                  <p className="truncate font-mono text-[10.5px] text-muted-foreground">
+                    {a.voice}
+                    {a.vapiAssistantId && <span className="text-booked"> · {L.vapiLinked}</span>}
+                  </p>
                 </div>
                 <span
                   className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[9.5px] font-semibold"
@@ -278,7 +299,7 @@ export default function AgentsPage() {
                     e.stopPropagation();
                     const toggled: Agent = { ...a, active: !a.active };
                     setAgents((list) => list.map((x) => (x.id === a.id ? toggled : x)));
-                    if (live) saveAgent(toggled);
+                    if (live) saveAgent(toggled).then((saved) => saved && pushToVapi(toggled.id));
                   }}
                   className={cn("relative h-4 w-7 cursor-pointer rounded-full border transition-colors", a.active ? "border-transparent bg-violet/40" : "border-border bg-muted")}
                 >
@@ -483,6 +504,18 @@ export default function AgentsPage() {
               <Icon name={justSaved ? "check" : "save"} className="h-3.5 w-3.5" />
               {justSaved ? L.saved : L.save}
             </button>
+            {vapiSync?.agentId === selected.id && (
+              <p
+                role="status"
+                className={cn(
+                  "text-[11px] leading-snug",
+                  vapiSync.state === "error" ? "text-missed" : vapiSync.state === "ok" ? "text-booked" : "text-muted-foreground",
+                )}
+              >
+                {vapiSync.state === "pending" ? L.vapiPending : vapiSync.state === "ok" ? L.vapiOk : vapiSync.message}
+                {vapiSync.warning && <span className="block text-muted-foreground">{vapiSync.warning}</span>}
+              </p>
+            )}
           </div>
         </aside>
       </div>

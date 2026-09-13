@@ -25,13 +25,17 @@ export interface AdminUser {
 }
 
 /**
- * A `/on-kayit` sign-up. These are our own prospects who handed us their
- * address directly, so unlike call data we're the controller here — listing
- * and exporting them is ordinary lead handling.
+ * A "Kliniğinizde deneyin" request (/demo-talep). Our own prospects, who
+ * handed us their details directly — so unlike call data we're the controller
+ * here, and listing and exporting them is ordinary lead handling.
  */
-export interface WaitlistEntry {
+export interface DemoRequest {
   id: string;
-  email: string;
+  clinicName: string;
+  contactName: string;
+  phone: string;
+  email: string | null;
+  note: string | null;
   createdAt: string;
 }
 
@@ -39,7 +43,7 @@ export interface AdminOverview {
   /** False when SUPABASE_SERVICE_ROLE_KEY / URL are missing — panel says so. */
   connected: boolean;
   users: AdminUser[];
-  waitlist: WaitlistEntry[];
+  demoRequests: DemoRequest[];
   clinics: AdminClinic[];
   totals: {
     users: number;
@@ -53,7 +57,7 @@ export interface AdminOverview {
 const EMPTY: AdminOverview = {
   connected: false,
   users: [],
-  waitlist: [],
+  demoRequests: [],
   clinics: [],
   totals: { users: 0, newToday: 0, unconfirmed: 0, appointments: null },
 };
@@ -72,27 +76,31 @@ async function countRows(
 }
 
 /**
- * The `/on-kayit` sign-ups, newest first. RLS has no policies on this table
- * on purpose (supabase/schema.sql), so the service-role client is the only
- * thing that can read it — which is exactly why it belongs here and nowhere
- * in the cockpit.
+ * Demo requests, newest first. RLS has no policies on this table on purpose
+ * (supabase/schema.sql), so the service-role client is the only thing that
+ * can read it — which is exactly why it belongs here and nowhere in the
+ * cockpit.
  */
-async function listWaitlist(
+async function listDemoRequests(
   supabase: NonNullable<ReturnType<typeof getSupabaseServer>>,
-): Promise<WaitlistEntry[]> {
+): Promise<DemoRequest[]> {
   const { data, error } = await supabase
-    .from("waitlist_emails")
-    .select("id, email, created_at")
+    .from("demo_requests")
+    .select("id, clinic_name, contact_name, phone, email, note, created_at")
     .order("created_at", { ascending: false })
     .limit(500);
 
   if (error) {
-    console.error("[admin] failed to list waitlist_emails:", error.message);
+    console.error("[admin] failed to list demo_requests:", error.message);
     return [];
   }
   return (data ?? []).map((r) => ({
     id: r.id as string,
-    email: r.email as string,
+    clinicName: r.clinic_name as string,
+    contactName: r.contact_name as string,
+    phone: r.phone as string,
+    email: (r.email as string | null) ?? null,
+    note: (r.note as string | null) ?? null,
     createdAt: r.created_at as string,
   }));
 }
@@ -122,16 +130,16 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [appointments, waitlist, clinics] = await Promise.all([
+  const [appointments, demoRequests, clinics] = await Promise.all([
     countRows(supabase, "appointments"),
-    listWaitlist(supabase),
+    listDemoRequests(supabase),
     listClinics(supabase, new Map(users.map((u) => [u.id, u.email]))),
   ]);
 
   return {
     connected: true,
     users,
-    waitlist,
+    demoRequests,
     clinics,
     totals: {
       users: users.length,

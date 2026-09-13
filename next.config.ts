@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   // so the bare domain must never serve the app on its own.
   async redirects() {
     return [
+      // The retired "Haberim olsun" waitlist page — old links go to the demo form.
+      { source: "/on-kayit", destination: "/demo-talep", permanent: true },
       {
         source: "/:path*",
         has: [{ type: "host", value: "randevoxai.com" }],

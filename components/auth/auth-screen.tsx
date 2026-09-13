@@ -304,10 +304,10 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
               <p className="text-center text-sm text-muted-foreground">
                 {isLogin ? ui.noAccount : ui.haveAccount}{" "}
                 <Link
-                  href={isLogin ? "/on-kayit" : "/login"}
+                  href={isLogin ? "/demo-talep" : "/login"}
                   className="font-medium text-primary hover:underline underline-offset-4"
                 >
-                  {isLogin ? ui.getStarted : ui.signIn}
+                  {isLogin ? ui.requestDemo : ui.signIn}
                 </Link>
               </p>
             </>

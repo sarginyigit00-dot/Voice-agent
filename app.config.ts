@@ -148,7 +148,7 @@ export const appConfig: AppConfig = {
     {
       key: "vapi",
       name: "Vapi (Voice)",
-      envVars: ["VAPI_API_KEY", "VAPI_PHONE_NUMBER_ID"],
+      envVars: ["VAPI_API_KEY", "VAPI_WEBHOOK_SECRET"],
       required: false,
       docsUrl: "https://docs.vapi.ai/api-reference",
       purpose: {

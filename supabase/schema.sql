@@ -285,19 +285,27 @@ create policy "Members read their clinic's crm_records"
   using (clinic_id in (select public.my_clinic_ids()));
 
 -- ─────────────────────────────────────────────────────────────────────────
---  waitlist_emails — the "Haberim olsun" box on the /on-kayit teaser page.
---  Inserts happen server-side only (service role key bypasses RLS); no
---  public policies on purpose — nobody, not even a signed-in user, can
---  list these through the API. It's a lead-capture inbox, not app data.
+--  demo_requests — the "Kliniğinizde deneyin" form (/demo-talep), read in
+--  /admin → Demo talepleri. Inserts happen server-side only (service role
+--  key bypasses RLS); no public policies on purpose — nobody, not even a
+--  signed-in user, can list these through the API. It's a lead inbox, not
+--  app data. (Replaces waitlist_emails, the retired /on-kayit list; older
+--  databases may still have that table — nothing reads it.)
 -- ─────────────────────────────────────────────────────────────────────────
 
-create table if not exists public.waitlist_emails (
+create table if not exists public.demo_requests (
   id uuid primary key default gen_random_uuid(),
-  email text not null unique,
+  clinic_name text not null,
+  contact_name text not null,
+  phone text not null,
+  email text,
+  note text,
   created_at timestamptz not null default now()
 );
 
-alter table public.waitlist_emails enable row level security;
+create index if not exists demo_requests_created_at_idx on public.demo_requests (created_at desc);
+
+alter table public.demo_requests enable row level security;
 
 -- ─────────────────────────────────────────────────────────────────────────
 --  appointments — every slot the agent actually booked on Cal.com, one row

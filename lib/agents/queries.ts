@@ -1,6 +1,8 @@
 "use client";
 
 import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { authedFetch } from "@/lib/supabase/authed-fetch";
+import type { VapiSyncResult } from "@/lib/vapi/sync";
 import type { Agent } from "@/lib/demo/data";
 import type { ActionId } from "@/lib/actions/registry";
 import type { L } from "@/lib/i18n/config";
@@ -18,6 +20,7 @@ interface AgentRow {
   action_ids: ActionId[];
   system_prompt: string;
   working_hours: WorkingHours | Record<string, never>;
+  vapi_assistant_id?: string | null;
 }
 
 function agentFromRow(r: AgentRow): Agent {
@@ -34,10 +37,15 @@ function agentFromRow(r: AgentRow): Agent {
     // Rows written before these columns existed carry `{}` — normalize fills
     // in the defaults so the booking path never sees a half-built schedule.
     workingHours: normalizeWorkingHours(r.working_hours),
+    vapiAssistantId: r.vapi_assistant_id ?? null,
   };
 }
 
-function toRow(a: Agent): AgentRow {
+/**
+ * No vapi_assistant_id: only the server writes it (lib/vapi/sync.ts), and a
+ * save from the browser must never overwrite or clear it.
+ */
+function toRow(a: Agent): Omit<AgentRow, "vapi_assistant_id"> {
   return {
     id: a.id,
     name: a.name,
@@ -93,16 +101,38 @@ export async function insertAgent(agent: Agent): Promise<void> {
   if (error) console.error("[agents] failed to insert agent:", error.message);
 }
 
-export async function saveAgent(agent: Agent): Promise<void> {
+/** True once the row is written — the Vapi sync only runs after that. */
+export async function saveAgent(agent: Agent): Promise<boolean> {
   const supabase = getSupabaseBrowser();
-  if (!supabase) return;
+  if (!supabase) return false;
   const { error } = await supabase.from("agents").update(toRow(agent)).eq("id", agent.id);
   if (error) console.error("[agents] failed to save agent:", error.message);
+  return !error;
 }
 
-export async function deleteAgent(id: string): Promise<void> {
-  const supabase = getSupabaseBrowser();
-  if (!supabase) return;
-  const { error } = await supabase.from("agents").delete().eq("id", id);
-  if (error) console.error("[agents] failed to delete agent:", error.message);
+async function postSync(body: { agentId: string; action?: "delete" }): Promise<VapiSyncResult> {
+  try {
+    const res = await authedFetch("/api/agents/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return (await res.json()) as VapiSyncResult;
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** Pushes a saved agent onto its Vapi assistant (app/api/agents/sync). */
+export function syncAgent(id: string): Promise<VapiSyncResult> {
+  return postSync({ agentId: id });
+}
+
+/**
+ * Deleted server-side rather than with the browser client: the agent's Vapi
+ * assistant has to go too, and only the server holds the Vapi key.
+ */
+export async function removeAgent(id: string): Promise<void> {
+  const res = await postSync({ agentId: id, action: "delete" });
+  if (!res.ok) console.error("[agents] failed to delete agent:", res.message);
 }

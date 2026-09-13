@@ -25,9 +25,12 @@ export interface ClinicContext {
   notifyEmail: string | null;
   /** Optional: this clinic's own CRM, sent every finished call. */
   crmWebhookUrl: string | null;
+  /** The clinic's line in Vapi — its phone-number id, not the number itself. */
+  vapiPhoneNumberId: string | null;
 }
 
-const CLINIC_COLUMNS = "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url";
+const CLINIC_COLUMNS =
+  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id";
 
 interface ClinicRow {
   id: string;
@@ -37,6 +40,7 @@ interface ClinicRow {
   transfer_number: string | null;
   notify_email: string | null;
   crm_webhook_url: string | null;
+  vapi_phone_number_id: string | null;
 }
 
 function clinicFromRow(r: ClinicRow): ClinicContext {
@@ -48,6 +52,7 @@ function clinicFromRow(r: ClinicRow): ClinicContext {
     transferNumber: r.transfer_number,
     notifyEmail: r.notify_email,
     crmWebhookUrl: r.crm_webhook_url,
+    vapiPhoneNumberId: r.vapi_phone_number_id,
   };
 }
 
@@ -70,7 +75,8 @@ interface AgentDbRow {
   action_ids: Agent["actionIds"];
   system_prompt: string | null;
   working_hours: unknown;
-  clinics: ClinicRow | ClinicRow[] | null;
+  vapi_assistant_id: string | null;
+  clinics?: ClinicRow | ClinicRow[] | null;
 }
 
 function agentFromRow(r: AgentDbRow): Agent {
@@ -85,6 +91,7 @@ function agentFromRow(r: AgentDbRow): Agent {
     actionIds: r.action_ids,
     systemPrompt: r.system_prompt ?? "",
     workingHours: normalizeWorkingHours(r.working_hours),
+    vapiAssistantId: r.vapi_assistant_id,
   };
 }
 
@@ -97,10 +104,11 @@ export interface CallOwner {
 /**
  * Who owns a Vapi call: the agent it was placed on, and that agent's clinic.
  *
- * Matched on `agents.vapi_assistant_id` — written when an agent is pushed to
- * Vapi — and, for agents wired up by hand before that column existed, on our
- * own agent id. Null when neither matches, and callers must then persist
- * NOTHING. The old behaviour (fall back to the first agent) was harmless with
+ * Matched on `agents.vapi_assistant_id` only — written by lib/vapi/sync.ts
+ * when the agent is pushed to Vapi. (It used to fall back to our own agent id
+ * for hand-wired assistants; but agent ids are chosen in the browser, so a
+ * clinic could have named an agent after someone else's assistant.) Null when
+ * nothing matches, and callers must then persist NOTHING. The old behaviour (fall back to the first agent) was harmless with
  * one clinic and a data leak with two: a stranger's call, transcript and
  * phone number written into whichever clinic happened to sort first.
  */
@@ -112,30 +120,53 @@ export async function resolveCallOwner(assistantId: string | undefined): Promise
   }
   if (!assistantId) return null;
 
-  // Two plain equality lookups rather than one `.or()` filter string, so the
-  // id from the webhook body is never spliced into PostgREST syntax.
-  for (const column of ["vapi_assistant_id", "id"] as const) {
-    const { data, error } = await supabase
-      .from("agents")
-      .select(`*, clinics(${CLINIC_COLUMNS})`)
-      .eq(column, assistantId)
-      .limit(1)
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from("agents")
+    .select(`*, clinics(${CLINIC_COLUMNS})`)
+    .eq("vapi_assistant_id", assistantId)
+    .maybeSingle();
 
-    if (error) {
-      console.error(`[clinics] agent lookup by ${column} failed:`, error.message);
-      return null;
-    }
-    if (data) {
-      const row = data as AgentDbRow;
-      const clinic = embedded(row.clinics);
-      // clinic_id is NOT NULL, so this only happens mid-migration — and a
-      // call we can't place in a clinic is a call we don't write.
-      if (!clinic) return null;
-      return { agent: agentFromRow(row), clinic: clinicFromRow(clinic) };
-    }
+  if (error) {
+    console.error("[clinics] agent lookup failed:", error.message);
+    return null;
   }
-  return null;
+  if (!data) return null;
+  const row = data as AgentDbRow;
+  const clinic = embedded(row.clinics);
+  // clinic_id is NOT NULL, so this only happens mid-migration — and a
+  // call we can't place in a clinic is a call we don't write.
+  if (!clinic) return null;
+  return { agent: agentFromRow(row), clinic: clinicFromRow(clinic) };
+}
+
+/** One agent, only if it belongs to this clinic — plus the Vapi assistant it's linked to. */
+export async function agentInClinic(
+  agentId: string,
+  clinicId: string,
+): Promise<{ agent: Agent; vapiAssistantId: string | null } | null> {
+  const supabase = getSupabaseServer();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("agents")
+    .select("*")
+    .eq("id", agentId)
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  if (error) console.error("[clinics] agent lookup failed:", error.message);
+  if (!data) return null;
+  const row = data as AgentDbRow;
+  return { agent: agentFromRow(row), vapiAssistantId: row.vapi_assistant_id };
+}
+
+/** For operator-side code (/admin), which acts on a clinic by id rather than as its member. */
+export async function clinicById(clinicId: string): Promise<ClinicContext | null> {
+  const supabase = getSupabaseServer();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.from("clinics").select(CLINIC_COLUMNS).eq("id", clinicId).maybeSingle();
+  if (error) console.error("[clinics] clinic lookup failed:", error.message);
+  return data ? clinicFromRow(data as ClinicRow) : null;
 }
 
 /* ───────────────────────── signed-in staff → clinic ───────────────────────── */

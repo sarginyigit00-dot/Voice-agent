@@ -57,12 +57,12 @@ const EXTRA_VARS: EnvCheck[] = [
   { name: "CRON_SECRET", set: false },
   { name: "BOOKING_FALLBACK_EMAIL", set: false },
   { name: "CALCOM_EVENT_TYPE_ID", set: false },
-  { name: "WAITLIST_WEBHOOK_URL", set: false, optional: true },
+  { name: "DEMO_REQUEST_WEBHOOK_URL", set: false, optional: true },
   { name: "CRM_WEBHOOK_URL", set: false, optional: true },
 ];
 
 /** The tables supabase/schema.sql defines — a missing one means schema drift. */
-const TABLES = ["clinics", "agents", "calls", "crm_records", "appointments", "waitlist_emails"];
+const TABLES = ["clinics", "agents", "calls", "crm_records", "appointments", "demo_requests"];
 
 export async function getSystemHealth(): Promise<SystemHealth> {
   const integrations: IntegrationHealth[] = appConfig.integrations.map((i) => {

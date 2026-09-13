@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AdminAction } from "@/lib/admin/actions";
 import { MIN_PASSWORD_LENGTH } from "@/lib/admin/constants";
-import type { AdminOverview, AdminUser, WaitlistEntry } from "@/lib/admin/queries";
+import type { AdminOverview, AdminUser, DemoRequest } from "@/lib/admin/queries";
 import type { EnvCheck, SystemHealth } from "@/lib/admin/health";
 import { ClinicsTab } from "./clinics-tab";
 import { ActionButton, EmptyRow } from "./controls";
@@ -16,7 +16,7 @@ import { ActionButton, EmptyRow } from "./controls";
  * Operator view over Randevox's own accounts and leads.
  *
  * Scope is deliberately limited to data we're the controller for — accounts
- * and waitlist sign-ups. No call transcripts, recordings, caller details or
+ * and demo requests. No call transcripts, recordings, caller details or
  * appointment content: for those we're a processor acting on the clinic's
  * instructions (app/gizlilik/page.tsx §2), so they don't belong in an
  * operator console. See lib/admin/actions.ts for the full reasoning.
@@ -28,7 +28,7 @@ import { ActionButton, EmptyRow } from "./controls";
 export function AdminPanel({ data, health }: { data: AdminOverview; health: SystemHealth }) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
-  const [tab, setTab] = useState<"clinics" | "users" | "waitlist" | "health">("clinics");
+  const [tab, setTab] = useState<"clinics" | "users" | "requests" | "health">("clinics");
   const [flash, setFlash] = useState<{ ok: boolean; message: string } | null>(null);
 
   async function logout() {
@@ -57,7 +57,7 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
     router.refresh();
   }
 
-  const { totals, users, waitlist, clinics, connected } = data;
+  const { totals, users, demoRequests, clinics, connected } = data;
   // Badge on the Sistem tab: unreachable tables plus missing non-optional keys
   // that aren't already covered by an integration's own "not connected" row.
   const problems =
@@ -114,7 +114,7 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
         <Stat label="Toplam kullanıcı" value={totals.users} />
         <Stat label="Bugün kaydolan" value={totals.newToday} />
         <Stat label="Doğrulanmamış" value={totals.unconfirmed} />
-        <Stat label="Ön kayıt" value={waitlist.length} />
+        <Stat label="Demo talebi" value={demoRequests.length} />
         <Stat label="Toplam randevu" value={totals.appointments} />
       </div>
 
@@ -125,8 +125,8 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
         <Tab active={tab === "users"} onClick={() => setTab("users")}>
           Kullanıcılar
         </Tab>
-        <Tab active={tab === "waitlist"} onClick={() => setTab("waitlist")}>
-          Ön kayıt ({waitlist.length})
+        <Tab active={tab === "requests"} onClick={() => setTab("requests")}>
+          Demo talepleri ({demoRequests.length})
         </Tab>
         <Tab active={tab === "health"} onClick={() => setTab("health")}>
           Sistem {problems > 0 && <span className="text-missed">({problems})</span>}
@@ -150,17 +150,17 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
           }
         />
       )}
-      {tab === "waitlist" && (
-        <WaitlistTab
-          entries={waitlist}
+      {tab === "requests" && (
+        <DemoRequestsTab
+          entries={demoRequests}
           connected={connected}
-          onDelete={(id) => post("/api/admin/waitlist", { action: "delete", id })}
+          onDelete={(id) => post("/api/admin/demo-requests", { action: "delete", id })}
         />
       )}
       {tab === "health" && <HealthTab health={health} />}
 
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        Bu panel yalnızca hesap, klinik ve ön kayıt bilgilerini gösterir; klinik kullanımı yalnızca
+        Bu panel yalnızca hesap, klinik ve demo talebi bilgilerini gösterir; klinik kullanımı yalnızca
         toplam dakika ve arama sayısı olarak görünür. Kliniklerin çağrı kayıtları, transkriptleri ve
         arayan bilgileri — gizlilik politikasının 2. maddesi gereği veri işleyen sıfatıyla
         tuttuğumuz veriler — buradan görüntülenmez.
@@ -407,14 +407,14 @@ function PasswordInput({
   );
 }
 
-/* ── Waitlist ───────────────────────────────────────────────────────────── */
+/* ── Demo requests ───────────────────────────────────────────────────────────── */
 
-function WaitlistTab({
+function DemoRequestsTab({
   entries,
   connected,
   onDelete,
 }: {
-  entries: WaitlistEntry[];
+  entries: DemoRequest[];
   connected: boolean;
   onDelete: (id: string) => Promise<void>;
 }) {
@@ -424,14 +424,18 @@ function WaitlistTab({
 
   const needle = query.trim().toLocaleLowerCase("tr");
   const shown = needle
-    ? entries.filter((e) => e.email.toLocaleLowerCase("tr").includes(needle))
+    ? entries.filter((e) =>
+        [e.clinicName, e.contactName, e.phone, e.email ?? ""].some((v) =>
+          v.toLocaleLowerCase("tr").includes(needle),
+        ),
+      )
     : entries;
 
   /** Exports what's on screen, so a filtered view exports the filtered list. */
   function exportCsv() {
     const rows = [
-      ["email", "kayit_tarihi"],
-      ...shown.map((e) => [e.email, e.createdAt]),
+      ["klinik", "yetkili", "telefon", "email", "not", "tarih"],
+      ...shown.map((e) => [e.clinicName, e.contactName, e.phone, e.email ?? "", e.note ?? "", e.createdAt]),
     ];
     const csv = rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
     // ﻿ so Excel opens the Turkish characters as UTF-8 rather than ANSI.
@@ -439,7 +443,7 @@ function WaitlistTab({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `on-kayit-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `demo-talepleri-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -454,9 +458,9 @@ function WaitlistTab({
   return (
     <section className="mt-3 rounded-lg border border-border bg-card/30">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <h2 className="text-sm font-semibold">Ön kayıt listesi</h2>
+        <h2 className="text-sm font-semibold">Demo talepleri</h2>
         <div className="flex items-center gap-2">
-          <SearchInput value={query} onChange={setQuery} placeholder="E-posta ara…" />
+          <SearchInput value={query} onChange={setQuery} placeholder="Klinik, isim, telefon ara…" />
           <button
             onClick={exportCsv}
             disabled={shown.length === 0}
@@ -467,8 +471,10 @@ function WaitlistTab({
         </div>
       </header>
 
-      <div className="hidden grid-cols-[2fr_0.8fr_auto] gap-2 border-b border-border/60 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:grid">
-        <span>E-posta</span>
+      <div className="hidden grid-cols-[1.3fr_1fr_1.1fr_0.8fr_auto] gap-2 border-b border-border/60 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:grid">
+        <span>Klinik</span>
+        <span>Yetkili</span>
+        <span>İletişim</span>
         <span>Tarih</span>
         <span className="w-28" />
       </div>
@@ -478,7 +484,7 @@ function WaitlistTab({
           text={
             entries.length === 0
               ? connected
-                ? "Henüz ön kayıt yok."
+                ? "Henüz demo talebi yok."
                 : "Veri yok."
               : "Aramaya uyan kayıt yok."
           }
@@ -488,9 +494,23 @@ function WaitlistTab({
           {shown.map((e) => (
             <li
               key={e.id}
-              className="grid grid-cols-1 gap-1 px-3 py-2.5 text-sm sm:grid-cols-[2fr_0.8fr_auto] sm:items-center sm:gap-2"
+              className="grid grid-cols-1 gap-1 px-3 py-2.5 text-sm sm:grid-cols-[1.3fr_1fr_1.1fr_0.8fr_auto] sm:items-start sm:gap-2"
             >
-              <span className="truncate">{e.email}</span>
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{e.clinicName}</span>
+                {e.note && <span className="block text-xs text-muted-foreground">{e.note}</span>}
+              </span>
+              <span className="truncate">{e.contactName}</span>
+              <span className="min-w-0 text-xs">
+                <a href={`tel:${e.phone.replace(/[^\d+]/g, "")}`} className="block font-mono tabular-nums hover:underline">
+                  {e.phone}
+                </a>
+                {e.email && (
+                  <a href={`mailto:${e.email}`} className="block truncate text-muted-foreground hover:underline">
+                    {e.email}
+                  </a>
+                )}
+              </span>
               <span className="font-mono text-xs tabular-nums text-muted-foreground">
                 {formatDate(e.createdAt)}
               </span>
@@ -498,7 +518,7 @@ function WaitlistTab({
                 <ConfirmDelete
                   open={confirmId === e.id}
                   busy={busy === e.id}
-                  label="Listeden çıkar"
+                  label="Sil"
                   question="Silinsin mi?"
                   onOpen={() => setConfirmId(e.id)}
                   onCancel={() => setConfirmId(null)}

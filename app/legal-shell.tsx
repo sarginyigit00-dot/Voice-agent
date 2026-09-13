@@ -40,7 +40,7 @@ function LegalNav() {
           >
             {lang === "tr" ? "Giriş yap" : "Sign in"}
           </Link>
-          <Link href="/signup" className="ed-pill ed-pill-primary h-11 px-5 text-[14.5px]">
+          <Link href="/demo-talep" className="ed-pill ed-pill-primary h-11 px-5 text-[14.5px]">
             {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
           </Link>
         </div>

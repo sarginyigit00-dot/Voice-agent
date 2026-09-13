@@ -5,11 +5,13 @@ import { logCall } from "@/lib/calls/log";
 import { isBookingTool, runBookingTool, type ToolContext } from "@/lib/booking/tools";
 import { computeSentiment } from "@/lib/calls/sentiment";
 import { resolveCallOwner } from "@/lib/clinics/server";
+import { findByCall } from "@/lib/booking/store";
+import { webhookSecret } from "@/lib/vapi/client";
+import type { Outcome } from "@/lib/demo/data";
 
 /**
- * Vapi's server URL. Point your assistant (or a phone number's serverUrl) here
- * and set VAPI_API_KEY both in this app and as the assistant's shared secret —
- * Vapi echoes it back in `x-vapi-secret` on every webhook.
+ * Vapi's server URL. Every assistant provisioned by lib/vapi/client.ts points
+ * here and sends VAPI_WEBHOOK_SECRET back in `x-vapi-secret` on every webhook.
  * https://docs.vapi.ai/server-url
  *
  * Two message types matter:
@@ -24,19 +26,19 @@ import { resolveCallOwner } from "@/lib/clinics/server";
  * Anything else (status updates, speech events) is acked and ignored.
  */
 export async function POST(req: Request) {
-  const apiKey = process.env.VAPI_API_KEY;
+  const expected = webhookSecret();
   // Fail closed, not open: without a configured key there is no secret to
   // check the request against, and this route holds the service-role key —
   // accepting it anyway meant anyone could forge a call, inject fabricated
   // transcripts, and trigger a real Cal.com booking. No key means no
   // legitimate caller either, since Vapi is the only thing that should ever
   // reach this URL.
-  if (!apiKey) {
-    return NextResponse.json({ error: "Vapi entegrasyonu yapılandırılmamış (VAPI_API_KEY yok)." }, { status: 503 });
+  if (!expected) {
+    return NextResponse.json({ error: "Vapi entegrasyonu yapılandırılmamış (VAPI_WEBHOOK_SECRET yok)." }, { status: 503 });
   }
 
   const secret = req.headers.get("x-vapi-secret");
-  if (secret !== apiKey) {
+  if (secret !== expected) {
     return NextResponse.json({ error: "invalid secret" }, { status: 401 });
   }
 
@@ -202,6 +204,29 @@ function extracted(message: VapiEndOfCallMessage): { requestedStart?: string; ca
   };
 }
 
+/**
+ * Vapi's endedReason folded into the five outcomes /calls, the dashboard
+ * donut and the CRM understand (lib/demo/data.ts → Outcome). The raw reason
+ * ("customer-ended-call") used to be stored as-is and matched none of them.
+ * "booked" is decided after the actions run, from the appointments table.
+ * https://docs.vapi.ai/calls/call-ended-reason
+ */
+function outcomeFrom(endedReason: string | undefined): Outcome {
+  const r = endedReason ?? "";
+  if (r.includes("forwarded")) return "transferred";
+  if (r === "voicemail") return "voicemail";
+  if (
+    r === "customer-did-not-answer" ||
+    r === "customer-busy" ||
+    r === "silence-timed-out" ||
+    r.includes("error") ||
+    r.includes("failed")
+  ) {
+    return "missed";
+  }
+  return "resolved";
+}
+
 async function handleEndOfCall(message: VapiEndOfCallMessage) {
   const call = message.call ?? {};
   const owner = await resolveCallOwner(call.assistantId);
@@ -229,7 +254,7 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
     number: call.customer?.number ?? "",
     startedAt: call.startedAt ?? new Date().toISOString(),
     durationSec: message.durationSeconds ?? 0,
-    outcome: message.endedReason ?? "completed",
+    outcome: outcomeFrom(message.endedReason),
     summary: message.summary ?? "",
     sentiment: "neutral", // overwritten below once computeSentiment resolves
     recordingUrl: recordingUrlFrom(message),
@@ -247,6 +272,8 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
     computeSentiment(transcript),
   ]);
   payload.sentiment = sentiment;
+  // A booking outranks whatever the line did next — made in-call or by the post-call net.
+  if (await findByCall(payload.callId)) payload.outcome = "booked";
 
   await logCall(payload, results);
   return NextResponse.json({ ok: true, results });

@@ -43,7 +43,8 @@ vars, every form submit silently falls back to the demo bypass too.
 
 Randevox is sold **turnkey** to clinics: the operator creates each clinic and
 its staff accounts from `/admin` (Klinikler tab, `lib/admin/clinics.ts`);
-there is no self-serve sign-up (`/signup` redirects to `/on-kayit`). Every
+there is no self-serve sign-up (`/signup` redirects to the demo-request form `/demo-talep`, whose
+submissions land in /admin → Demo talepleri). Every
 operational table — `agents`, `calls`, `crm_records`, `appointments` —
 carries a NOT NULL `clinic_id`, and RLS lets a signed-in user see only the
 clinics they're in (`clinic_members`, via `my_clinic_ids()`). A signed-in
@@ -61,6 +62,23 @@ agent". Per-clinic credentials (Cal.com key + event type) live in
 clinic. Per-clinic settings (transfer number, notify email, CRM webhook
 URL, quota, status) are columns on `clinics`. A `suspended` clinic's calls
 are still logged but its tools and actions don't run.
+
+## Vapi provisioning
+
+Agents are never configured by hand in the Vapi dashboard. Saving an agent on
+`/agents` writes the row (browser, RLS), then calls `app/api/agents/sync`,
+which re-reads the row scoped to the caller's clinic and pushes the whole
+assistant through `lib/vapi/client.ts` (`buildAssistant`: `composeSystemPrompt`,
+greeting, Azure tr-TR voice, `check_availability` / `book_appointment`,
+`transferCall` to `clinics.transfer_number`, server URL + `x-vapi-secret`,
+summary + structured-data plan). The returned id lands in
+`agents.vapi_assistant_id` — the ONLY key the webhook matches a call on, and
+never written from the browser. Deleting an agent goes through the same route
+so its assistant goes too. Phone numbers stay manual (Netgsm SIP → Vapi BYO
+number, `TELEFON-KURULUMU.md`); the operator stores the Vapi phone-number id
+on the clinic and picks the answering agent in /admin → Klinikler → Telefon
+(which can also provision all of a clinic's agents at once).
+`VAPI_WEBHOOK_SECRET` must be identical locally and on Vercel.
 
 ## Data model & demo mode
 

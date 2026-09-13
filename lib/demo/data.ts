@@ -247,6 +247,11 @@ export interface Agent {
   systemPrompt: string;
   /** When the phone line books. Enforced in lib/booking/tools.ts. */
   workingHours: WorkingHours;
+  /**
+   * The Vapi assistant this agent is provisioned as (lib/vapi/sync.ts). Only
+   * the server writes it; demo agents never have one.
+   */
+  vapiAssistantId?: string | null;
 }
 
 export const AGENTS: Agent[] = [

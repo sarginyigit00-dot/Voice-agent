@@ -12,10 +12,8 @@ import type { L } from "@/lib/i18n/config";
  * into a prompt by hand is how they drift. The clinic writes only the part
  * that is genuinely prose — `systemPrompt` — and everything else is derived.
  *
- * The result is what /agents shows under "Tam talimat", ready to paste onto
- * the assistant in the voice provider's dashboard. (Pushing it there
- * automatically needs the provider API, which is a separate piece of work —
- * until then this is the handoff.)
+ * The result is the Vapi assistant's system prompt, pushed on every save by
+ * lib/vapi/client.ts — nobody pastes it anywhere by hand.
  */
 export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr"): string {
   const t = (l: L) => l[lang];

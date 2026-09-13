@@ -1,5 +1,14 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { MIN_PASSWORD_LENGTH, PLANS, isPlan, type PlanId } from "@/lib/admin/constants";
+import { clinicById } from "@/lib/clinics/server";
+import {
+  assignPhoneNumber,
+  isVapiConfigured,
+  listPhoneNumbers,
+  type VapiPhoneNumber,
+  type VapiResult,
+} from "@/lib/vapi/client";
+import { syncAgentToVapi, type VapiSyncResult } from "@/lib/vapi/sync";
 
 type Supabase = NonNullable<ReturnType<typeof getSupabaseServer>>;
 
@@ -30,6 +39,11 @@ export interface AdminClinic {
   transferNumber: string | null;
   notifyEmail: string | null;
   crmWebhookUrl: string | null;
+  vapiPhoneNumberId: string | null;
+  /** Names only — for picking which agent answers the line. */
+  agents: { id: string; name: string; active: boolean; vapiAssistantId: string | null }[];
+  /** Live from Vapi: the number and who answers it. Null when the clinic has no number yet. */
+  phone: { number: string | null; inboundAgentId: string | null; error?: string } | null;
   createdAt: string;
   calendarConnected: boolean;
   members: AdminClinicMember[];
@@ -43,6 +57,26 @@ export interface ClinicActionResult {
   message: string;
 }
 
+/** The clinic's number as Vapi sees it right now, and which of its agents answers. */
+function phoneFor(
+  id: string | null,
+  numbers: VapiResult<VapiPhoneNumber[]> | null,
+  agents: AdminClinic["agents"],
+): AdminClinic["phone"] {
+  if (!id) return null;
+  if (!numbers) return { number: null, inboundAgentId: null, error: "Vapi bağlı değil (VAPI_API_KEY yok)." };
+  if (!numbers.ok) return { number: null, inboundAgentId: null, error: `Vapi: ${numbers.error}` };
+  const n = numbers.data.find((x) => x.id === id);
+  if (!n) return { number: null, inboundAgentId: null, error: "Bu numara ID'si Vapi'de yok." };
+
+  const inbound = agents.find((a) => a.vapiAssistantId && a.vapiAssistantId === n.assistantId);
+  return {
+    number: n.number ?? n.sipUri ?? null,
+    inboundAgentId: inbound?.id ?? null,
+    error: n.assistantId && !inbound ? "Numara bu kliniğin ajanı olmayan bir asistana bağlı." : undefined,
+  };
+}
+
 /** Start of the current month in Türkiye — UTC+3 all year, no DST since 2016. */
 function monthStartIstanbul(now = new Date()): Date {
   const OFFSET = 3 * 60 * 60 * 1000;
@@ -54,13 +88,16 @@ export async function listClinics(
   supabase: Supabase,
   emails: Map<string, string | null>,
 ): Promise<AdminClinic[]> {
-  const [clinics, members, secrets, usage] = await Promise.all([
+  const [clinics, members, secrets, usage, agents, numbers] = await Promise.all([
     supabase.from("clinics").select("*").order("created_at", { ascending: true }),
     supabase.from("clinic_members").select("clinic_id, user_id, role").order("created_at"),
     supabase.from("clinic_secrets").select("clinic_id, calcom_api_key, calcom_event_type_id"),
     // An aggregate in SQL, not rows here: PostgREST caps a response at 1,000
     // rows, which one busy clinic passes within a week.
     supabase.rpc("clinic_usage_since", { since: monthStartIstanbul().toISOString() }),
+    supabase.from("agents").select("id, name, active, clinic_id, vapi_assistant_id").order("created_at"),
+    // One call for every clinic's number, not one per clinic.
+    isVapiConfigured() ? listPhoneNumbers() : Promise.resolve(null),
   ]);
 
   if (clinics.error) {
@@ -70,6 +107,8 @@ export async function listClinics(
   if (members.error) console.error("[admin] failed to list clinic members:", members.error.message);
   if (secrets.error) console.error("[admin] failed to read clinic secrets:", secrets.error.message);
   if (usage.error) console.error("[admin] failed to read clinic usage:", usage.error.message);
+  if (agents.error) console.error("[admin] failed to list agents:", agents.error.message);
+  if (numbers && !numbers.ok) console.error("[admin] failed to list Vapi numbers:", numbers.error);
 
   const connected = new Set(
     (secrets.data ?? [])
@@ -85,6 +124,9 @@ export async function listClinics(
 
   return clinics.data.map((c) => {
     const used = usageBy.get(c.id);
+    const clinicAgents = (agents.data ?? [])
+      .filter((a) => a.clinic_id === c.id)
+      .map((a) => ({ id: a.id, name: a.name, active: a.active, vapiAssistantId: a.vapi_assistant_id }));
     return {
       id: c.id,
       name: c.name,
@@ -95,6 +137,9 @@ export async function listClinics(
       transferNumber: c.transfer_number,
       notifyEmail: c.notify_email,
       crmWebhookUrl: c.crm_webhook_url,
+      vapiPhoneNumberId: c.vapi_phone_number_id,
+      agents: clinicAgents,
+      phone: phoneFor(c.vapi_phone_number_id, numbers, clinicAgents),
       createdAt: c.created_at,
       calendarConnected: connected.has(c.id),
       members: (members.data ?? [])
@@ -171,6 +216,16 @@ function parseClinicFields(raw: unknown): { patch: Record<string, unknown> } | {
       if (url.protocol !== "https:") return { error: "CRM webhook adresi https:// ile başlamalı." };
     }
     patch.crm_webhook_url = v || null;
+  }
+
+  if ("vapiPhoneNumberId" in f) {
+    const v = text(f.vapiPhoneNumberId);
+    // The id from Vapi → Phone Numbers, not the number: pasting the number
+    // itself is the easy mistake, and it would silently match nothing.
+    if (v && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) {
+      return { error: "Vapi numara ID'si, Vapi → Phone Numbers'taki UUID olmalı (numaranın kendisi değil)." };
+    }
+    patch.vapi_phone_number_id = v || null;
   }
 
   if (Object.keys(patch).length === 0) return { error: "Değiştirilecek alan yok." };
@@ -285,6 +340,55 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
         .eq("user_id", userId);
       if (error) return fail(error.message);
       return ok("Kullanıcı klinikten çıkarıldı. Hesabı silinmedi.");
+    }
+
+    case "syncAgents": {
+      // The operator provisioning a clinic's agents without signing in as its staff.
+      const clinic = clinicId ? await clinicById(clinicId) : null;
+      if (!clinic) return fail("Klinik bulunamadı.");
+      const { data, error } = await supabase.from("agents").select("id, name").eq("clinic_id", clinic.id);
+      if (error) return fail(error.message);
+      if (!data.length) {
+        return fail("Bu klinikte ajan yok. Klinik /agents sayfasını ilk açtığında başlangıç ajanları oluşur.");
+      }
+
+      const results: ({ name: string } & VapiSyncResult)[] = [];
+      for (const a of data) results.push({ name: a.name, ...(await syncAgentToVapi(a.id, clinic)) });
+      const failed = results.filter((r) => !r.ok);
+      if (failed.length) {
+        return fail(
+          `${results.length - failed.length}/${results.length} ajan kuruldu. ` +
+            failed.map((r) => `${r.name}: ${r.message}`).join(" · "),
+        );
+      }
+      const notes = results.filter((r) => r.warning).map((r) => `${r.name}: ${r.warning}`);
+      return ok([`${results.length} ajan Vapi'ye kuruldu.`, ...notes].join(" "));
+    }
+
+    case "assignNumber": {
+      const clinic = clinicId ? await clinicById(clinicId) : null;
+      if (!clinic) return fail("Klinik bulunamadı.");
+      if (!clinic.vapiPhoneNumberId) return fail("Önce Ayarlar'dan Vapi numara ID'sini kaydet.");
+
+      // Empty agentId = detach the number.
+      const agentId = str("agentId");
+      let assistantId: string | null = null;
+      if (agentId) {
+        const { data, error } = await supabase
+          .from("agents")
+          .select("vapi_assistant_id")
+          .eq("id", agentId)
+          .eq("clinic_id", clinic.id)
+          .maybeSingle();
+        if (error) return fail(error.message);
+        if (!data) return fail("Ajan bu klinikte değil.");
+        if (!data.vapi_assistant_id) return fail("Bu ajan henüz Vapi'de kurulu değil — önce \"Ajanları Vapi'ye kur\".");
+        assistantId = data.vapi_assistant_id;
+      }
+
+      const res = await assignPhoneNumber(clinic.vapiPhoneNumberId, assistantId);
+      if (!res.ok) return fail(`Vapi: ${res.error}`);
+      return ok(assistantId ? "Numara ajana bağlandı; gelen aramaları artık bu ajan karşılar." : "Numara ajandan ayrıldı.");
     }
 
     default:

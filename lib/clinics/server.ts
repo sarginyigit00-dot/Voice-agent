@@ -27,10 +27,12 @@ export interface ClinicContext {
   crmWebhookUrl: string | null;
   /** The clinic's line in Vapi — its phone-number id, not the number itself. */
   vapiPhoneNumberId: string | null;
+  /** Patient WhatsApp (confirmation, reminders) via n8n — off until Meta approves the templates. */
+  whatsappEnabled: boolean;
 }
 
 const CLINIC_COLUMNS =
-  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id";
+  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, whatsapp_enabled";
 
 interface ClinicRow {
   id: string;
@@ -41,6 +43,7 @@ interface ClinicRow {
   notify_email: string | null;
   crm_webhook_url: string | null;
   vapi_phone_number_id: string | null;
+  whatsapp_enabled: boolean | null;
 }
 
 function clinicFromRow(r: ClinicRow): ClinicContext {
@@ -53,6 +56,7 @@ function clinicFromRow(r: ClinicRow): ClinicContext {
     notifyEmail: r.notify_email,
     crmWebhookUrl: r.crm_webhook_url,
     vapiPhoneNumberId: r.vapi_phone_number_id,
+    whatsappEnabled: Boolean(r.whatsapp_enabled),
   };
 }
 

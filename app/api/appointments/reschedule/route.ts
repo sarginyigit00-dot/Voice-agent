@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { calcomConfigFor, rescheduleBooking, toInstant } from "@/lib/calcom/client";
 import { requireMember } from "@/lib/clinics/server";
+import { emitEvent } from "@/lib/automation/emit";
+import { localParts } from "@/lib/automation/format";
 
 /**
  * Reschedules an appointment from /randevular. Staff-only, panel-side —
@@ -50,7 +52,7 @@ export async function POST(req: Request) {
 
   const { data: appointment, error: readError } = await supabase
     .from("appointments")
-    .select("id, booking_uid, status")
+    .select("id, booking_uid, status, starts_at, attendee_name, attendee_phone")
     .eq("id", id)
     // Scoped to the caller's clinic — see the same line in ../cancel/route.ts.
     .eq("clinic_id", clinic.id)
@@ -76,7 +78,13 @@ export async function POST(req: Request) {
 
   const { error: writeError } = await supabase
     .from("appointments")
-    .update({ booking_uid: rescheduled.data.uid, starts_at: newStart.toISOString() })
+    .update({
+      booking_uid: rescheduled.data.uid,
+      starts_at: newStart.toISOString(),
+      // A new time is a new appointment as far as reminders go.
+      reminder_24h_sent_at: null,
+      reminder_2h_sent_at: null,
+    })
     .eq("id", id)
     .eq("clinic_id", clinic.id);
 
@@ -89,6 +97,16 @@ export async function POST(req: Request) {
       warning: "Takvimde ertelendi, ancak panel kaydı güncellenemedi.",
     });
   }
+
+  await emitEvent(clinic, "appointment.rescheduled", {
+    id,
+    previousStartsAt: appointment.starts_at,
+    startsAt: newStart.toISOString(),
+    ...localParts(newStart.toISOString(), clinic.timeZone),
+    attendeeName: appointment.attendee_name,
+    phone: appointment.attendee_phone,
+    by: user.email ?? null,
+  });
 
   return NextResponse.json({ ok: true, startsAt: newStart.toISOString(), bookingUid: rescheduled.data.uid });
 }

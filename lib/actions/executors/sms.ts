@@ -1,16 +1,26 @@
 import type { ActionResult, CallActionPayload } from "@/lib/actions/types";
+import { isAutomationConfigured } from "@/lib/automation/emit";
+import { toE164 } from "@/lib/vapi/client";
 
 /**
- * Sends the confirmation SMS via Twilio once its keys are set. Real send
- * wiring (message body, recipient number formatting) is left for a project
- * that connects Twilio for real — this stub keeps the same
- * demo/ok/error contract as the other executors so the pipeline in
- * lib/actions/run.ts doesn't special-case it.
+ * The patient's confirmation message. Nothing is sent from here: the webhook
+ * emits `call.completed` to n8n once the call is logged (with `confirm: true`
+ * when this action is on), and n8n sends the approved WhatsApp template. This
+ * executor only reports, on the call's action list, whether that will happen.
  */
 export async function runSms(payload: CallActionPayload): Promise<ActionResult> {
-  const configured = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER;
-  if (!configured) {
-    return { actionId: "sms", status: "demo", note: `Twilio anahtarları yok — ${payload.number} için SMS demo modda kaydedildi.` };
+  const { clinic } = payload;
+  if (!clinic) {
+    return { actionId: "sms", status: "demo", note: `Demo mod — ${payload.number} için onay mesajı gönderilmedi.` };
   }
-  return { actionId: "sms", status: "demo", note: "Twilio anahtarları bulundu, ama gönderim çağrısı henüz bağlanmadı." };
+  if (!clinic.whatsappEnabled) {
+    return { actionId: "sms", status: "demo", note: "Bu klinikte WhatsApp mesajları kapalı — onay gönderilmedi." };
+  }
+  if (!isAutomationConfigured()) {
+    return { actionId: "sms", status: "error", note: "Otomasyon bağlı değil (N8N_EVENTS_URL / AUTOMATION_SECRET yok)." };
+  }
+  if (!toE164(payload.number)) {
+    return { actionId: "sms", status: "error", note: "Arayanın numarası okunamadı — WhatsApp onayı gönderilemez." };
+  }
+  return { actionId: "sms", status: "ok", note: "Randevu alındıysa onay WhatsApp ile gönderilecek." };
 }

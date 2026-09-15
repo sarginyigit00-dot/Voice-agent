@@ -1,0 +1,190 @@
+{
+  "name": "Randevox — Randevu hatırlatma (WhatsApp)",
+  "nodes": [
+    {
+      "id": "cron",
+      "name": "Her 15 dakika",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kinds",
+      "name": "24h ve 2h",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { kind: '24h' } }, { json: { kind: '2h' } }];"
+      }
+    },
+    {
+      "id": "due",
+      "name": "Zamanı gelenler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "url": "={{ $env.RANDEVOX_URL + '/api/automation/due-reminders?kind=' + $json.kind }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.AUTOMATION_SECRET }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "split",
+      "name": "Hatırlatmaları böl",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "fieldToSplitOut": "reminders",
+        "options": {}
+      }
+    },
+    {
+      "id": "wa",
+      "name": "WhatsApp: hatırlatma",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v21.0/' + $env.WHATSAPP_PHONE_NUMBER_ID + '/messages' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: String($('Hatırlatmaları böl').item.json.phone).replace('+', ''), type: 'template', template: { name: ($('Hatırlatmaları böl').item.json.kind === '2h' ? 'randevu_hatirlatma_2s' : 'randevu_hatirlatma_24s'), language: { code: 'tr' }, components: [{ type: 'body', parameters: ($('Hatırlatmaları böl').item.json.kind === '2h' ? [($('Hatırlatmaları böl').item.json.attendeeName || 'Değerli hastamız'), $('Hatırlatmaları böl').item.json.clinic.name, $('Hatırlatmaları böl').item.json.time] : [($('Hatırlatmaları böl').item.json.attendeeName || 'Değerli hastamız'), $('Hatırlatmaları böl').item.json.clinic.name, $('Hatırlatmaları böl').item.json.date, $('Hatırlatmaları böl').item.json.time]).map(t => ({ type: 'text', text: String(t) })) }] } }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "sent",
+      "name": "Gönderildi olarak işaretle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RANDEVOX_URL + '/api/automation/reminders/sent' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.AUTOMATION_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ id: $('Hatırlatmaları böl').item.json.id, kind: $('Hatırlatmaları böl').item.json.kind }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Her 15 dakika": {
+      "main": [
+        [
+          {
+            "node": "24h ve 2h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "24h ve 2h": {
+      "main": [
+        [
+          {
+            "node": "Zamanı gelenler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zamanı gelenler": {
+      "main": [
+        [
+          {
+            "node": "Hatırlatmaları böl",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hatırlatmaları böl": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp: hatırlatma",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp: hatırlatma": {
+      "main": [
+        [
+          {
+            "node": "Gönderildi olarak işaretle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul"
+  }
+}

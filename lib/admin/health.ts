@@ -59,6 +59,9 @@ const EXTRA_VARS: EnvCheck[] = [
   { name: "CALCOM_EVENT_TYPE_ID", set: false },
   { name: "DEMO_REQUEST_WEBHOOK_URL", set: false, optional: true },
   { name: "CRM_WEBHOOK_URL", set: false, optional: true },
+  // Faz 3: events to n8n and the routes n8n calls back — see lib/automation/emit.ts.
+  { name: "N8N_EVENTS_URL", set: false, optional: true },
+  { name: "AUTOMATION_SECRET", set: false, optional: true },
 ];
 
 /** The tables supabase/schema.sql defines — a missing one means schema drift. */

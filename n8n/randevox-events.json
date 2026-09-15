@@ -1,0 +1,401 @@
+{
+  "name": "Randevox — Olaylar (onay + klinik uyarısı)",
+  "nodes": [
+    {
+      "id": "wh",
+      "name": "Randevox Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "randevox-events",
+      "notes": "Path'i tahmin edilemez yap. Production adresi Vercel'deki N8N_EVENTS_URL olur. lib/automation/emit.ts 5 sn bekler.",
+      "parameters": {
+        "path": "randevox-events-REPLACE-ME",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "sig",
+      "name": "İmza hesapla",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "HMAC-SHA256(gövde, AUTOMATION_SECRET). Randevox gövdeyi JSON.stringify ile yazıyor; ayrıştırıp yeniden yazmak aynı metni verir.",
+      "parameters": {
+        "action": "hmac",
+        "type": "SHA256",
+        "value": "={{ JSON.stringify($json.body) }}",
+        "dataPropertyName": "expected",
+        "secret": "={{ $env.AUTOMATION_SECRET }}",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "ok",
+      "name": "İmza doğru mu?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ok-c",
+              "leftValue": "={{ $json.expected === $json.headers['x-randevox-signature'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "r401",
+      "name": "401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        460
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"error\":\"bad signature\"}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "r200",
+      "name": "200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\":true}",
+        "options": {}
+      }
+    },
+    {
+      "id": "done",
+      "name": "Arama bitti mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        200
+      ],
+      "notes": "appointment.cancelled / appointment.rescheduled şimdilik yok sayılıyor (hasta şablonu onaylanınca eklenecek).",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "done-c",
+              "leftValue": "={{ $('Randevox Event').item.json.body.type === 'call.completed' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "booked",
+      "name": "Randevu alındı mı?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "booked-c",
+              "leftValue": "={{ !!$('Randevox Event').item.json.body.data.appointment }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wa",
+      "name": "WhatsApp gönderilsin mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        100
+      ],
+      "notes": "Klinikte WhatsApp açık + ajanda 'Onay mesajı' açık + arayanın numarası okunmuş.",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wa-c",
+              "leftValue": "={{ !!($('Randevox Event').item.json.body.clinic.whatsappEnabled && $('Randevox Event').item.json.body.data.confirm && $('Randevox Event').item.json.body.data.phone) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "waconf",
+      "name": "WhatsApp: randevu_onay",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v21.0/' + $env.WHATSAPP_PHONE_NUMBER_ID + '/messages' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: String($('Randevox Event').item.json.body.data.phone).replace('+', ''), type: 'template', template: { name: 'randevu_onay', language: { code: 'tr' }, components: [{ type: 'body', parameters: [$('Randevox Event').item.json.body.data.appointment.attendeeName || 'Değerli hastamız', $('Randevox Event').item.json.body.clinic.name, $('Randevox Event').item.json.body.data.appointment.date, $('Randevox Event').item.json.body.data.appointment.time].map(t => ({ type: 'text', text: String(t) })) }] } }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "mail",
+      "name": "Kliniğin e-postası var mı?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "mail-c",
+              "leftValue": "={{ !!$('Randevox Event').item.json.body.clinic.notifyEmail }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "sendmail",
+      "name": "E-posta: randevusuz arama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.RESEND_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: $env.RESEND_FROM, to: [$('Randevox Event').item.json.body.clinic.notifyEmail], subject: 'Randevu alınamayan arama: ' + ($('Randevox Event').item.json.body.data.number || 'numara yok'), html: '<p><b>' + $('Randevox Event').item.json.body.clinic.name + '</b> hattına gelen bir arama randevuyla sonuçlanmadı. Geri aramak isteyebilirsiniz.</p>' + '<p>Arayan: ' + ($('Randevox Event').item.json.body.data.caller || '-') + '<br>Numara: ' + ($('Randevox Event').item.json.body.data.number || '-') + '<br>Ajan: ' + $('Randevox Event').item.json.body.data.agentName + '<br>Sonuç: ' + $('Randevox Event').item.json.body.data.outcome + ' · Duygu: ' + $('Randevox Event').item.json.body.data.sentiment + '</p><p>' + ($('Randevox Event').item.json.body.data.summary || '') + '</p>' }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "200": {
+      "main": [
+        [
+          {
+            "node": "Arama bitti mi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Randevox Event": {
+      "main": [
+        [
+          {
+            "node": "İmza hesapla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "İmza hesapla": {
+      "main": [
+        [
+          {
+            "node": "İmza doğru mu?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "İmza doğru mu?": {
+      "main": [
+        [
+          {
+            "node": "200",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Arama bitti mi?": {
+      "main": [
+        [
+          {
+            "node": "Randevu alındı mı?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Randevu alındı mı?": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp gönderilsin mi?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Kliniğin e-postası var mı?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp gönderilsin mi?": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp: randevu_onay",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Kliniğin e-postası var mı?": {
+      "main": [
+        [
+          {
+            "node": "E-posta: randevusuz arama",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul"
+  }
+}

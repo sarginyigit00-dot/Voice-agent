@@ -6,7 +6,9 @@ import { isBookingTool, runBookingTool, type ToolContext } from "@/lib/booking/t
 import { computeSentiment } from "@/lib/calls/sentiment";
 import { resolveCallOwner } from "@/lib/clinics/server";
 import { findByCall } from "@/lib/booking/store";
-import { webhookSecret } from "@/lib/vapi/client";
+import { toE164, webhookSecret } from "@/lib/vapi/client";
+import { emitEvent } from "@/lib/automation/emit";
+import { localParts } from "@/lib/automation/format";
 import type { Outcome } from "@/lib/demo/data";
 
 /**
@@ -273,8 +275,36 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
   ]);
   payload.sentiment = sentiment;
   // A booking outranks whatever the line did next — made in-call or by the post-call net.
-  if (await findByCall(payload.callId)) payload.outcome = "booked";
+  const appointment = await findByCall(payload.callId);
+  if (appointment) payload.outcome = "booked";
 
   await logCall(payload, results);
+
+  // After the log, so n8n never hears about a call the panel doesn't have.
+  // Suspended clinics run no actions, and that includes messages.
+  if (clinic && clinic.status !== "suspended") {
+    await emitEvent(clinic, "call.completed", {
+      callId: payload.callId,
+      agentName: payload.agentName,
+      caller: payload.caller,
+      number: payload.number,
+      phone: toE164(payload.number),
+      startedAt: payload.startedAt,
+      durationSec: payload.durationSec,
+      outcome: payload.outcome,
+      sentiment: payload.sentiment,
+      summary: payload.summary,
+      // The patient's WhatsApp confirmation goes out only if this agent has it on.
+      confirm: actionIds.includes("sms"),
+      appointment: appointment
+        ? {
+            startsAt: appointment.startsAt,
+            ...localParts(appointment.startsAt, clinic.timeZone),
+            attendeeName: appointment.attendeeName,
+          }
+        : null,
+    });
+  }
+
   return NextResponse.json({ ok: true, results });
 }

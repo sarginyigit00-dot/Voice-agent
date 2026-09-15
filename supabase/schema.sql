@@ -359,6 +359,13 @@ alter table public.appointments
 alter table public.appointments
   add column if not exists clinic_id uuid references public.clinics (id) on delete cascade;
 
+-- Faz 3: set by n8n through /api/automation/reminders/sent, so a reminder
+-- goes out once. Cleared again when the appointment is rescheduled.
+alter table public.appointments
+  add column if not exists reminder_24h_sent_at timestamptz;
+alter table public.appointments
+  add column if not exists reminder_2h_sent_at timestamptz;
+
 create unique index if not exists appointments_call_id_idx on public.appointments (call_id);
 create index if not exists appointments_starts_at_idx on public.appointments (starts_at);
 create index if not exists appointments_clinic_starts_idx on public.appointments (clinic_id, starts_at);

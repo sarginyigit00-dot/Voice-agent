@@ -40,6 +40,7 @@ export interface AdminClinic {
   notifyEmail: string | null;
   crmWebhookUrl: string | null;
   vapiPhoneNumberId: string | null;
+  whatsappEnabled: boolean;
   /** Names only — for picking which agent answers the line. */
   agents: { id: string; name: string; active: boolean; vapiAssistantId: string | null }[];
   /** Live from Vapi: the number and who answers it. Null when the clinic has no number yet. */
@@ -138,6 +139,7 @@ export async function listClinics(
       notifyEmail: c.notify_email,
       crmWebhookUrl: c.crm_webhook_url,
       vapiPhoneNumberId: c.vapi_phone_number_id,
+      whatsappEnabled: Boolean(c.whatsapp_enabled),
       agents: clinicAgents,
       phone: phoneFor(c.vapi_phone_number_id, numbers, clinicAgents),
       createdAt: c.created_at,
@@ -226,6 +228,11 @@ function parseClinicFields(raw: unknown): { patch: Record<string, unknown> } | {
       return { error: "Vapi numara ID'si, Vapi → Phone Numbers'taki UUID olmalı (numaranın kendisi değil)." };
     }
     patch.vapi_phone_number_id = v || null;
+  }
+
+  if ("whatsappEnabled" in f) {
+    if (typeof f.whatsappEnabled !== "boolean") return { error: "WhatsApp ayarı geçersiz." };
+    patch.whatsapp_enabled = f.whatsappEnabled;
   }
 
   if (Object.keys(patch).length === 0) return { error: "Değiştirilecek alan yok." };

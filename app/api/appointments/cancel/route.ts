@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { calcomConfigFor, cancelBooking } from "@/lib/calcom/client";
 import { requireMember } from "@/lib/clinics/server";
+import { emitEvent } from "@/lib/automation/emit";
+import { localParts } from "@/lib/automation/format";
 
 /**
  * Cancels an appointment from /randevular.
@@ -33,7 +35,7 @@ export async function POST(req: Request) {
 
   const { data: appointment, error: readError } = await supabase
     .from("appointments")
-    .select("id, booking_uid, status")
+    .select("id, booking_uid, status, starts_at, attendee_name, attendee_phone")
     .eq("id", id)
     // Scoped to the caller's clinic: this client bypasses RLS, and another
     // clinic's appointment id must read as "not found", never as cancellable.
@@ -74,6 +76,15 @@ export async function POST(req: Request) {
       warning: "Takvimde iptal edildi, ancak panel kaydı güncellenemedi.",
     });
   }
+
+  await emitEvent(clinic, "appointment.cancelled", {
+    id,
+    startsAt: appointment.starts_at,
+    ...localParts(appointment.starts_at, clinic.timeZone),
+    attendeeName: appointment.attendee_name,
+    phone: appointment.attendee_phone,
+    by: user.email ?? null,
+  });
 
   return NextResponse.json({ ok: true });
 }

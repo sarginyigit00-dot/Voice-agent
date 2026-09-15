@@ -125,6 +125,8 @@ const BOOKING_TOOLS = [
         },
       },
     },
+    // Said while the calendar loads, so the line never goes silent.
+    messages: [{ type: "request-start", content: "Hemen bakıyorum." }],
   },
   {
     type: "function",
@@ -145,6 +147,7 @@ const BOOKING_TOOLS = [
         required: ["start"],
       },
     },
+    messages: [{ type: "request-start", content: "Hemen oluşturuyorum." }],
   },
 ];
 
@@ -244,13 +247,17 @@ async function toolIdsFor(agent: Agent, clinic: ClinicContext, secret: string): 
 
 /** The full assistant — sent whole on both create and update, so Vapi never drifts from /agents. */
 export function buildAssistant(agent: Agent, clinic: ClinicContext, secret: string, toolIds: string[]) {
+  // "{klinik}" in a greeting becomes the clinic's name, so the starter
+  // greetings work for every clinic without being retyped.
+  const fill = (s: string) => s.replaceAll("{klinik}", clinic.name);
+  const spoken = { ...agent, greeting: { tr: fill(agent.greeting.tr), en: fill(agent.greeting.en) } };
   return {
     // Vapi caps the name at 40 characters.
     name: `${clinic.name} · ${agent.name}`.slice(0, 40),
-    firstMessage: agent.greeting.tr || agent.greeting.en,
+    firstMessage: spoken.greeting.tr || spoken.greeting.en,
     model: {
       ...MODEL,
-      messages: [{ role: "system", content: composeSystemPrompt(agent, "tr") }],
+      messages: [{ role: "system", content: composeSystemPrompt(spoken, "tr") }],
       // Emptied explicitly: assistants synced before the library held their tools inline.
       tools: [],
       toolIds,

@@ -4,6 +4,7 @@ import { calcomConfigFor, cancelBooking } from "@/lib/calcom/client";
 import { requireMember } from "@/lib/clinics/server";
 import { emitEvent } from "@/lib/automation/emit";
 import { localParts } from "@/lib/automation/format";
+import { toE164 } from "@/lib/vapi/client";
 
 /**
  * Cancels an appointment from /randevular.
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
     startsAt: appointment.starts_at,
     ...localParts(appointment.starts_at, clinic.timeZone),
     attendeeName: appointment.attendee_name,
-    phone: appointment.attendee_phone,
+    phone: appointment.attendee_phone ? toE164(appointment.attendee_phone) : null,
     by: user.email ?? null,
   });
 

@@ -4,6 +4,7 @@ import { calcomConfigFor, rescheduleBooking, toInstant } from "@/lib/calcom/clie
 import { requireMember } from "@/lib/clinics/server";
 import { emitEvent } from "@/lib/automation/emit";
 import { localParts } from "@/lib/automation/format";
+import { toE164 } from "@/lib/vapi/client";
 
 /**
  * Reschedules an appointment from /randevular. Staff-only, panel-side —
@@ -104,7 +105,7 @@ export async function POST(req: Request) {
     startsAt: newStart.toISOString(),
     ...localParts(newStart.toISOString(), clinic.timeZone),
     attendeeName: appointment.attendee_name,
-    phone: appointment.attendee_phone,
+    phone: appointment.attendee_phone ? toE164(appointment.attendee_phone) : null,
     by: user.email ?? null,
   });
 

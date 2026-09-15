@@ -4,7 +4,7 @@
 
 | Dosya | Ne yapar |
 |---|---|
-| `randevox-events.json` | Arama bitince Randevox olay gönderir (`lib/automation/emit.ts`). Randevu alındıysa hastaya WhatsApp onayı, alınmadıysa kliniğe e-posta gider. |
+| `randevox-events.json` | Arama bitince Randevox olay gönderir (`lib/automation/emit.ts`). Randevu alındıysa hastaya WhatsApp onayı, alınmadıysa kliniğe e-posta gider. Panelden iptal edilen ya da ertelenen randevu için de hastaya WhatsApp gider. |
 | `randevox-reminders.json` | 15 dakikada bir, randevuya 24 saat ve 2 saat kala hastaya WhatsApp hatırlatması gönderir. |
 
 ## 1. n8n ortam değişkenleri (Railway → n8n servisi → Variables)
@@ -40,6 +40,15 @@ Kategori: **Utility**, dil: **Turkish (tr)**. Değişkenler sırayla doldurulur.
 
 **`randevu_hatirlatma_2s`**, 3 değişken: ad, klinik, saat
 > Merhaba {{1}}, {{2}} randevunuza az kaldı: bugün saat {{3}}. Sizi bekliyoruz.
+
+**`randevu_iptal`**, 4 değişken: ad, klinik, tarih, saat
+> Merhaba {{1}}, {{2}} için {{3}} saat {{4}} randevunuz iptal edildi. Yeni randevu için kliniği arayabilirsiniz.
+
+**`randevu_degisiklik`**, 4 değişken: ad, klinik, yeni tarih, yeni saat
+> Merhaba {{1}}, {{2}} randevunuzun saati değişti. Yeni randevunuz: {{3}}, saat {{4}}. Uygun değilse lütfen kliniği arayın.
+
+İptal ve değişiklik mesajları yalnızca panelden (/randevular) yapılan işlemlerde ve randevu saati
+henüz geçmemişse gider.
 
 ## 4. Klinikte aç
 

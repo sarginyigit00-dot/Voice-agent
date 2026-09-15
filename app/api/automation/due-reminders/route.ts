@@ -14,15 +14,23 @@ export const dynamic = "force-dynamic";
  * /api/automation/reminders/sent, and the row drops out of this list.
  *
  * Booked less than an hour ago → skipped: the confirmation just went out.
- * Only clinics that are active and have WhatsApp switched on, and only rows
- * with a phone number a message can actually reach.
+ * Only clinics that are active and have a message channel switched on, and
+ * only rows with a phone number that channel can actually reach — Netgsm SMS
+ * goes to Turkish mobiles only.
  */
+interface ClinicRow {
+  id: string;
+  name: string;
+  time_zone: string;
+  message_channel: "sms" | "whatsapp";
+}
+
 interface Row {
   id: string;
   starts_at: string;
   attendee_name: string;
   attendee_phone: string | null;
-  clinics: { id: string; name: string; time_zone: string } | { id: string; name: string; time_zone: string }[] | null;
+  clinics: ClinicRow | ClinicRow[] | null;
 }
 
 export async function GET(req: Request) {
@@ -40,7 +48,7 @@ export async function GET(req: Request) {
   const now = Date.now();
   const { data, error } = await supabase
     .from("appointments")
-    .select("id, starts_at, attendee_name, attendee_phone, clinics!inner(id, name, time_zone)")
+    .select("id, starts_at, attendee_name, attendee_phone, clinics!inner(id, name, time_zone, message_channel)")
     .eq("status", "booked")
     .is(w.column, null)
     .not("attendee_phone", "is", null)
@@ -48,7 +56,7 @@ export async function GET(req: Request) {
     .lte("starts_at", new Date(now + w.to).toISOString())
     .lte("created_at", new Date(now - HOUR).toISOString())
     .eq("clinics.status", "active")
-    .eq("clinics.whatsapp_enabled", true)
+    .in("clinics.message_channel", ["sms", "whatsapp"])
     .order("starts_at")
     .limit(100);
 
@@ -61,10 +69,12 @@ export async function GET(req: Request) {
     const clinic = Array.isArray(r.clinics) ? r.clinics[0] : r.clinics;
     const phone = r.attendee_phone ? toE164(r.attendee_phone) : null;
     if (!clinic || !phone) return [];
+    if (clinic.message_channel === "sms" && !phone.startsWith("+905")) return [];
     return [
       {
         id: r.id,
         kind,
+        channel: clinic.message_channel,
         startsAt: r.starts_at,
         ...localParts(r.starts_at, clinic.time_zone),
         attendeeName: r.attendee_name,

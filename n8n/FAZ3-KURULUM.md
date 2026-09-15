@@ -4,8 +4,12 @@
 
 | Dosya | Ne yapar |
 |---|---|
-| `randevox-events.json` | Arama bitince Randevox olay gönderir (`lib/automation/emit.ts`). Randevu alındıysa hastaya WhatsApp onayı, alınmadıysa kliniğe e-posta gider. Panelden iptal edilen ya da ertelenen randevu için de hastaya WhatsApp gider. |
-| `randevox-reminders.json` | 15 dakikada bir, randevuya 24 saat ve 2 saat kala hastaya WhatsApp hatırlatması gönderir. |
+| `randevox-events.json` | Arama bitince Randevox olay gönderir (`lib/automation/emit.ts`). Randevu alındıysa hastaya onay mesajı, alınmadıysa kliniğe e-posta gider. Panelden iptal edilen ya da ertelenen randevu için de hastaya mesaj gider. |
+| `randevox-reminders.json` | 15 dakikada bir, randevuya 24 saat ve 2 saat kala hastaya hatırlatma gönderir. |
+
+Hasta mesajı kliniğin **mesaj kanalından** gider (admin → Klinikler → Yönet → Ayarlar → **Hasta
+mesajları**): Kapalı, SMS (Netgsm) ya da WhatsApp. SMS yalnızca Türkiye cep numaralarına (+905…)
+gider; yabancı numaralı hastaya SMS atlanır.
 
 ## 1. n8n ortam değişkenleri (Railway → n8n servisi → Variables)
 
@@ -19,6 +23,9 @@
 | `RESEND_FROM` | `Randevox <bildirim@randevoxai.com>` |
 | `WHATSAPP_TOKEN` | Meta → kalıcı (System User) erişim anahtarı |
 | `WHATSAPP_PHONE_NUMBER_ID` | Meta → WhatsApp → API Setup → Phone number ID |
+| `NETGSM_USERCODE` | Netgsm abone numarası (ör. `8508403483`) |
+| `NETGSM_PASSWORD` | Netgsm → Abonelik İşlemleri → Alt Kullanıcı Hesapları'nda açılan **API kullanıcısının** şifresi (SMS yetkili, IP kısıtlaması yok) |
+| `NETGSM_HEADER` | Onaylı gönderici adı, panelde yazdığı gibi (Abonelik İşlemleri → Online Başvurular → Gönderici Adı Başvurusu) |
 
 ## 2. Akışları içeri al
 
@@ -50,10 +57,14 @@ Kategori: **Utility**, dil: **Turkish (tr)**. Değişkenler sırayla doldurulur.
 İptal ve değişiklik mesajları yalnızca panelden (/randevular) yapılan işlemlerde ve randevu saati
 henüz geçmemişse gider.
 
+SMS'te şablon onayı yok; metinler aynı cümlelerle doğrudan akışta yazılı. Bilgilendirme mesajı
+olarak gönderilir (`iysfilter: 0`), İYS izni gerekmez.
+
 ## 4. Klinikte aç
 
-Şablonlar onaylanınca: admin → Klinikler → Yönet → Ayarlar → **WhatsApp mesajları** kutusunu
-işaretle → **Ayarları kaydet**. Kutu kapalıyken hastaya mesaj gitmez, kliniğe e-posta yine gider.
+admin → Klinikler → Yönet → Ayarlar → **Hasta mesajları** → **SMS** (Netgsm değişkenleri
+girilince) ya da **WhatsApp** (şablonlar onaylanınca) → **Ayarları kaydet**. Kapalıyken hastaya
+mesaj gitmez, kliniğe e-posta yine gider.
 
 ## Test
 

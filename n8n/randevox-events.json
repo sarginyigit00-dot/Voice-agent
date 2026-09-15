@@ -143,7 +143,7 @@
         1100,
         560
       ],
-      "notes": "Panelden iptal / erteleme. Klinikte WhatsApp açık + hastanın numarası var + randevu (yeni) saati geçmemiş.",
+      "notes": "Panelden iptal / erteleme. Klinikte mesaj kanalı açık + hastanın numarası var (SMS'te TR cep) + randevu (yeni) saati geçmemiş.",
       "parameters": {
         "conditions": {
           "options": {
@@ -154,7 +154,7 @@
           "conditions": [
             {
               "id": "change-c",
-              "leftValue": "={{ !!(['appointment.cancelled', 'appointment.rescheduled'].includes($('Randevox Event').item.json.body.type) && $('Randevox Event').item.json.body.clinic.whatsappEnabled && $('Randevox Event').item.json.body.data.phone && new Date($('Randevox Event').item.json.body.data.startsAt) > new Date()) }}",
+              "leftValue": "={{ !!(['appointment.cancelled', 'appointment.rescheduled'].includes($('Randevox Event').item.json.body.type) && $('Randevox Event').item.json.body.data.phone && (($('Randevox Event').item.json.body.clinic.messageChannel || ($('Randevox Event').item.json.body.clinic.whatsappEnabled ? 'whatsapp' : 'off')) === 'whatsapp' || (($('Randevox Event').item.json.body.clinic.messageChannel || ($('Randevox Event').item.json.body.clinic.whatsappEnabled ? 'whatsapp' : 'off')) === 'sms' && String($('Randevox Event').item.json.body.data.phone).startsWith('+905'))) && new Date($('Randevox Event').item.json.body.data.startsAt) > new Date()) }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -173,8 +173,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1320,
-        560
+        1540,
+        660
       ],
       "parameters": {
         "method": "POST",
@@ -228,14 +228,14 @@
     },
     {
       "id": "wa",
-      "name": "WhatsApp gönderilsin mi?",
+      "name": "Onay gönderilsin mi?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
         1320,
         100
       ],
-      "notes": "Klinikte WhatsApp açık + ajanda 'Onay mesajı' açık + arayanın numarası okunmuş.",
+      "notes": "Klinikte mesaj kanalı açık + ajanda 'Onay mesajı' açık + arayanın numarası okunmuş. SMS yalnızca TR cep (+905…).",
       "parameters": {
         "conditions": {
           "options": {
@@ -246,7 +246,7 @@
           "conditions": [
             {
               "id": "wa-c",
-              "leftValue": "={{ !!($('Randevox Event').item.json.body.clinic.whatsappEnabled && $('Randevox Event').item.json.body.data.confirm && $('Randevox Event').item.json.body.data.phone) }}",
+              "leftValue": "={{ !!($('Randevox Event').item.json.body.data.confirm && $('Randevox Event').item.json.body.data.phone && (($('Randevox Event').item.json.body.clinic.messageChannel || ($('Randevox Event').item.json.body.clinic.whatsappEnabled ? 'whatsapp' : 'off')) === 'whatsapp' || (($('Randevox Event').item.json.body.clinic.messageChannel || ($('Randevox Event').item.json.body.clinic.whatsappEnabled ? 'whatsapp' : 'off')) === 'sms' && String($('Randevox Event').item.json.body.data.phone).startsWith('+905')))) }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -265,8 +265,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1540,
-        0
+        1760,
+        200
       ],
       "parameters": {
         "method": "POST",
@@ -342,6 +342,126 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ from: $env.RESEND_FROM, to: [$('Randevox Event').item.json.body.clinic.notifyEmail], subject: 'Randevu alınamayan arama: ' + ($('Randevox Event').item.json.body.data.number || 'numara yok'), html: '<p><b>' + $('Randevox Event').item.json.body.clinic.name + '</b> hattına gelen bir arama randevuyla sonuçlanmadı. Geri aramak isteyebilirsiniz.</p>' + '<p>Arayan: ' + ($('Randevox Event').item.json.body.data.caller || '-') + '<br>Numara: ' + ($('Randevox Event').item.json.body.data.number || '-') + '<br>Ajan: ' + $('Randevox Event').item.json.body.data.agentName + '<br>Sonuç: ' + $('Randevox Event').item.json.body.data.outcome + ' · Duygu: ' + $('Randevox Event').item.json.body.data.sentiment + '</p><p>' + ($('Randevox Event').item.json.body.data.summary || '') + '</p>' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "confsms",
+      "name": "Onay: SMS mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "confsms-c",
+              "leftValue": "={{ ($('Randevox Event').item.json.body.clinic.messageChannel || ($('Randevox Event').item.json.body.clinic.whatsappEnabled ? 'whatsapp' : 'off')) === 'sms' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "smsconf",
+      "name": "SMS: randevu onayı",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        0
+      ],
+      "notes": "Netgsm REST v2. Kullanıcı adı = abone numarası, şifre = API alt kullanıcısının şifresi. iysfilter 0 = bilgilendirme (İYS izni gerekmez). no = 5xxxxxxxxx.",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.netgsm.com.tr/sms/rest/v2/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Basic ' + ($env.NETGSM_USERCODE + ':' + $env.NETGSM_PASSWORD).base64Encode() }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ msgheader: $env.NETGSM_HEADER, encoding: 'TR', iysfilter: '0', messages: [{ msg: 'Merhaba ' + ($('Randevox Event').item.json.body.data.appointment.attendeeName || 'Değerli hastamız') + ', ' + $('Randevox Event').item.json.body.clinic.name + ' randevunuz oluşturuldu: ' + $('Randevox Event').item.json.body.data.appointment.date + ', saat ' + $('Randevox Event').item.json.body.data.appointment.time + '. Değişiklik için kliniği arayabilirsiniz.', no: String($('Randevox Event').item.json.body.data.phone).slice(3) }] }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "changesms",
+      "name": "İptal: SMS mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        560
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "changesms-c",
+              "leftValue": "={{ ($('Randevox Event').item.json.body.clinic.messageChannel || ($('Randevox Event').item.json.body.clinic.whatsappEnabled ? 'whatsapp' : 'off')) === 'sms' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "smschange",
+      "name": "SMS: iptal / değişiklik",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        460
+      ],
+      "notes": "Netgsm REST v2. Kullanıcı adı = abone numarası, şifre = API alt kullanıcısının şifresi. iysfilter 0 = bilgilendirme (İYS izni gerekmez). no = 5xxxxxxxxx.",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.netgsm.com.tr/sms/rest/v2/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Basic ' + ($env.NETGSM_USERCODE + ':' + $env.NETGSM_PASSWORD).base64Encode() }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ msgheader: $env.NETGSM_HEADER, encoding: 'TR', iysfilter: '0', messages: [{ msg: ($('Randevox Event').item.json.body.type === 'appointment.cancelled' ? 'Merhaba ' + ($('Randevox Event').item.json.body.data.attendeeName || 'Değerli hastamız') + ', ' + $('Randevox Event').item.json.body.clinic.name + ' için ' + $('Randevox Event').item.json.body.data.date + ' saat ' + $('Randevox Event').item.json.body.data.time + ' randevunuz iptal edildi. Yeni randevu için kliniği arayabilirsiniz.' : 'Merhaba ' + ($('Randevox Event').item.json.body.data.attendeeName || 'Değerli hastamız') + ', ' + $('Randevox Event').item.json.body.clinic.name + ' randevunuzun saati değişti. Yeni randevunuz: ' + $('Randevox Event').item.json.body.data.date + ', saat ' + $('Randevox Event').item.json.body.data.time + '. Uygun değilse lütfen kliniği arayın.'), no: String($('Randevox Event').item.json.body.data.phone).slice(3) }] }) }}",
         "options": {}
       }
     }
@@ -420,7 +540,7 @@
       "main": [
         [
           {
-            "node": "WhatsApp: iptal / değişiklik",
+            "node": "İptal: SMS mi?",
             "type": "main",
             "index": 0
           }
@@ -432,7 +552,7 @@
       "main": [
         [
           {
-            "node": "WhatsApp gönderilsin mi?",
+            "node": "Onay gönderilsin mi?",
             "type": "main",
             "index": 0
           }
@@ -446,18 +566,6 @@
         ]
       ]
     },
-    "WhatsApp gönderilsin mi?": {
-      "main": [
-        [
-          {
-            "node": "WhatsApp: randevu_onay",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
     "Kliniğin e-postası var mı?": {
       "main": [
         [
@@ -468,6 +576,54 @@
           }
         ],
         []
+      ]
+    },
+    "Onay gönderilsin mi?": {
+      "main": [
+        [
+          {
+            "node": "Onay: SMS mi?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Onay: SMS mi?": {
+      "main": [
+        [
+          {
+            "node": "SMS: randevu onayı",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WhatsApp: randevu_onay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "İptal: SMS mi?": {
+      "main": [
+        [
+          {
+            "node": "SMS: iptal / değişiklik",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WhatsApp: iptal / değişiklik",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },

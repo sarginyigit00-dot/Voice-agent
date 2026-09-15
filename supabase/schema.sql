@@ -40,7 +40,10 @@ create table if not exists public.clinics (
   vapi_phone_number_id text,
   -- booking confirmations when the caller gave no email; the weekly report
   notify_email text,
+  -- legacy, superseded by message_channel; kept in step until dropped
   whatsapp_enabled boolean not null default false,
+  -- patient messages via n8n: 'off' | 'sms' (Netgsm) | 'whatsapp'
+  message_channel text not null default 'off' check (message_channel in ('off', 'sms', 'whatsapp')),
   -- optional: forward every finished call to this clinic's own CRM
   crm_webhook_url text,
   created_at timestamptz not null default now()

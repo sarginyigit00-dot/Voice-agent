@@ -12,7 +12,7 @@ export type ActionId = (typeof ACTION_IDS)[number];
 export const ACTION_LABEL: Record<ActionId, L> = {
   book: { tr: "Takvime randevu al", en: "Book to calendar" },
   transfer: { tr: "Canlı temsilciye transfer", en: "Transfer to a human" },
-  sms: { tr: "Onay mesajı gönder (WhatsApp)", en: "Send confirmation (WhatsApp)" },
+  sms: { tr: "Onay mesajı gönder (SMS / WhatsApp)", en: "Send confirmation (SMS / WhatsApp)" },
   crm: { tr: "CRM'e kaydet", en: "Log to CRM" },
   qualify: { tr: "Adayı nitelendir & puanla", en: "Qualify & score lead" },
 };

@@ -213,9 +213,9 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
     crmWebhookUrl: clinic.crmWebhookUrl ?? "",
     timeZone: clinic.timeZone,
     vapiPhoneNumberId: clinic.vapiPhoneNumberId ?? "",
-    whatsappEnabled: clinic.whatsappEnabled,
+    messageChannel: clinic.messageChannel,
   });
-  const set = (k: Exclude<keyof typeof f, "whatsappEnabled">) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((prev) => ({ ...prev, [k]: e.target.value }));
 
   return (
@@ -263,16 +263,13 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
               className={inputClass}
             />
           </Field>
-          <Field label="WhatsApp mesajları">
-            {/* Off until Meta approves the templates — n8n skips this clinic's patients while it is. */}
-            <label className="flex items-center gap-2 py-1.5 text-sm">
-              <input
-                type="checkbox"
-                checked={f.whatsappEnabled}
-                onChange={(e) => setF((prev) => ({ ...prev, whatsappEnabled: e.target.checked }))}
-              />
-              Hastaya onay ve hatırlatma gönder
-            </label>
+          <Field label="Hasta mesajları (onay, hatırlatma)">
+            {/* SMS needs the NETGSM_* variables on n8n; WhatsApp needs Meta-approved templates. */}
+            <select value={f.messageChannel} onChange={set("messageChannel")} className={inputClass}>
+              <option value="off">Kapalı</option>
+              <option value="sms">SMS (Netgsm, yalnızca TR cep)</option>
+              <option value="whatsapp">WhatsApp</option>
+            </select>
           </Field>
         </div>
         <ActionButton type="submit" disabled={busy}>

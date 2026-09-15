@@ -4,7 +4,7 @@ import type { ClinicContext } from "@/lib/clinics/server";
 /**
  * The seam between Randevox and n8n (Faz 3). Randevox owns everything that
  * happens while a caller is on the line; n8n owns what happens after —
- * WhatsApp to the patient, email to the clinic, reminders. One shared set of
+ * SMS or WhatsApp to the patient, email to the clinic, reminders. One shared set of
  * n8n workflows serves every clinic: whatever a workflow needs to know about
  * the clinic travels inside the event, so n8n never holds the service-role key.
  *
@@ -35,7 +35,9 @@ function clinicForEvent(c: ClinicContext) {
     name: c.name,
     timeZone: c.timeZone,
     notifyEmail: c.notifyEmail,
-    whatsappEnabled: c.whatsappEnabled,
+    messageChannel: c.messageChannel,
+    // Read by n8n flows from before the SMS channel; drop once live n8n is updated.
+    whatsappEnabled: c.messageChannel === "whatsapp",
   };
 }
 

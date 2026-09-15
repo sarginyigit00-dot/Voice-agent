@@ -2,7 +2,7 @@ const MIN = 60 * 1000;
 export const HOUR = 60 * MIN;
 
 /**
- * The two WhatsApp reminders, shared by /api/automation/due-reminders (what
+ * The two reminders (SMS or WhatsApp, per clinic), shared by /api/automation/due-reminders (what
  * is due) and /api/automation/reminders/sent (mark it done).
  *
  * - `24h`: starts in (3 h, 24 h] — anything sooner only gets the 2 h one.

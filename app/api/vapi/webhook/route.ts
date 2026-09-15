@@ -323,7 +323,7 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
       outcome: payload.outcome,
       sentiment: payload.sentiment,
       summary: payload.summary,
-      // The patient's WhatsApp confirmation goes out only if this agent has it on.
+      // The patient's confirmation (SMS / WhatsApp) goes out only if this agent has it on.
       confirm: actionIds.includes("sms"),
       appointment: appointment
         ? {

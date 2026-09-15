@@ -183,15 +183,15 @@ Bekleyen işleri de listele: Resend, Meta, Vercel.
   Tutmazsa 401.
 - Randevox 5 sn bekler: hemen 200 dön, işi sonra yap.
 - Gövde:
-  `{ source, type, sentAt, clinic: { id, name, timeZone, notifyEmail, whatsappEnabled }, data }`
+  `{ source, type, sentAt, clinic: { id, name, timeZone, notifyEmail, messageChannel ('off'|'sms'|'whatsapp'), whatsappEnabled (eski, messageChannel === 'whatsapp') }, data }`
 - `type`: `call.completed` | `appointment.cancelled` | `appointment.rescheduled`. Son ikisi
   şimdilik yok sayılır.
 - `call.completed` → `data`: `callId, agentName, caller, number, phone (+90…|null), startedAt,
   durationSec, outcome (booked|transferred|voicemail|resolved|missed), sentiment, summary,
   confirm, appointment: { startsAt, date, time, attendeeName } | null`
 - Kurallar:
-  - Randevu var **ve** `clinic.whatsappEnabled && data.confirm && data.phone` → hastaya
-    `randevu_onay` (ad, klinik, tarih, saat).
+  - Randevu var **ve** `data.confirm && data.phone` **ve** kanal açık → hastaya onay: `whatsapp`
+    ise `randevu_onay` şablonu (ad, klinik, tarih, saat), `sms` ise Netgsm (yalnızca `+905…`).
   - Randevu yok **ve** `clinic.notifyEmail` dolu → kliniğe e-posta.
 
 **Hatırlatma:** Randevox'un n8n'e açtığı iki adres. İkisi de

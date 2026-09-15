@@ -14,6 +14,11 @@ import { normalizeWorkingHours } from "@/lib/agents/hours";
  * Nothing else stands between one clinic and another's patients.
  */
 
+/** How patient messages (confirmation, reminders, cancel/reschedule) leave n8n. */
+export type MessageChannel = "off" | "sms" | "whatsapp";
+
+export const isMessageChannel = (v: unknown): v is MessageChannel => v === "off" || v === "sms" || v === "whatsapp";
+
 export interface ClinicContext {
   id: string;
   name: string;
@@ -27,12 +32,12 @@ export interface ClinicContext {
   crmWebhookUrl: string | null;
   /** The clinic's line in Vapi — its phone-number id, not the number itself. */
   vapiPhoneNumberId: string | null;
-  /** Patient WhatsApp (confirmation, reminders) via n8n — off until Meta approves the templates. */
-  whatsappEnabled: boolean;
+  /** Patient messages via n8n: Netgsm SMS, or WhatsApp once Meta approves the templates. */
+  messageChannel: MessageChannel;
 }
 
 const CLINIC_COLUMNS =
-  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, whatsapp_enabled";
+  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, message_channel";
 
 interface ClinicRow {
   id: string;
@@ -43,7 +48,7 @@ interface ClinicRow {
   notify_email: string | null;
   crm_webhook_url: string | null;
   vapi_phone_number_id: string | null;
-  whatsapp_enabled: boolean | null;
+  message_channel: string | null;
 }
 
 function clinicFromRow(r: ClinicRow): ClinicContext {
@@ -56,7 +61,7 @@ function clinicFromRow(r: ClinicRow): ClinicContext {
     notifyEmail: r.notify_email,
     crmWebhookUrl: r.crm_webhook_url,
     vapiPhoneNumberId: r.vapi_phone_number_id,
-    whatsappEnabled: Boolean(r.whatsapp_enabled),
+    messageChannel: isMessageChannel(r.message_channel) ? r.message_channel : "off",
   };
 }
 

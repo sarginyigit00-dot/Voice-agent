@@ -1,6 +1,6 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { MIN_PASSWORD_LENGTH, PLANS, isPlan, type PlanId } from "@/lib/admin/constants";
-import { clinicById } from "@/lib/clinics/server";
+import { clinicById, isMessageChannel, type MessageChannel } from "@/lib/clinics/server";
 import {
   assignPhoneNumber,
   isVapiConfigured,
@@ -40,7 +40,7 @@ export interface AdminClinic {
   notifyEmail: string | null;
   crmWebhookUrl: string | null;
   vapiPhoneNumberId: string | null;
-  whatsappEnabled: boolean;
+  messageChannel: MessageChannel;
   /** Names only — for picking which agent answers the line. */
   agents: { id: string; name: string; active: boolean; vapiAssistantId: string | null }[];
   /** Live from Vapi: the number and who answers it. Null when the clinic has no number yet. */
@@ -139,7 +139,7 @@ export async function listClinics(
       notifyEmail: c.notify_email,
       crmWebhookUrl: c.crm_webhook_url,
       vapiPhoneNumberId: c.vapi_phone_number_id,
-      whatsappEnabled: Boolean(c.whatsapp_enabled),
+      messageChannel: isMessageChannel(c.message_channel) ? c.message_channel : "off",
       agents: clinicAgents,
       phone: phoneFor(c.vapi_phone_number_id, numbers, clinicAgents),
       createdAt: c.created_at,
@@ -230,9 +230,11 @@ function parseClinicFields(raw: unknown): { patch: Record<string, unknown> } | {
     patch.vapi_phone_number_id = v || null;
   }
 
-  if ("whatsappEnabled" in f) {
-    if (typeof f.whatsappEnabled !== "boolean") return { error: "WhatsApp ayarı geçersiz." };
-    patch.whatsapp_enabled = f.whatsappEnabled;
+  if ("messageChannel" in f) {
+    if (!isMessageChannel(f.messageChannel)) return { error: "Mesaj kanalı geçersiz." };
+    patch.message_channel = f.messageChannel;
+    // Legacy column, kept in step until it is dropped.
+    patch.whatsapp_enabled = f.messageChannel === "whatsapp";
   }
 
   if (Object.keys(patch).length === 0) return { error: "Değiştirilecek alan yok." };

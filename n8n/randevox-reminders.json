@@ -1,5 +1,5 @@
 {
-  "name": "Randevox — Randevu hatırlatma (WhatsApp)",
+  "name": "Randevox — Randevu hatırlatma (SMS / WhatsApp)",
   "nodes": [
     {
       "id": "cron",
@@ -77,8 +77,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        880,
-        300
+        1100,
+        400
       ],
       "parameters": {
         "method": "POST",
@@ -104,7 +104,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1100,
+        1540,
         300
       ],
       "parameters": {
@@ -122,6 +122,100 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ id: $('Hatırlatmaları böl').item.json.id, kind: $('Hatırlatmaları böl').item.json.kind }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "remsms",
+      "name": "SMS mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "remsms-c",
+              "leftValue": "={{ $('Hatırlatmaları böl').item.json.channel === 'sms' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "smsrem",
+      "name": "SMS: hatırlatma",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        200
+      ],
+      "notes": "Netgsm REST v2. Kullanıcı adı = abone numarası, şifre = API alt kullanıcısının şifresi. iysfilter 0 = bilgilendirme (İYS izni gerekmez). no = 5xxxxxxxxx.",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.netgsm.com.tr/sms/rest/v2/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Basic ' + ($env.NETGSM_USERCODE + ':' + $env.NETGSM_PASSWORD).base64Encode() }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ msgheader: $env.NETGSM_HEADER, encoding: 'TR', iysfilter: '0', messages: [{ msg: ($('Hatırlatmaları böl').item.json.kind === '2h' ? 'Merhaba ' + ($('Hatırlatmaları böl').item.json.attendeeName || 'Değerli hastamız') + ', ' + $('Hatırlatmaları böl').item.json.clinic.name + ' randevunuza az kaldı: bugün saat ' + $('Hatırlatmaları böl').item.json.time + '. Sizi bekliyoruz.' : 'Merhaba ' + ($('Hatırlatmaları böl').item.json.attendeeName || 'Değerli hastamız') + ', ' + $('Hatırlatmaları böl').item.json.clinic.name + ' randevunuzu hatırlatırız: ' + $('Hatırlatmaları böl').item.json.date + ', saat ' + $('Hatırlatmaları böl').item.json.time + '. Gelemeyecekseniz lütfen kliniği arayın.'), no: String($('Hatırlatmaları böl').item.json.phone).slice(3) }] }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "smsok",
+      "name": "SMS gitti mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        200
+      ],
+      "notes": "Netgsm iş numarası (jobid) döndüyse gitti. Dönmediyse işaretlenmez, 15 dk sonra tekrar denenir.",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "smsok-c",
+              "leftValue": "={{ !!$json.jobid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
         "options": {}
       }
     }
@@ -164,7 +258,7 @@
       "main": [
         [
           {
-            "node": "WhatsApp: hatırlatma",
+            "node": "SMS mi?",
             "type": "main",
             "index": 0
           }
@@ -180,6 +274,47 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "SMS mi?": {
+      "main": [
+        [
+          {
+            "node": "SMS: hatırlatma",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WhatsApp: hatırlatma",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SMS: hatırlatma": {
+      "main": [
+        [
+          {
+            "node": "SMS gitti mi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SMS gitti mi?": {
+      "main": [
+        [
+          {
+            "node": "Gönderildi olarak işaretle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },

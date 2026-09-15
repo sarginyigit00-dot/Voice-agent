@@ -82,6 +82,16 @@ on the clinic and picks the answering agent in /admin → Klinikler → Telefon
 (which can also provision all of a clinic's agents at once).
 `VAPI_WEBHOOK_SECRET` must be identical locally and on Vercel.
 
+**Clinic facts (/klinik).** Services (price, duration, specialty), doctors,
+address and FAQ live in `clinic_knowledge`, one row per clinic
+(`lib/clinics/knowledge-shape.ts` holds the shape, validator, demo data and
+the "# Klinik bilgileri" prompt block). Every agent of the clinic gets that
+block in its system prompt on each sync; saving on /klinik goes through
+`app/api/clinic/knowledge`, which re-pushes the clinic's live agents
+(`syncClinicAgents`). Anything the agent reads aloud in Turkish — times,
+dates, opening hours — is produced as words by `lib/speech/tr.ts`, never as
+"09:00"; panel text keeps digits.
+
 ## Data model & demo mode
 
 With no Supabase keys in `.env.local`, the cockpit renders from

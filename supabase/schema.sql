@@ -439,3 +439,29 @@ $$;
 
 revoke execute on function public.clinic_usage_since(timestamptz) from public, anon, authenticated;
 grant execute on function public.clinic_usage_since(timestamptz) to service_role;
+
+-- ─────────────────────────────────────────────────────────────────────────
+--  clinic_knowledge — the clinic's own facts (services with prices,
+--  doctors, address, FAQ), edited on /klinik and folded into every agent's
+--  system prompt on each Vapi sync (lib/clinics/knowledge-shape.ts). One row
+--  per clinic. Written only by app/api/clinic/knowledge (service role);
+--  members may read their own.
+-- ─────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.clinic_knowledge (
+  clinic_id uuid primary key references public.clinics (id) on delete cascade,
+  services jsonb not null default '[]'::jsonb,
+  doctors jsonb not null default '[]'::jsonb,
+  address text not null default '',
+  faq text not null default '',
+  updated_at timestamptz not null default now(),
+  updated_by uuid references auth.users (id) on delete set null
+);
+
+alter table public.clinic_knowledge enable row level security;
+
+drop policy if exists "Members read their clinic's knowledge" on public.clinic_knowledge;
+create policy "Members read their clinic's knowledge"
+  on public.clinic_knowledge for select
+  to authenticated
+  using (clinic_id in (select public.my_clinic_ids()));

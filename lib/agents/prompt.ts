@@ -1,6 +1,7 @@
 import type { Agent } from "@/lib/demo/data";
 import { summarizeHours } from "@/lib/agents/hours";
 import { speakHours } from "@/lib/speech/tr";
+import { knowledgeSection, type ClinicKnowledge } from "@/lib/clinics/knowledge-shape";
 import type { L } from "@/lib/i18n/config";
 
 /**
@@ -16,7 +17,12 @@ import type { L } from "@/lib/i18n/config";
  * The result is the Vapi assistant's system prompt, pushed on every save by
  * lib/vapi/client.ts — nobody pastes it anywhere by hand.
  */
-export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr"): string {
+export function composeSystemPrompt(
+  agent: Agent,
+  lang: "tr" | "en" = "tr",
+  /** The clinic's facts from /klinik — shared by all of its agents. */
+  knowledge: ClinicKnowledge | null = null,
+): string {
   const t = (l: L) => l[lang];
   const tr = lang === "tr";
   const sections: string[] = [];
@@ -40,6 +46,9 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr"): str
       (tr ? "# Klinik talimatları\n" : "# Clinic instructions\n") + agent.systemPrompt.trim(),
     );
   }
+
+  const facts = knowledgeSection(knowledge, lang);
+  if (facts) sections.push(facts);
 
   // Turkish gets the spoken form, so the model never reads "09:00" aloud.
   const hours = tr ? speakHours(agent.workingHours) : summarizeHours(agent.workingHours, lang);

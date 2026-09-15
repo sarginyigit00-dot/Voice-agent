@@ -1,5 +1,6 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { agentInClinic, type ClinicContext } from "@/lib/clinics/server";
+import { getKnowledge } from "@/lib/clinics/knowledge";
 import {
   assignPhoneNumber,
   deleteAssistant,
@@ -39,7 +40,7 @@ export async function syncAgentToVapi(
   if (!found) return { ok: false, message: "Ajan bulunamadı." };
   const { agent, vapiAssistantId } = found;
 
-  const res = await upsertAssistant(agent, clinic, vapiAssistantId);
+  const res = await upsertAssistant(agent, clinic, vapiAssistantId, await getKnowledge(clinic.id));
   if (!res.ok) return { ok: false, message: `Vapi: ${res.error}` };
   const id = res.data.id;
 
@@ -116,4 +117,25 @@ export async function removeAgent(agentId: string, clinic: ClinicContext): Promi
   const { error } = await supabase.from("agents").delete().eq("id", agentId).eq("clinic_id", clinic.id);
   if (error) return { ok: false, message: error.message };
   return { ok: true, message: "Ajan silindi." };
+}
+
+/**
+ * Re-pushes every agent of a clinic that is already live in Vapi — for
+ * changes shared by all of them (the /klinik facts). Agents never provisioned
+ * stay that way; this is not the operator's "Ajanları Vapi'ye kur".
+ */
+export async function syncClinicAgents(clinic: ClinicContext): Promise<({ name: string } & VapiSyncResult)[]> {
+  const supabase = getSupabaseServer();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("agents")
+    .select("id, name")
+    .eq("clinic_id", clinic.id)
+    .not("vapi_assistant_id", "is", null);
+  if (error) return [{ name: "—", ok: false, message: error.message }];
+
+  const results: ({ name: string } & VapiSyncResult)[] = [];
+  for (const a of data ?? []) results.push({ name: a.name, ...(await syncAgentToVapi(a.id, clinic)) });
+  return results;
 }

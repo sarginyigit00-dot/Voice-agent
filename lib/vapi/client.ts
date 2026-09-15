@@ -2,6 +2,7 @@ import appConfig from "@/app.config";
 import type { Agent } from "@/lib/demo/data";
 import type { ClinicContext } from "@/lib/clinics/server";
 import { composeSystemPrompt } from "@/lib/agents/prompt";
+import type { ClinicKnowledge } from "@/lib/clinics/knowledge-shape";
 
 /**
  * Vapi's REST API — server-side only (it carries the private key).
@@ -246,7 +247,13 @@ async function toolIdsFor(agent: Agent, clinic: ClinicContext, secret: string): 
 /* ───────────────────────────── assistant ───────────────────────────── */
 
 /** The full assistant — sent whole on both create and update, so Vapi never drifts from /agents. */
-export function buildAssistant(agent: Agent, clinic: ClinicContext, secret: string, toolIds: string[]) {
+export function buildAssistant(
+  agent: Agent,
+  clinic: ClinicContext,
+  secret: string,
+  toolIds: string[],
+  knowledge: ClinicKnowledge | null = null,
+) {
   // "{klinik}" in a greeting becomes the clinic's name, so the starter
   // greetings work for every clinic without being retyped.
   const fill = (s: string) => s.replaceAll("{klinik}", clinic.name);
@@ -257,7 +264,7 @@ export function buildAssistant(agent: Agent, clinic: ClinicContext, secret: stri
     firstMessage: spoken.greeting.tr || spoken.greeting.en,
     model: {
       ...MODEL,
-      messages: [{ role: "system", content: composeSystemPrompt(spoken, "tr") }],
+      messages: [{ role: "system", content: composeSystemPrompt(spoken, "tr", knowledge) }],
       // Emptied explicitly: assistants synced before the library held their tools inline.
       tools: [],
       toolIds,
@@ -310,12 +317,13 @@ export async function upsertAssistant(
   agent: Agent,
   clinic: ClinicContext,
   existingId: string | null,
+  knowledge: ClinicKnowledge | null = null,
 ): Promise<VapiResult<{ id: string; created: boolean }>> {
   const secret = webhookSecret();
   if (!secret) return { ok: false, status: 0, error: "VAPI_WEBHOOK_SECRET tanımlı değil." };
   const toolIds = await toolIdsFor(agent, clinic, secret);
   if (!toolIds.ok) return { ...toolIds, error: `Araç kütüphanesi: ${toolIds.error}` };
-  const body = buildAssistant(agent, clinic, secret, toolIds.data);
+  const body = buildAssistant(agent, clinic, secret, toolIds.data, knowledge);
 
   if (existingId) {
     const updated = await vapi<{ id: string }>("PATCH", `/assistant/${encodeURIComponent(existingId)}`, body);

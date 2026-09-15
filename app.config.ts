@@ -140,6 +140,7 @@ export const appConfig: AppConfig = {
     { label: { tr: "Aramalar", en: "Calls" }, href: "/calls", icon: "phone" },
     { label: { tr: "Randevular", en: "Appointments" }, href: "/randevular", icon: "calendar-check" },
     { label: { tr: "Ajanlar", en: "Agents" }, href: "/agents", icon: "bot" },
+    { label: { tr: "Klinik", en: "Clinic" }, href: "/klinik", icon: "stethoscope" },
     { label: { tr: "CRM", en: "CRM" }, href: "/crm", icon: "database" },
     { label: { tr: "Ayarlar", en: "Settings" }, href: "/settings", icon: "settings" },
   ],

@@ -85,10 +85,35 @@ interface VapiToolCall {
   parameters?: Record<string, unknown>;
 }
 
+/**
+ * What Vapi actually sends: OpenAI-shaped `{ id, type, function: { name,
+ * arguments } }`, arguments sometimes a JSON string. Older payloads (and our
+ * tests) put `name` / `arguments` at the top level — both are accepted.
+ */
+interface RawToolCall {
+  id: string;
+  name?: string;
+  arguments?: Record<string, unknown> | string;
+  parameters?: Record<string, unknown>;
+  function?: { name?: string; arguments?: Record<string, unknown> | string };
+}
+
 interface VapiToolCallsMessage {
   call?: VapiCall;
-  toolCallList?: VapiToolCall[];
-  toolWithToolCallList?: { name: string; toolCall: VapiToolCall }[];
+  toolCallList?: RawToolCall[];
+  toolWithToolCallList?: { name?: string; function?: { name?: string }; toolCall: RawToolCall }[];
+}
+
+function normalizeToolCall(raw: RawToolCall): VapiToolCall {
+  let args = raw.arguments ?? raw.function?.arguments ?? raw.parameters ?? {};
+  if (typeof args === "string") {
+    try {
+      args = JSON.parse(args) as Record<string, unknown>;
+    } catch {
+      args = {};
+    }
+  }
+  return { id: raw.id, name: raw.name ?? raw.function?.name ?? "", arguments: args };
 }
 
 interface VapiEndOfCallMessage {
@@ -126,10 +151,11 @@ function recordingUrlFrom(message: VapiEndOfCallMessage): string | undefined {
  * "not implemented" result rather than being dropped.
  */
 async function handleToolCalls(message: VapiToolCallsMessage) {
-  const list: VapiToolCall[] =
+  const list: VapiToolCall[] = (
     message.toolCallList ??
-    message.toolWithToolCallList?.map((t) => ({ ...t.toolCall, name: t.name })) ??
-    [];
+    message.toolWithToolCallList?.map((t) => ({ ...t.toolCall, name: t.name ?? t.function?.name })) ??
+    []
+  ).map(normalizeToolCall);
 
   const call = message.call ?? {};
   // Resolve the agent — and through it the clinic — so the tools book into

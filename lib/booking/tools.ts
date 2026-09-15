@@ -2,11 +2,11 @@ import {
   calcomConfigFor,
   createBooking,
   getSlots,
-  speakInstant,
   toInstant,
 } from "@/lib/calcom/client";
+import { speakHours, speakInstantTr } from "@/lib/speech/tr";
 import { findByCall, record } from "@/lib/booking/store";
-import { hoursForDate, isWithinHours, summarizeHours, type WorkingHours } from "@/lib/agents/hours";
+import { hoursForDate, isWithinHours, type WorkingHours } from "@/lib/agents/hours";
 import type { ClinicContext } from "@/lib/clinics/server";
 
 /**
@@ -104,7 +104,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
       return JSON.stringify({
         ok: false,
         closed: true,
-        spoken: `O gün kapalıyız. Açık olduğumuz saatler: ${summarizeHours(ctx.workingHours)}. Başka bir güne bakmamı ister misiniz?`,
+        spoken: `O gün kapalıyız. Açık olduğumuz saatler: ${speakHours(ctx.workingHours)}. Başka bir güne bakmamı ister misiniz?`,
       });
     }
   } else {
@@ -141,7 +141,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
     // ISO values are what book_appointment must be called back with — the
     // spoken forms are only for reading out loud.
     slots: offered,
-    spoken: offered.map((s) => speakInstant(new Date(s), cfg.timeZone)),
+    spoken: offered.map((s) => speakInstantTr(new Date(s), cfg.timeZone)),
     note: "Hastaya bu saatleri oku. Seçtiği saati book_appointment'a slots dizisindeki ISO değeriyle gönder.",
   });
 }
@@ -171,7 +171,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
       ok: true,
       alreadyBooked: true,
       bookingUid: existing.bookingUid,
-      spoken: `Randevunuz zaten ${speakInstant(new Date(existing.startsAt), cfg.timeZone)} için oluşturuldu.`,
+      spoken: `Randevunuz zaten ${speakInstantTr(new Date(existing.startsAt), cfg.timeZone)} için oluşturuldu.`,
     });
   }
 
@@ -198,7 +198,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     return JSON.stringify({
       ok: false,
       outsideHours: true,
-      spoken: `O saatte kapalıyız. Açık olduğumuz saatler: ${summarizeHours(ctx.workingHours)}. Bu saatler içinde bir zaman seçelim mi?`,
+      spoken: `O saatte kapalıyız. Açık olduğumuz saatler: ${speakHours(ctx.workingHours)}. Bu saatler içinde bir zaman seçelim mi?`,
     });
   }
 
@@ -215,7 +215,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
       spoken: alternatives.length
         ? "O saat maalesef dolmuş. Şu saatler boş, hangisi uygun olur?"
         : "O saat maalesef dolmuş. Başka bir güne bakmamı ister misiniz?",
-      alternativesSpoken: alternatives.map((s) => speakInstant(new Date(s), cfg.timeZone)),
+      alternativesSpoken: alternatives.map((s) => speakInstantTr(new Date(s), cfg.timeZone)),
     });
   }
 
@@ -259,7 +259,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
   return JSON.stringify({
     ok: true,
     bookingUid: booking.data.uid,
-    spoken: `Randevunuzu ${speakInstant(start, cfg.timeZone)} için oluşturdum.`,
+    spoken: `Randevunuzu ${speakInstantTr(start, cfg.timeZone)} için oluşturdum.`,
   });
 }
 

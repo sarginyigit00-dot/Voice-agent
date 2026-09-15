@@ -22,7 +22,8 @@ export async function logCall(payload: CallActionPayload, results: ActionResult[
       caller_name: payload.caller,
       caller_number: payload.number,
       started_at: payload.startedAt,
-      duration_sec: payload.durationSec,
+      // Integer column: a fractional value makes Postgres reject the whole row.
+      duration_sec: Math.round(payload.durationSec),
       outcome: payload.outcome,
       summary: payload.summary,
       transcript: payload.transcript,

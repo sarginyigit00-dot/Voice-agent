@@ -118,7 +118,9 @@ function normalizeToolCall(raw: RawToolCall): VapiToolCall {
 
 interface VapiEndOfCallMessage {
   call?: VapiCall;
+  /** Fractional (e.g. 16.4) — `calls.duration_sec` is an integer. */
   durationSeconds?: number;
+  startedAt?: string;
   endedReason?: string;
   summary?: string;
   analysis?: { structuredData?: Record<string, unknown> };
@@ -280,8 +282,9 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
     agentName: agent.name,
     caller: call.customer?.name ?? "Unknown",
     number: call.customer?.number ?? "",
-    startedAt: call.startedAt ?? new Date().toISOString(),
-    durationSec: message.durationSeconds ?? 0,
+    // The report carries startedAt at its top level; call.startedAt is often absent.
+    startedAt: call.startedAt ?? message.startedAt ?? new Date().toISOString(),
+    durationSec: Math.round(message.durationSeconds ?? 0),
     outcome: outcomeFrom(message.endedReason),
     summary: message.summary ?? "",
     sentiment: "neutral", // overwritten below once computeSentiment resolves

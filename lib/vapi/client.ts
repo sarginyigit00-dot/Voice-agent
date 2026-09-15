@@ -105,7 +105,7 @@ async function vapi<T>(method: "GET" | "POST" | "PATCH" | "DELETE", path: string
   }
 }
 
-/* ───────────────────────────── assistant ───────────────────────────── */
+/* ───────────────────────────── tools ───────────────────────────── */
 
 /** Mirrors lib/booking/tools.ts — the names and arguments it dispatches on. */
 const BOOKING_TOOLS = [
@@ -154,24 +154,96 @@ export function transferTarget(agent: Agent, clinic: ClinicContext): string | nu
   return toE164(clinic.transferNumber);
 }
 
-/** The full assistant — sent whole on both create and update, so Vapi never drifts from /agents. */
-export function buildAssistant(agent: Agent, clinic: ClinicContext, secret: string) {
-  const tools: unknown[] = agent.actionIds.includes("book") ? [...BOOKING_TOOLS] : [];
+/* ───────────────────────────── tool library ───────────────────────────── */
+
+/**
+ * The tools live in Vapi's Tools library (so they show on its Tools page) and
+ * assistants reference them by `model.toolIds`. Each is found by its function
+ * name and rewritten on every sync, so the library never drifts from the code
+ * above — edits made to them in the Vapi dashboard are overwritten.
+ */
+interface VapiTool {
+  id: string;
+  type: string;
+  function?: { name?: string };
+  server?: { url?: string };
+}
+
+/** One in-flight upsert per tool name, so two syncs at once can't both create it. */
+const pending = new Map<string, Promise<VapiResult<string>>>();
+
+function upsertLibraryTool(name: string, body: Record<string, unknown>): Promise<VapiResult<string>> {
+  const inFlight = pending.get(name);
+  if (inFlight) return inFlight;
+  const run = (async (): Promise<VapiResult<string>> => {
+    const list = await vapi<VapiTool[]>("GET", "/tool?limit=1000");
+    if (!list.ok) return list;
+    const same = list.data.filter((t) => t.type === body.type && t.function?.name === name);
+    const existing = same.find((t) => t.server?.url === webhookUrl()) ?? same[0];
+    const res = existing
+      ? await vapi<VapiTool>("PATCH", `/tool/${encodeURIComponent(existing.id)}`, body)
+      : await vapi<VapiTool>("POST", "/tool", body);
+    return res.ok ? { ok: true, data: res.data.id } : res;
+  })();
+  pending.set(name, run);
+  return run.finally(() => pending.delete(name));
+}
+
+/**
+ * Shared by every clinic: the webhook finds the clinic from the call's
+ * assistant id, never from the tool, so one pair serves them all.
+ */
+async function bookingToolIds(secret: string): Promise<VapiResult<string[]>> {
+  const ids: string[] = [];
+  for (const tool of BOOKING_TOOLS) {
+    const res = await upsertLibraryTool(tool.function.name, {
+      ...tool,
+      server: { url: webhookUrl(), headers: { "x-vapi-secret": secret } },
+    });
+    if (!res.ok) return res;
+    ids.push(res.data);
+  }
+  return { ok: true, data: ids };
+}
+
+/** One per clinic — the destination number is the clinic's own. */
+function transferToolId(clinic: ClinicContext, number: string): Promise<VapiResult<string>> {
+  const name = `transfer_${clinic.id.replace(/-/g, "").slice(0, 12)}`;
+  return upsertLibraryTool(name, {
+    type: "transferCall",
+    function: { name, description: `Arayanı ${clinic.name} resepsiyonundaki canlı bir yetkiliye aktarır.` },
+    destinations: [
+      {
+        type: "number",
+        number,
+        message: "Sizi hemen bir yetkiliye aktarıyorum, lütfen hatta kalın.",
+        description: `${clinic.name} resepsiyonu`,
+      },
+    ],
+  });
+}
+
+/** The library tools this agent should carry, created or refreshed on the way. */
+async function toolIdsFor(agent: Agent, clinic: ClinicContext, secret: string): Promise<VapiResult<string[]>> {
+  const ids: string[] = [];
+  if (agent.actionIds.includes("book")) {
+    const booking = await bookingToolIds(secret);
+    if (!booking.ok) return booking;
+    ids.push(...booking.data);
+  }
   const transferTo = transferTarget(agent, clinic);
   if (transferTo) {
-    tools.push({
-      type: "transferCall",
-      destinations: [
-        {
-          type: "number",
-          number: transferTo,
-          message: "Sizi hemen bir yetkiliye aktarıyorum, lütfen hatta kalın.",
-          description: `${clinic.name} resepsiyonu`,
-        },
-      ],
-    });
+    const transfer = await transferToolId(clinic, transferTo);
+    if (!transfer.ok) return transfer;
+    ids.push(transfer.data);
   }
+  return { ok: true, data: ids };
+}
 
+/* ───────────────────────────── assistant ───────────────────────────── */
+
+/** The full assistant — sent whole on both create and update, so Vapi never drifts from /agents. */
+export function buildAssistant(agent: Agent, clinic: ClinicContext, secret: string, toolIds: string[]) {
   return {
     // Vapi caps the name at 40 characters.
     name: `${clinic.name} · ${agent.name}`.slice(0, 40),
@@ -179,7 +251,9 @@ export function buildAssistant(agent: Agent, clinic: ClinicContext, secret: stri
     model: {
       ...MODEL,
       messages: [{ role: "system", content: composeSystemPrompt(agent, "tr") }],
-      tools,
+      // Emptied explicitly: assistants synced before the library held their tools inline.
+      tools: [],
+      toolIds,
     },
     voice: voiceFor(agent.voice),
     transcriber: TRANSCRIBER,
@@ -232,7 +306,9 @@ export async function upsertAssistant(
 ): Promise<VapiResult<{ id: string; created: boolean }>> {
   const secret = webhookSecret();
   if (!secret) return { ok: false, status: 0, error: "VAPI_WEBHOOK_SECRET tanımlı değil." };
-  const body = buildAssistant(agent, clinic, secret);
+  const toolIds = await toolIdsFor(agent, clinic, secret);
+  if (!toolIds.ok) return { ...toolIds, error: `Araç kütüphanesi: ${toolIds.error}` };
+  const body = buildAssistant(agent, clinic, secret, toolIds.data);
 
   if (existingId) {
     const updated = await vapi<{ id: string }>("PATCH", `/assistant/${encodeURIComponent(existingId)}`, body);

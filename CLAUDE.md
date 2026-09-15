@@ -70,7 +70,9 @@ Agents are never configured by hand in the Vapi dashboard. Saving an agent on
 which re-reads the row scoped to the caller's clinic and pushes the whole
 assistant through `lib/vapi/client.ts` (`buildAssistant`: `composeSystemPrompt`,
 greeting, Azure tr-TR voice, `check_availability` / `book_appointment`,
-`transferCall` to `clinics.transfer_number`, server URL + `x-vapi-secret`,
+`transferCall` to `clinics.transfer_number` — these three live in Vapi's Tools
+library (booking pair shared by all clinics, one transfer tool per clinic) and
+are upserted by name on every sync, server URL + `x-vapi-secret`,
 summary + structured-data plan). The returned id lands in
 `agents.vapi_assistant_id` — the ONLY key the webhook matches a call on, and
 never written from the browser. Deleting an agent goes through the same route

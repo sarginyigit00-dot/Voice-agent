@@ -1,0 +1,61 @@
+{
+  "name": "Randevox — Hızlı geri dönüş (bekleyenler)",
+  "nodes": [
+    {
+      "id": "cron",
+      "name": "Her 5 dakika",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "due",
+      "name": "Bekleyenleri ara",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 300],
+      "notes": "Mesai dışında gelen ya da araması başarısız olan başvurular. Yeni başvurular zaten form gelir gelmez aranır.",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RANDEVOX_URL + '/api/automation/lead-callbacks' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.AUTOMATION_SECRET }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Her 5 dakika": {
+      "main": [
+        [
+          {
+            "node": "Bekleyenleri ara",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul"
+  }
+}

@@ -2,6 +2,7 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { MIN_PASSWORD_LENGTH, PLANS, isPlan, type PlanId } from "@/lib/admin/constants";
 import { clinicById, isMessageChannel, type MessageChannel } from "@/lib/clinics/server";
 import { monthStartIstanbul } from "@/lib/clinics/usage";
+import { LEAD_STATUSES, newLeadFormKey, type LeadStatus } from "@/lib/leads/callback";
 import {
   assignPhoneNumber,
   isVapiConfigured,
@@ -42,6 +43,12 @@ export interface AdminClinic {
   crmWebhookUrl: string | null;
   vapiPhoneNumberId: string | null;
   messageChannel: MessageChannel;
+  vapiOutboundPhoneNumberId: string | null;
+  /** Hızlı geri dönüş: who phones new leads (null = off), and the key in the clinic's form URL. */
+  callbackAgentId: string | null;
+  leadFormKey: string | null;
+  /** Last 30 days, counts only — the operator never sees a patient's name or number. */
+  leadCounts: Record<LeadStatus, number>;
   /** Names only — for picking which agent answers the line. */
   agents: { id: string; name: string; active: boolean; vapiAssistantId: string | null }[];
   /** Live from Vapi: the number and who answers it. Null when the clinic has no number yet. */
@@ -83,7 +90,7 @@ export async function listClinics(
   supabase: Supabase,
   emails: Map<string, string | null>,
 ): Promise<AdminClinic[]> {
-  const [clinics, members, secrets, usage, agents, numbers] = await Promise.all([
+  const [clinics, members, secrets, usage, agents, numbers, leads] = await Promise.all([
     supabase.from("clinics").select("*").order("created_at", { ascending: true }),
     supabase.from("clinic_members").select("clinic_id, user_id, role").order("created_at"),
     supabase.from("clinic_secrets").select("clinic_id, calcom_api_key, calcom_event_type_id"),
@@ -93,6 +100,11 @@ export async function listClinics(
     supabase.from("agents").select("id, name, active, clinic_id, vapi_assistant_id").order("created_at"),
     // One call for every clinic's number, not one per clinic.
     isVapiConfigured() ? listPhoneNumbers() : Promise.resolve(null),
+    supabase
+      .from("leads")
+      .select("clinic_id, status")
+      .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .limit(1000),
   ]);
 
   if (clinics.error) {
@@ -104,6 +116,15 @@ export async function listClinics(
   if (usage.error) console.error("[admin] failed to read clinic usage:", usage.error.message);
   if (agents.error) console.error("[admin] failed to list agents:", agents.error.message);
   if (numbers && !numbers.ok) console.error("[admin] failed to list Vapi numbers:", numbers.error);
+  if (leads.error) console.error("[admin] failed to count leads:", leads.error.message);
+
+  const leadCountsFor = (clinicId: string) => {
+    const counts = Object.fromEntries(LEAD_STATUSES.map((s) => [s, 0])) as Record<LeadStatus, number>;
+    for (const l of leads.data ?? []) {
+      if (l.clinic_id === clinicId && l.status in counts) counts[l.status as LeadStatus]++;
+    }
+    return counts;
+  };
 
   const connected = new Set(
     (secrets.data ?? [])
@@ -134,6 +155,10 @@ export async function listClinics(
       crmWebhookUrl: c.crm_webhook_url,
       vapiPhoneNumberId: c.vapi_phone_number_id,
       messageChannel: isMessageChannel(c.message_channel) ? c.message_channel : "off",
+      vapiOutboundPhoneNumberId: c.vapi_outbound_phone_number_id,
+      callbackAgentId: c.callback_agent_id,
+      leadFormKey: c.lead_form_key,
+      leadCounts: leadCountsFor(c.id),
       agents: clinicAgents,
       phone: phoneFor(c.vapi_phone_number_id, numbers, clinicAgents),
       createdAt: c.created_at,
@@ -214,14 +239,22 @@ function parseClinicFields(raw: unknown): { patch: Record<string, unknown> } | {
     patch.crm_webhook_url = v || null;
   }
 
+  // The ids from Vapi → Phone Numbers, not the numbers: pasting the number
+  // itself is the easy mistake, and it would silently match nothing.
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if ("vapiPhoneNumberId" in f) {
     const v = text(f.vapiPhoneNumberId);
-    // The id from Vapi → Phone Numbers, not the number: pasting the number
-    // itself is the easy mistake, and it would silently match nothing.
-    if (v && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) {
+    if (v && !UUID.test(v)) {
       return { error: "Vapi numara ID'si, Vapi → Phone Numbers'taki UUID olmalı (numaranın kendisi değil)." };
     }
     patch.vapi_phone_number_id = v || null;
+  }
+  if ("vapiOutboundPhoneNumberId" in f) {
+    const v = text(f.vapiOutboundPhoneNumberId);
+    if (v && !UUID.test(v)) {
+      return { error: "Giden arama numara ID'si, Vapi → Phone Numbers'taki UUID olmalı (numaranın kendisi değil)." };
+    }
+    patch.vapi_outbound_phone_number_id = v || null;
   }
 
   if ("messageChannel" in f) {
@@ -392,6 +425,46 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
       const res = await assignPhoneNumber(clinic.vapiPhoneNumberId, assistantId);
       if (!res.ok) return fail(`Vapi: ${res.error}`);
       return ok(assistantId ? "Numara ajana bağlandı; gelen aramaları artık bu ajan karşılar." : "Numara ajandan ayrıldı.");
+    }
+
+    case "setCallback": {
+      // Empty agentId = Hızlı geri dönüş off. The form URL keeps working, but leads are only recorded.
+      const clinic = clinicId ? await clinicById(clinicId) : null;
+      if (!clinic) return fail("Klinik bulunamadı.");
+      const agentId = str("agentId");
+      const patch: Record<string, unknown> = { callback_agent_id: agentId || null };
+
+      if (agentId) {
+        const { data, error } = await supabase
+          .from("agents")
+          .select("vapi_assistant_id")
+          .eq("id", agentId)
+          .eq("clinic_id", clinic.id)
+          .maybeSingle();
+        if (error) return fail(error.message);
+        if (!data) return fail("Ajan bu klinikte değil.");
+        if (!data.vapi_assistant_id) return fail("Bu ajan henüz Vapi'de kurulu değil — önce \"Ajanları Vapi'ye kur\".");
+
+        const { data: current } = await supabase.from("clinics").select("lead_form_key").eq("id", clinic.id).single();
+        if (!current?.lead_form_key) patch.lead_form_key = newLeadFormKey();
+      }
+
+      const { error } = await supabase.from("clinics").update(patch).eq("id", clinic.id);
+      if (error) return fail(error.message);
+      if (!agentId) return ok("Hızlı geri dönüş kapatıldı. Formdan gelen başvurular kaydedilir ama aranmaz.");
+      const outbound = clinic.vapiOutboundPhoneNumberId ?? clinic.vapiPhoneNumberId;
+      return ok(
+        outbound
+          ? "Hızlı geri dönüş açıldı. Form adresini kliniğin sitesine ve n8n'e ver."
+          : "Hızlı geri dönüş açıldı, ama klinikte Vapi numarası yok — Ayarlar'dan ekle, yoksa kimse aranamaz.",
+      );
+    }
+
+    case "rotateLeadKey": {
+      if (!clinicId) return fail("Klinik seçilmedi.");
+      const { error } = await supabase.from("clinics").update({ lead_form_key: newLeadFormKey() }).eq("id", clinicId);
+      if (error) return fail(error.message);
+      return ok("Yeni form adresi oluşturuldu. Eski adres artık çalışmaz; kliniğin formunu ve n8n'i güncelle.");
     }
 
     default:

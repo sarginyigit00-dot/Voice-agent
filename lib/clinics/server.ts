@@ -34,10 +34,14 @@ export interface ClinicContext {
   vapiPhoneNumberId: string | null;
   /** Patient messages via n8n: Netgsm SMS, or WhatsApp once Meta approves the templates. */
   messageChannel: MessageChannel;
+  /** Hızlı geri dönüş: the agent that phones new leads. Null = off. */
+  callbackAgentId: string | null;
+  /** The Vapi number outbound calls go out on, when it isn't the inbound one. */
+  vapiOutboundPhoneNumberId: string | null;
 }
 
 const CLINIC_COLUMNS =
-  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, message_channel";
+  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, message_channel, callback_agent_id, vapi_outbound_phone_number_id";
 
 interface ClinicRow {
   id: string;
@@ -49,6 +53,8 @@ interface ClinicRow {
   crm_webhook_url: string | null;
   vapi_phone_number_id: string | null;
   message_channel: string | null;
+  callback_agent_id: string | null;
+  vapi_outbound_phone_number_id: string | null;
 }
 
 function clinicFromRow(r: ClinicRow): ClinicContext {
@@ -62,6 +68,8 @@ function clinicFromRow(r: ClinicRow): ClinicContext {
     crmWebhookUrl: r.crm_webhook_url,
     vapiPhoneNumberId: r.vapi_phone_number_id,
     messageChannel: isMessageChannel(r.message_channel) ? r.message_channel : "off",
+    callbackAgentId: r.callback_agent_id,
+    vapiOutboundPhoneNumberId: r.vapi_outbound_phone_number_id,
   };
 }
 

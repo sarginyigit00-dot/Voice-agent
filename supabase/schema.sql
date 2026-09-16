@@ -468,3 +468,54 @@ create policy "Members read their clinic's knowledge"
   on public.clinic_knowledge for select
   to authenticated
   using (clinic_id in (select public.my_clinic_ids()));
+
+-- ─────────────────────────────────────────────────────────────────────────
+--  Hızlı geri dönüş — a clinic's lead form (website, or a Meta lead ad via
+--  n8n) posts to app/api/leads?key=<lead_form_key>, and the clinic's
+--  callback agent phones the lead (lib/leads/callback.ts). Written only by
+--  the service role; members may read their own clinic's leads.
+-- ─────────────────────────────────────────────────────────────────────────
+
+alter table public.clinics
+  add column if not exists callback_agent_id text references public.agents (id) on delete set null;
+-- The Vapi number outbound calls go out on, when it isn't the inbound one.
+alter table public.clinics
+  add column if not exists vapi_outbound_phone_number_id text;
+-- In the clinic's public form URL; names the clinic and unlocks nothing else.
+alter table public.clinics
+  add column if not exists lead_form_key text;
+create unique index if not exists clinics_lead_form_key_idx on public.clinics (lead_form_key);
+
+create table if not exists public.leads (
+  id uuid primary key default gen_random_uuid(),
+  clinic_id uuid not null references public.clinics (id) on delete cascade,
+  name text not null default '',
+  -- E.164
+  phone text not null,
+  -- 'web' | 'meta' | 'manual'
+  source text not null default 'web',
+  note text,
+  -- KVKK / İYS: no consent, no lead
+  consent_at timestamptz not null,
+  status text not null default 'new'
+    check (status in ('new', 'waiting', 'calling', 'called', 'failed', 'skipped')),
+  attempts integer not null default 0,
+  vapi_call_id text,
+  -- the call's outcome, set by the Vapi webhook once it ends
+  result text,
+  error text,
+  created_at timestamptz not null default now(),
+  called_at timestamptz
+);
+
+create index if not exists leads_clinic_created_idx on public.leads (clinic_id, created_at desc);
+create index if not exists leads_due_idx on public.leads (created_at) where status in ('new', 'waiting');
+create index if not exists leads_vapi_call_idx on public.leads (vapi_call_id);
+
+alter table public.leads enable row level security;
+
+drop policy if exists "Members read their clinic's leads" on public.leads;
+create policy "Members read their clinic's leads"
+  on public.leads for select
+  to authenticated
+  using (clinic_id in (select public.my_clinic_ids()));

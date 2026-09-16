@@ -9,6 +9,7 @@ import { findByCall } from "@/lib/booking/store";
 import { toE164, webhookSecret } from "@/lib/vapi/client";
 import { emitEvent } from "@/lib/automation/emit";
 import { localParts } from "@/lib/automation/format";
+import { markLeadCallEnded } from "@/lib/leads/callback";
 import type { Outcome } from "@/lib/demo/data";
 
 /**
@@ -308,6 +309,8 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
   if (appointment) payload.outcome = "booked";
 
   await logCall(payload, results);
+  // A no-op unless this was a Hızlı geri dönüş call.
+  await markLeadCallEnded(payload.callId, payload.outcome);
 
   // After the log, so n8n never hears about a call the panel doesn't have.
   // Suspended clinics run no actions, and that includes messages.

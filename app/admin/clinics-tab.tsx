@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import appConfig from "@/app.config";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { MIN_PASSWORD_LENGTH, OVERAGE_USD_PER_MIN, PLANS, type PlanId } from "@/lib/admin/constants";
@@ -209,6 +210,7 @@ function ClinicEditor({
     <div className="space-y-3 border-t border-border/60 bg-muted/40 px-3 py-3">
       <SettingsForm clinic={clinic} busy={busy} act={act} />
       <PhoneForm clinic={clinic} busy={busy} act={act} />
+      <CallbackForm clinic={clinic} busy={busy} act={act} />
       <CalendarForm clinic={clinic} busy={busy} act={act} />
       <Members clinic={clinic} users={users} busy={busy} act={act} />
     </div>
@@ -226,6 +228,7 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
     crmWebhookUrl: clinic.crmWebhookUrl ?? "",
     timeZone: clinic.timeZone,
     vapiPhoneNumberId: clinic.vapiPhoneNumberId ?? "",
+    vapiOutboundPhoneNumberId: clinic.vapiOutboundPhoneNumberId ?? "",
     messageChannel: clinic.messageChannel,
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -273,6 +276,14 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
               value={f.vapiPhoneNumberId}
               onChange={set("vapiPhoneNumberId")}
               placeholder="Vapi → Phone Numbers → ID"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Giden arama numara ID (opsiyonel)">
+            <input
+              value={f.vapiOutboundPhoneNumberId}
+              onChange={set("vapiOutboundPhoneNumberId")}
+              placeholder="Boşsa gelen arama numarası"
               className={inputClass}
             />
           </Field>
@@ -355,6 +366,70 @@ function PhoneForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; 
           {"Ajanları Vapi'ye kur"}
         </ActionButton>
       </div>
+    </Block>
+  );
+}
+
+const LEAD_STATUS_LABEL = {
+  new: "yeni",
+  waiting: "bekliyor",
+  calling: "aranıyor",
+  called: "arandı",
+  failed: "başarısız",
+  skipped: "atlandı",
+} as const;
+
+/**
+ * Hızlı geri dönüş: which agent phones new leads, and the form URL that
+ * feeds it. Steps and a ready-made form: n8n/HIZLI-GERI-DONUS.md.
+ */
+function CallbackForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
+  const provisioned = clinic.agents.filter((a) => a.vapiAssistantId);
+  const [agentId, setAgentId] = useState(clinic.callbackAgentId ?? "");
+  const current = clinic.agents.find((a) => a.id === clinic.callbackAgentId);
+  const url = clinic.leadFormKey ? `https://www.${appConfig.domain}/api/leads?key=${clinic.leadFormKey}` : null;
+  const counts = Object.entries(clinic.leadCounts).filter(([, n]) => n > 0);
+
+  return (
+    <Block
+      title={`Hızlı geri dönüş — ${current ? `açık (${current.name})` : "kapalı"}`}
+      hint="Kliniğin formunu dolduran hastayı seçilen ajan hemen arar; mesai dışındaysa klinik açılınca. Kurulum: n8n/HIZLI-GERI-DONUS.md."
+    >
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-full max-w-[240px]">
+          <Field label="Arayacak ajan">
+            <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className={inputClass}>
+              <option value="">— kapalı —</option>
+              {provisioned.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                  {a.active ? "" : " (duraklatılmış)"}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <ActionButton disabled={busy} onClick={() => void act({ action: "setCallback", clinicId: clinic.id, agentId })}>
+          Kaydet
+        </ActionButton>
+        {url && (
+          <ActionButton disabled={busy} onClick={() => void act({ action: "rotateLeadKey", clinicId: clinic.id })}>
+            Adresi yenile
+          </ActionButton>
+        )}
+      </div>
+      {url && (
+        <p className="break-all font-mono text-[11px]">
+          <span className="text-muted-foreground">Form adresi (POST): </span>
+          {url}
+        </p>
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        Son 30 gün:{" "}
+        {counts.length
+          ? counts.map(([s, n]) => `${n} ${LEAD_STATUS_LABEL[s as keyof typeof LEAD_STATUS_LABEL]}`).join(" · ")
+          : "başvuru yok"}
+      </p>
     </Block>
   );
 }

@@ -343,6 +343,65 @@ export async function deleteAssistant(id: string): Promise<VapiResult<null>> {
   return res;
 }
 
+/* ───────────────────────────── callback calls ───────────────────────────── */
+
+interface VapiAssistant {
+  id: string;
+  model?: { messages?: { role: string; content: string }[] } & Record<string, unknown>;
+}
+
+const SOURCE_LABEL = { web: "web sitesindeki iletişim formunu", meta: "reklamdaki başvuru formunu", manual: "iletişim formunu" } as const;
+
+/** What the agent must know on a call it placed itself — appended to its own prompt for this call only. */
+function callbackBrief(name: string, note: string | null, source: keyof typeof SOURCE_LABEL): string {
+  const who = name ? `${name} adlı kişi` : "Karşındaki kişi";
+  const extra = note ? `\nFormdaki notu: "${note.replace(/\s+/g, " ").slice(0, 300)}"` : "";
+  return `# Bu arama bir geri dönüş
+Bu görüşmeyi sen başlattın, karşındaki kişi seni aramadı. ${who} kliniğin ${SOURCE_LABEL[source]} az önce doldurdu ve aranmayı kabul etti.${extra}
+- Karşılama bölümündeki cümleyi bu aramada kullanma; ilk cümlen zaten söylendi.
+- Önce şimdi konuşmaya uygun olup olmadığını öğren. Uygun değilse ne zaman aranmak istediğini sor, teşekkür et ve kapat.
+- Uygunsa ne istediğini dinle, sorularını klinik bilgileriyle yanıtla ve uygun görürsen randevu öner.
+- Israr etme. Aranmak istemediğini söylerse özür dile ve görüşmeyi kapat.
+- Telesekretere düşersen kısa bir mesaj bırak: kim olduğunu ve formu için aradığını söyle.`;
+}
+
+/**
+ * Phones a lead on the agent's own assistant — so the webhook recognises and
+ * logs the call like any other — with the prompt and opening line swapped for
+ * this call only. The model is read back from Vapi and sent whole, because an
+ * override replaces it rather than merging.
+ */
+export async function startCallbackCall(opts: {
+  assistantId: string;
+  phoneNumberId: string;
+  number: string;
+  name: string;
+  note: string | null;
+  source: keyof typeof SOURCE_LABEL;
+  clinic: ClinicContext;
+}): Promise<VapiResult<{ id: string }>> {
+  const assistant = await vapi<VapiAssistant>("GET", `/assistant/${encodeURIComponent(opts.assistantId)}`);
+  if (!assistant.ok) return assistant;
+
+  const name = opts.name.trim().slice(0, 40);
+  const brief = callbackBrief(name, opts.note, opts.source);
+  const model = assistant.data.model ?? {};
+  const messages = model.messages ?? [];
+  const withBrief = messages.some((m) => m.role === "system")
+    ? messages.map((m) => (m.role === "system" ? { ...m, content: `${m.content}\n\n${brief}` } : m))
+    : [{ role: "system", content: brief }, ...messages];
+
+  return vapi<{ id: string }>("POST", "/call", {
+    assistantId: opts.assistantId,
+    phoneNumberId: opts.phoneNumberId,
+    customer: { number: opts.number, ...(name ? { name } : {}) },
+    assistantOverrides: {
+      firstMessage: `Merhaba${name ? ` ${name}` : ""}, ${opts.clinic.name} olarak arıyorum. Az önce bize bir form doldurmuştunuz. Şimdi konuşmak için uygun musunuz?`,
+      model: { ...model, messages: withBrief },
+    },
+  });
+}
+
 /* ───────────────────────────── phone numbers ───────────────────────────── */
 
 export interface VapiPhoneNumber {

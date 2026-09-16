@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { MIN_PASSWORD_LENGTH, PLANS, type PlanId } from "@/lib/admin/constants";
+import { MIN_PASSWORD_LENGTH, OVERAGE_USD_PER_MIN, PLANS, type PlanId } from "@/lib/admin/constants";
 import type { AdminClinic } from "@/lib/admin/clinics";
 import type { AdminUser } from "@/lib/admin/queries";
 import { ActionButton, EmptyRow, inputClass } from "./controls";
@@ -73,7 +73,7 @@ export function ClinicsTab({
                     )}
                   </span>
                   <span className="text-muted-foreground">{PLANS[c.plan].label}</span>
-                  <Usage used={c.minutesThisMonth} quota={c.minutesQuota} calls={c.callsThisMonth} />
+                  <Usage plan={c.plan} used={c.minutesThisMonth} quota={c.minutesQuota} calls={c.callsThisMonth} />
                   <span className={cn("text-xs", c.calendarConnected ? "text-booked" : "text-missed")}>
                     {c.calendarConnected ? "bağlı" : "bağlı değil"}
                   </span>
@@ -96,10 +96,19 @@ export function ClinicsTab({
   );
 }
 
-/** Minutes used against the package, with the overage that goes on the invoice. */
-function Usage({ used, quota, calls }: { used: number; quota: number; calls: number }) {
+const usd = (n: number, digits = 0) =>
+  n.toLocaleString("tr-TR", { minimumFractionDigits: digits, maximumFractionDigits: 2 });
+
+/**
+ * Minutes used against the package, the overage, and this month's invoice
+ * so far: package price + minutes past the quota. "≈" because a custom deal
+ * may have its quota edited while the price stays the package's.
+ */
+function Usage({ plan, used, quota, calls }: { plan: PlanId; used: number; quota: number; calls: number }) {
   const pct = quota > 0 ? Math.min(100, Math.round((used / quota) * 100)) : 100;
   const over = Math.max(0, used - quota);
+  const price = PLANS[plan].priceUsd;
+  const total = price + over * OVERAGE_USD_PER_MIN;
   return (
     <span className="min-w-0 space-y-1">
       <span className="flex items-baseline gap-1.5 font-mono text-xs tabular-nums">
@@ -115,6 +124,10 @@ function Usage({ used, quota, calls }: { used: number; quota: number; calls: num
       {over > 0 && (
         <span className="block text-[11px] text-missed">+{over.toLocaleString("tr-TR")} dk aşım</span>
       )}
+      <span className="block font-mono text-[11px] tabular-nums text-muted-foreground">
+        Fatura ≈ {usd(total)} $
+        {over > 0 && ` (paket ${usd(price)} $ + ${over.toLocaleString("tr-TR")} dk × ${usd(OVERAGE_USD_PER_MIN, 2)} $)`}
+      </span>
     </span>
   );
 }

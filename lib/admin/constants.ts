@@ -16,14 +16,17 @@
 export const MIN_PASSWORD_LENGTH = 8;
 
 /**
- * The packages sold (app.config.ts pricing): id → label and included minutes
- * per month. Choosing a plan when a clinic is created sets its quota to
+ * The packages sold (app.config.ts pricing): id → label, monthly price and
+ * included minutes. Choosing a plan when a clinic is created sets its quota to
  * this; the quota stays editable per clinic for custom deals.
  */
 export const PLANS = {
-  klinik: { label: "Klinik", minutes: 1000 },
-  klinik_pro: { label: "Klinik Pro", minutes: 2500 },
+  klinik: { label: "Klinik", priceUsd: 500, minutes: 1000 },
+  klinik_pro: { label: "Klinik Pro", priceUsd: 1000, minutes: 2500 },
 } as const;
+
+/** Billed per minute past a clinic's monthly quota. */
+export const OVERAGE_USD_PER_MIN = 0.3;
 
 export type PlanId = keyof typeof PLANS;
 

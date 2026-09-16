@@ -1,6 +1,7 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { MIN_PASSWORD_LENGTH, PLANS, isPlan, type PlanId } from "@/lib/admin/constants";
 import { clinicById, isMessageChannel, type MessageChannel } from "@/lib/clinics/server";
+import { monthStartIstanbul } from "@/lib/clinics/usage";
 import {
   assignPhoneNumber,
   isVapiConfigured,
@@ -76,13 +77,6 @@ function phoneFor(
     inboundAgentId: inbound?.id ?? null,
     error: n.assistantId && !inbound ? "Numara bu kliniğin ajanı olmayan bir asistana bağlı." : undefined,
   };
-}
-
-/** Start of the current month in Türkiye — UTC+3 all year, no DST since 2016. */
-function monthStartIstanbul(now = new Date()): Date {
-  const OFFSET = 3 * 60 * 60 * 1000;
-  const local = new Date(now.getTime() + OFFSET);
-  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1) - OFFSET);
 }
 
 export async function listClinics(

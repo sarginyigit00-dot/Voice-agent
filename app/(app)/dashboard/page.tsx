@@ -30,6 +30,8 @@ import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchCalls } from "@/lib/calls/queries";
 import { fetchAgents, saveAgent } from "@/lib/agents/queries";
+import { fetchUsage } from "@/lib/clinics/usage-queries";
+import type { ClinicUsage } from "@/lib/clinics/usage";
 import { useSession, useSampleData } from "@/components/auth/session";
 import { usePrefs } from "@/lib/prefs";
 
@@ -62,6 +64,7 @@ export default function DashboardPage() {
   const [liveCalls, setLiveCalls] = useState<LiveCall[]>(sample ? LIVE_CALLS : []);
   const [agents, setAgents] = useState<Agent[]>(sample ? AGENTS : []);
   const [live, setLive] = useState(!sample); // renders real rows (empty until the fetch lands) rather than the demo constants
+  const [usage, setUsage] = useState<ClinicUsage | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured || demo) return; // demo bypass stays fully local — never touches Supabase
@@ -72,6 +75,7 @@ export default function DashboardPage() {
       setLive(true);
     });
     fetchAgents().then((rows) => { if (rows !== null && rows.length) setAgents(rows); });
+    fetchUsage().then(setUsage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demo]);
 
@@ -115,8 +119,13 @@ export default function DashboardPage() {
   const donutSegments = outcomeList.map((o) => ({ key: o.key, value: o.value, tint: OUTCOME_TINT[o.key] }));
 
   const totalMinutes = useMemo(() => calls.reduce((s, c) => s + c.durationSec, 0) / 60, [calls]);
-  const minutesUsed = live ? Math.round(totalMinutes) : minutes.used;
-  const minutesPct = Math.round((minutesUsed / minutes.cap) * 100);
+  // Real accounts: this calendar month against the clinic's package (app/api/clinic/usage),
+  // the same numbers /admin invoices from — not the recent-calls list, which is capped.
+  const meterReady = !live || usage !== null;
+  const minutesUsed = live ? usage?.minutes ?? 0 : minutes.used;
+  const minutesCap = live ? usage?.quota ?? 0 : minutes.cap;
+  const minutesOver = Math.max(0, minutesUsed - minutesCap);
+  const minutesPct = minutesCap > 0 ? Math.min(100, Math.round((minutesUsed / minutesCap) * 100)) : 100;
 
   const kpiList: DKpi[] = live
     ? [
@@ -266,13 +275,29 @@ export default function DashboardPage() {
           <section className="rounded-lg border border-border bg-card/30 p-3">
             <div className="mb-2 flex items-center justify-between">
               <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{t(minutes.label)}</p>
-              <p className="font-mono text-[12px] font-semibold tabular-nums">{minutesUsed.toLocaleString("en-US")} / {minutes.cap.toLocaleString("en-US")}</p>
+              <p className="font-mono text-[12px] font-semibold tabular-nums">
+                {meterReady ? `${minutesUsed.toLocaleString("en-US")} / ${minutesCap.toLocaleString("en-US")}` : "—"}
+              </p>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full" style={{ width: `${minutesPct}%`, background: "var(--grad-brand)" }} />
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${meterReady ? minutesPct : 0}%`,
+                  background: minutesOver > 0 ? "var(--color-missed)" : "var(--grad-brand)",
+                }}
+              />
             </div>
-            <p className="mt-2 font-mono text-[10.5px] text-muted-foreground">
-              {lang === "tr" ? `Aylık paketinizin %${minutesPct}'i` : `${minutesPct}% of your monthly allowance`}
+            <p className={cn("mt-2 font-mono text-[10.5px]", minutesOver > 0 ? "text-missed" : "text-muted-foreground")}>
+              {!meterReady
+                ? lang === "tr" ? "Yükleniyor…" : "Loading…"
+                : minutesCap <= 0
+                  ? lang === "tr" ? "Aylık paket tanımlı değil" : "No monthly allowance set"
+                  : minutesOver > 0
+                    ? lang === "tr"
+                      ? `Aylık paket aşıldı: +${minutesOver.toLocaleString("en-US")} dk`
+                      : `Monthly allowance exceeded: +${minutesOver.toLocaleString("en-US")} min`
+                    : lang === "tr" ? `Aylık paketinizin %${minutesPct}'i` : `${minutesPct}% of your monthly allowance`}
             </p>
           </section>
         </div>

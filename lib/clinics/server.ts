@@ -139,7 +139,9 @@ export async function resolveCallOwner(assistantId: string | undefined): Promise
 
   const { data, error } = await supabase
     .from("agents")
-    .select(`*, clinics(${CLINIC_COLUMNS})`)
+    // Named FK: clinics.callback_agent_id also links the two tables, and an
+    // ambiguous embed fails every lookup (PGRST201).
+    .select(`*, clinics!agents_clinic_id_fkey(${CLINIC_COLUMNS})`)
     .eq("vapi_assistant_id", assistantId)
     .maybeSingle();
 

@@ -52,6 +52,14 @@ export function composeSystemPrompt(
 
   // Turkish gets the spoken form, so the model never reads "09:00" aloud.
   const hours = tr ? speakHours(agent.workingHours) : summarizeHours(agent.workingHours, lang);
+  // Filled in by Vapi (Liquid) when each call starts — a date written here at
+  // sync time would go stale, and without one the model guesses the year.
+  const today = `{{"now" | date: "%Y-%m-%d, %A", "${agent.workingHours.timeZone}"}}`;
+  sections.push(
+    tr
+      ? `# Tarih\nBugün: ${today}. Arayan yıl söylemezse bu yılı kullan; o gün bu yıl geçtiyse gelecek yılı.`
+      : `# Date\nToday: ${today}. When the caller gives no year, use this year — or next year if that day has already passed.`,
+  );
   sections.push(
     tr
       ? `# Çalışma saatleri\nKlinik şu saatlerde açık (${agent.workingHours.timeZone}):\n${hours}\n\nBu saatlerin dışına randevu verme. Arayan kapalı bir saat isterse, bunu söyle ve açık olan en yakın saatleri öner.`

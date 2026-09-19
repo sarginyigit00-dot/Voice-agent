@@ -59,6 +59,19 @@ function str(args: ToolArgs, key: string): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
+/**
+ * "21 Eylül" said on the phone never means a past year, but the model
+ * sometimes sends one ("2021-09-21"). Move such a day to this year — or
+ * next year if it has already gone by — and leave anything else untouched.
+ */
+function withCurrentYear(date: string | null, now: Date): string | null {
+  const m = date?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!date || !m || Number(m[1]) >= now.getUTCFullYear()) return date;
+  const thisYear = `${now.getUTCFullYear()}-${m[2]}-${m[3]}`;
+  const today = now.toISOString().slice(0, 10);
+  return thisYear >= today ? thisYear : `${now.getUTCFullYear() + 1}-${m[2]}-${m[3]}`;
+}
+
 /* ─────────────────────── check_availability ─────────────────────── */
 
 /**
@@ -75,7 +88,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
   }
 
   const now = new Date();
-  const date = str(args, "date");
+  const date = withCurrentYear(str(args, "date"), now);
 
   let start: Date;
   let end: Date;

@@ -414,12 +414,13 @@ interface VapiAssistant {
 const SOURCE_LABEL = { web: "web sitesindeki iletişim formunu", meta: "reklamdaki başvuru formunu", manual: "iletişim formunu" } as const;
 
 /** What the agent must know on a call it placed itself — appended to its own prompt for this call only. */
-function callbackBrief(name: string, note: string | null, source: keyof typeof SOURCE_LABEL): string {
+function callbackBrief(name: string, note: string | null, source: keyof typeof SOURCE_LABEL, opening: string): string {
   const who = name ? `${name} adlı kişi` : "Karşındaki kişi";
   const extra = note ? `\nFormdaki notu: "${note.replace(/\s+/g, " ").slice(0, 300)}"` : "";
   return `# Bu arama bir geri dönüş
 Bu görüşmeyi sen başlattın, karşındaki kişi seni aramadı. ${who} kliniğin ${SOURCE_LABEL[source]} az önce doldurdu ve aranmayı kabul etti.${extra}
-- Karşılama bölümündeki cümleyi bu aramada kullanma; ilk cümlen zaten söylendi.
+- "Açılış" bölümü bu arama için GEÇERSİZ: o cümle söylenmedi. Bu aramayı şu cümleyle açtın: "${opening}"
+- Bu açılışı tekrarlama; karşındakinin cevabından devam et.
 - Önce şimdi konuşmaya uygun olup olmadığını öğren. Uygun değilse ne zaman aranmak istediğini sor, teşekkür et ve kapat.
 - Uygunsa ne istediğini dinle, sorularını klinik bilgileriyle yanıtla ve uygun görürsen randevu öner.
 - Israr etme. Aranmak istemediğini söylerse özür dile ve görüşmeyi kapat.
@@ -445,7 +446,9 @@ export async function startCallbackCall(opts: {
   if (!assistant.ok) return assistant;
 
   const name = opts.name.trim().slice(0, 40);
-  const brief = callbackBrief(name, opts.note, opts.source);
+  // One string for both: what Vapi says first and what the prompt says was said.
+  const opening = `Merhaba${name ? ` ${name}` : ""}, ${opts.clinic.name} olarak arıyorum. Az önce bize bir form doldurmuştunuz. Şimdi konuşmak için uygun musunuz?`;
+  const brief = callbackBrief(name, opts.note, opts.source, opening);
   const model = assistant.data.model ?? {};
   const messages = model.messages ?? [];
   const withBrief = messages.some((m) => m.role === "system")
@@ -457,7 +460,7 @@ export async function startCallbackCall(opts: {
     phoneNumberId: opts.phoneNumberId,
     customer: { number: opts.number, ...(name ? { name } : {}) },
     assistantOverrides: {
-      firstMessage: `Merhaba${name ? ` ${name}` : ""}, ${opts.clinic.name} olarak arıyorum. Az önce bize bir form doldurmuştunuz. Şimdi konuşmak için uygun musunuz?`,
+      firstMessage: opening,
       model: { ...model, messages: withBrief },
     },
   });

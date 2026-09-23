@@ -58,10 +58,16 @@ interface VoiceConfig {
   language: string;
 }
 
+const DEFAULT_MALE_VOICE = "Nico";
+
 export function voiceFor(label: string): VoiceConfig {
   // "Defne · warm female" → "Defne"
   const persona = label.split("·")[0].trim();
-  return { provider: "vapi", version: "2", voiceId: VAPI_VOICES[persona] ?? DEFAULT_VOICE, language: "tr" };
+  // Rows saved before the persona list was renamed still carry the old names
+  // ("Atlas · confident male", "Nova · warm female") — those fall back on the
+  // gender word. \bmale\b doesn't match inside "female".
+  const voiceId = VAPI_VOICES[persona] ?? (/\bmale\b/i.test(label) ? DEFAULT_MALE_VOICE : DEFAULT_VOICE);
+  return { provider: "vapi", version: "2", voiceId, language: "tr" };
 }
 
 export function isVapiConfigured(): boolean {

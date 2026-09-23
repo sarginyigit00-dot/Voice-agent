@@ -2,6 +2,7 @@
 
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import type { CallRow, Outcome, Sentiment, Turn } from "@/lib/demo/data";
+import { cleanTranscript } from "@/lib/calls/transcript";
 
 /** Shape of a row in the `calls` table (supabase/schema.sql). */
 interface CallRowDb {
@@ -60,8 +61,9 @@ function fromRow(r: CallRowDb): CallRow {
     wave: waveFor(r.id),
     summary: { tr: r.summary, en: r.summary },
     actions: r.actions.map((note) => ({ tr: note, en: note })),
-    transcript: (r.transcript ?? []).map(
-      (t): Turn => ({ who: t.speaker === "assistant" || t.speaker === "agent" ? "agent" : "caller", at: t.atSec, text: { tr: t.text, en: t.text } }),
+    // Rows logged before cleanTranscript still hold Vapi's raw roles and stamps.
+    transcript: cleanTranscript(r.transcript).map(
+      (t): Turn => ({ who: t.speaker, at: t.atSec, text: { tr: t.text, en: t.text } }),
     ),
   };
 }

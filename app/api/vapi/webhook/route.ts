@@ -4,6 +4,7 @@ import type { CallActionPayload } from "@/lib/actions/types";
 import { logCall } from "@/lib/calls/log";
 import { isBookingTool, runBookingTool, type ToolContext } from "@/lib/booking/tools";
 import { computeSentiment } from "@/lib/calls/sentiment";
+import { cleanTranscript } from "@/lib/calls/transcript";
 import { resolveCallOwner } from "@/lib/clinics/server";
 import { findByCall } from "@/lib/booking/store";
 import { toE164, webhookSecret } from "@/lib/vapi/client";
@@ -270,11 +271,8 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
   }
   const { agent, clinic } = owner;
 
-  const transcript = (message.messages ?? []).map((m: { role: string; message: string; time?: number }) => ({
-    speaker: m.role,
-    text: m.message,
-    atSec: m.time ?? 0,
-  }));
+  // Vapi's raw rows include the system prompt and tool calls — see cleanTranscript.
+  const transcript = cleanTranscript(message.messages);
 
   const payload: CallActionPayload = {
     clinic,

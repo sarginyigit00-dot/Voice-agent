@@ -1,5 +1,6 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { CrmRecord } from "@/lib/crm/types";
+import { cleanTranscript } from "@/lib/calls/transcript";
 
 /**
  * One clinic's most recent CRM records, newest first. Returns [] when Supabase
@@ -21,5 +22,6 @@ export async function listCrmRecords(clinicId: string, limit = 100): Promise<Crm
     console.error("[crm] failed to list crm_records:", error.message);
     return [];
   }
-  return (data ?? []) as CrmRecord[];
+  // Records copied before cleanTranscript still hold Vapi's raw rows.
+  return ((data ?? []) as CrmRecord[]).map((r) => ({ ...r, transcript: cleanTranscript(r.transcript) }));
 }

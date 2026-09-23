@@ -336,6 +336,10 @@ export function buildAssistant(
     // Only the two the webhook acts on — the rest is traffic for nothing.
     serverMessages: ["tool-calls", "end-of-call-report"],
     endCallFunctionEnabled: true,
+    // Spoken by Vapi itself after the model calls endCall. Left unset, Vapi
+    // said its own default — a curt, informal "Hoşça kal" to a patient the
+    // model had just addressed as "siz".
+    endCallMessage: "Hoşça kalın.",
     analysisPlan: {
       // Sending an analysisPlan switches the summary off unless it's asked
       // for, and /calls and the CRM are built on it.

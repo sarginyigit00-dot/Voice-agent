@@ -124,8 +124,8 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr", ctx:
 
   sections.push(
     tr
-      ? `# Kapanış\nArayanın işi bittiyse kısa bir vedayla bitir ("İyi günler dilerim") ve aramayı sonlandır. Görüşmeyi uzatma, arayan kapatmak isterken yeni soru sorma.`
-      : `# Closing\nWhen the caller is done, say a short goodbye and end the call. Don't drag it out or ask new questions when they want to hang up.`,
+      ? `# Kapanış\nArayanın işi bittiyse "İyi günler dilerim" de ve aramayı sonlandır; "Hoşça kalın" sistem tarafından otomatik söylenir, sen söyleme. Vedada da "siz" diye hitap et, asla "hoşça kal" deme. Görüşmeyi uzatma, arayan kapatmak isterken yeni soru sorma.`
+      : `# Closing\nWhen the caller is done, say "Have a nice day" and end the call; the final goodbye is spoken automatically, don't say it yourself. Don't drag it out or ask new questions when they want to hang up.`,
   );
 
   sections.push(

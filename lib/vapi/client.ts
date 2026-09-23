@@ -17,20 +17,51 @@ import type { ClinicKnowledge } from "@/lib/clinics/knowledge-shape";
 
 const API = "https://api.vapi.ai";
 
-/** Fixed per product, not per clinic: Turkish-first, cheap enough for the package margins. */
+/**
+ * Fixed per product, not per clinic: Turkish-first, cheap enough for the
+ * package margins. gpt-4o-mini is the fastest to first token on Vapi's own
+ * load-balanced cluster (the dashboard's "GPT 4o Mini Cluster" is this id with
+ * no region suffix) — and on a phone line latency is felt before quality is.
+ * The small model forgets more between turns, so lib/agents/prompt.ts spells
+ * out every rule it has broken on a real call rather than trusting it to infer.
+ */
 const MODEL = { provider: "openai", model: "gpt-4o-mini", temperature: 0.3 } as const;
 const TRANSCRIBER = { provider: "deepgram", model: "nova-2", language: "tr" } as const;
 
 /**
  * The /agents voice labels (lib/demo/data.ts → VOICES) are personas, not
- * provider ids. Azure has two Turkish neural voices, so every persona lands on
- * one of them by gender.
+ * provider ids — each persona's first name picks one of Vapi's own voices.
+ *
+ * Azure's two Turkish neural voices (Emel / Ahmet) were the first cut and
+ * callers spotted the robot in one sentence. These are Vapi's bundled voices:
+ * included in the per-minute price, so no second provider key and no second
+ * invoice. They're trained on English speech, so `language` is pinned to `tr`
+ * — a short line of Turkish names and digits must not be read as English.
+ *
+ * `version: "2"` is the voice set the Vapi dashboard now picks; Vapi refuses
+ * the retired v1 voices (Cole, Harry, Kylie, Paige, …) on new assistants.
+ * Swapping a persona's voice is one entry below.
  */
-const AZURE_TR = { female: "tr-TR-EmelNeural", male: "tr-TR-AhmetNeural" } as const;
+const VAPI_VOICES: Record<string, string> = {
+  Defne: "Savannah",
+  Ada: "Savannah",
+  Deniz: "Savannah",
+  Kerem: "Nico",
+  Poyraz: "Elliot",
+};
+const DEFAULT_VOICE = "Savannah";
 
-export function voiceFor(label: string): { provider: "azure"; voiceId: string } {
-  // \bmale\b doesn't match inside "female".
-  return { provider: "azure", voiceId: /\bmale\b/i.test(label) ? AZURE_TR.male : AZURE_TR.female };
+interface VoiceConfig {
+  provider: "vapi";
+  version: "2";
+  voiceId: string;
+  language: string;
+}
+
+export function voiceFor(label: string): VoiceConfig {
+  // "Defne · warm female" → "Defne"
+  const persona = label.split("·")[0].trim();
+  return { provider: "vapi", version: "2", voiceId: VAPI_VOICES[persona] ?? DEFAULT_VOICE, language: "tr" };
 }
 
 export function isVapiConfigured(): boolean {
@@ -264,13 +295,37 @@ export function buildAssistant(
     firstMessage: spoken.greeting.tr || spoken.greeting.en,
     model: {
       ...MODEL,
-      messages: [{ role: "system", content: composeSystemPrompt(spoken, "tr", knowledge) }],
+      messages: [
+        {
+          role: "system",
+          content: composeSystemPrompt(spoken, "tr", { knowledge, canTransfer: transferTarget(agent, clinic) !== null }),
+        },
+      ],
       // Emptied explicitly: assistants synced before the library held their tools inline.
       tools: [],
       toolIds,
     },
     voice: voiceFor(agent.voice),
     transcriber: TRANSCRIBER,
+    // Vapi's defaults are tuned for English, where a 0.4 s gap means "your
+    // turn". Turkish callers pause mid-sentence far longer than that — with
+    // the defaults the agent talked over its own question and then asked it
+    // again, because it only ever heard half the answer.
+    startSpeakingPlan: {
+      // Floor before the agent may answer at all.
+      waitSeconds: 0.8,
+      transcriptionEndpointingPlan: {
+        // A finished sentence ends in punctuation — react quickly.
+        onPunctuationSeconds: 0.3,
+        // No punctuation means the caller is probably still thinking.
+        onNoPunctuationSeconds: 1.5,
+        // Digits arrive in bursts (phone numbers, dates) — never cut those.
+        onNumberSeconds: 0.6,
+      },
+    },
+    // When the caller does talk over the agent, stop — but not on a cough or
+    // an "hı hı": two real words, and then stay quiet long enough to listen.
+    stopSpeakingPlan: { numWords: 2, voiceSeconds: 0.3, backoffSeconds: 1.5 },
     server: { url: webhookUrl(), headers: { "x-vapi-secret": secret } },
     // Only the two the webhook acts on — the rest is traffic for nothing.
     serverMessages: ["tool-calls", "end-of-call-report"],

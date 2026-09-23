@@ -69,7 +69,8 @@ Agents are never configured by hand in the Vapi dashboard. Saving an agent on
 `/agents` writes the row (browser, RLS), then calls `app/api/agents/sync`,
 which re-reads the row scoped to the caller's clinic and pushes the whole
 assistant through `lib/vapi/client.ts` (`buildAssistant`: `composeSystemPrompt`,
-greeting, Azure tr-TR voice, `check_availability` / `book_appointment`,
+greeting, a Vapi-bundled voice pinned to `tr` (bundled = no second provider key
+and no second invoice), `check_availability` / `book_appointment`,
 `transferCall` to `clinics.transfer_number` — these three live in Vapi's Tools
 library (booking pair shared by all clinics, one transfer tool per clinic) and
 are upserted by name on every sync, server URL + `x-vapi-secret`,
@@ -126,7 +127,8 @@ once Supabase is connected. CRM is the one action with a real implementation —
 `app/api/crm/route.ts` → `lib/crm/queries.ts`). If the clinic has a `crm_webhook_url`, the same
 call is additionally forwarded there for an external CRM (Zapier/Make/n8n etc.) — that part
 stays optional (the env `CRM_WEBHOOK_URL` is only used without Supabase). As a safety net for calls the webhook path missed, `app/api/cron/crm-sync`
-(`lib/crm/sync.ts`, scheduled every 5 minutes in `vercel.json`, protected by `CRON_SECRET`)
+(`lib/crm/sync.ts`, scheduled nightly in `vercel.json` — Vercel's plan runs crons daily at
+most, which is why the 5-minute polls live in n8n instead — protected by `CRON_SECRET`)
 re-scans the `calls` table and upserts anything not yet in `crm_records` — `crm_records.call_id`
 is uniquely indexed, so both paths are idempotent. The other four actions report a `"demo"` result until a project wires their
 real call in. `app/api/actions/test` lets Settings → Integrations → CRM fire a fake call at

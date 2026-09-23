@@ -256,7 +256,7 @@ export interface Agent {
 
 export const AGENTS: Agent[] = [
   {
-    id: "ag1", name: "Reception", voice: "Defne · warm female", active: true, callsToday: 142,
+    id: "ag1", name: "Ön Büro", voice: "Defne · warm female", active: true, callsToday: 142,
     purpose: { tr: "Gelen aramaları karşılar, randevu alır, yönlendirir.", en: "Greets inbound calls, books appointments and routes." },
     greeting: { tr: "Briteline'a hoş geldiniz, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Thanks for calling Brightline, this is Randevox. How can I help?" },
     actionIds: ["book", "transfer", "sms"],
@@ -265,7 +265,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag2", name: "Sales SDR", voice: "Kerem · confident male", active: true, callsToday: 98,
+    id: "ag2", name: "Hasta Danışmanı", voice: "Kerem · confident male", active: true, callsToday: 98,
     purpose: { tr: "Müşteri adaylarını nitelendirir ve satışa iletir.", en: "Qualifies leads and forwards them to sales." },
     greeting: { tr: "Randevox'a hoş geldiniz! Hangi konuda yardımcı olabilirim?", en: "Welcome to Randevox! What can I help you with today?" },
     actionIds: ["qualify", "crm"],
@@ -274,7 +274,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag3", name: "Clinic Desk", voice: "Deniz · calm neutral", active: true, callsToday: 67,
+    id: "ag3", name: "Randevu Masası", voice: "Deniz · calm neutral", active: true, callsToday: 67,
     purpose: { tr: "Hasta randevuları ve rutin talepleri yönetir.", en: "Handles patient bookings and routine requests." },
     greeting: { tr: "Cedar Klinik, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Cedar Clinic, this is Randevox. How can I help you today?" },
     actionIds: ["book", "sms"],
@@ -283,7 +283,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag4", name: "After Hours", voice: "Ada · soft female", active: false, callsToday: 35,
+    id: "ag4", name: "Mesai Dışı", voice: "Ada · soft female", active: false, callsToday: 35,
     purpose: { tr: "Mesai dışı mesaj alır ve acil olanları yönlendirir.", en: "Takes after-hours messages and escalates urgent ones." },
     greeting: { tr: "Şu an kapalıyız. Mesajınızı bırakın, sabah ilk iş dönüş yapalım.", en: "We're closed right now. Leave a message and we'll call back first thing." },
     actionIds: ["sms", "transfer"],

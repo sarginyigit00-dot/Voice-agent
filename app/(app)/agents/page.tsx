@@ -9,6 +9,7 @@ import { ACTION_HINT } from "@/lib/actions/registry";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchAgents, seedAgents, insertAgent, saveAgent, removeAgent, syncAgent } from "@/lib/agents/queries";
+import { STARTER_AGENTS } from "@/lib/agents/starter";
 import { useSession } from "@/components/auth/session";
 import { DAY_KEYS, DAY_LABEL, defaultWorkingHours, normalizeWorkingHours, type DayKey, type WorkingHours } from "@/lib/agents/hours";
 
@@ -56,8 +57,9 @@ export default function AgentsPage() {
 
   // With Supabase configured, agents live in the `agents` table and every
   // team member sees the same list. A brand-new (empty) workspace is seeded
-  // with the same starter agents the demo ships, once, so /agents isn't a
-  // blank page on first sign-in. Without Supabase, fall back to the old
+  // once from STARTER_AGENTS — shape only, no facts — so /agents isn't a blank
+  // page on first sign-in. Not the demo array: that one ships another clinic's
+  // address and prices. Without Supabase, fall back to the old
   // per-browser localStorage persistence — runs once on mount, after the
   // server-matching first render, to avoid a hydration mismatch.
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function AgentsPage() {
       fetchAgents().then(async (loaded) => {
         if (loaded === null) return; // request failed — keep the AGENTS default
         if (loaded.length === 0) {
-          loaded = await seedAgents(AGENTS);
+          loaded = await seedAgents(STARTER_AGENTS);
         }
         setAgents(loaded);
         setSelectedId(loaded[0].id);

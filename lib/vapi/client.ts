@@ -283,6 +283,27 @@ async function toolIdsFor(agent: Agent, clinic: ClinicContext, secret: string): 
 
 /* ───────────────────────────── assistant ───────────────────────────── */
 
+/**
+ * Every call is recorded (audio + transcript) and it carries health data, so
+ * the caller is told so in the opening line — the clinic's name, said first,
+ * names who is recording. Added here rather than typed into each greeting so
+ * no clinic can edit it away or forget it on a new agent.
+ */
+const RECORDING_NOTICE = { tr: "Görüşmeniz hizmet kalitesi için kaydedilmektedir.", en: "This call is recorded for quality purposes." };
+
+/** Puts the notice before the closing question, so the line still ends by inviting the caller to speak. */
+export function withRecordingNotice(opening: string, lang: "tr" | "en" = "tr"): string {
+  const notice = RECORDING_NOTICE[lang];
+  const text = opening.trim();
+  if (!text || text.includes(notice)) return text || notice;
+  const sentences = text.match(/[^.!?]+[.!?]*/g)?.map((x) => x.trim()).filter(Boolean) ?? [text];
+  const last = sentences[sentences.length - 1];
+  if (sentences.length > 1 && last.endsWith("?")) {
+    return [...sentences.slice(0, -1), notice, last].join(" ");
+  }
+  return `${text} ${notice}`;
+}
+
 /** The full assistant — sent whole on both create and update, so Vapi never drifts from /agents. */
 export function buildAssistant(
   agent: Agent,
@@ -294,7 +315,11 @@ export function buildAssistant(
   // "{klinik}" in a greeting becomes the clinic's name, so the starter
   // greetings work for every clinic without being retyped.
   const fill = (s: string) => s.replaceAll("{klinik}", clinic.name);
-  const spoken = { ...agent, greeting: { tr: fill(agent.greeting.tr), en: fill(agent.greeting.en) } };
+  // The prompt quotes this same line as "already said", so both carry the notice.
+  const spoken = {
+    ...agent,
+    greeting: { tr: withRecordingNotice(fill(agent.greeting.tr), "tr"), en: withRecordingNotice(fill(agent.greeting.en), "en") },
+  };
   return {
     // Vapi caps the name at 40 characters.
     name: `${clinic.name} · ${agent.name}`.slice(0, 40),
@@ -451,7 +476,9 @@ export async function startCallbackCall(opts: {
 
   const name = opts.name.trim().slice(0, 40);
   // One string for both: what Vapi says first and what the prompt says was said.
-  const opening = `Merhaba${name ? ` ${name}` : ""}, ${opts.clinic.name} olarak arıyorum. Az önce bize bir form doldurmuştunuz. Şimdi konuşmak için uygun musunuz?`;
+  const opening = withRecordingNotice(
+    `Merhaba${name ? ` ${name}` : ""}, ${opts.clinic.name} olarak arıyorum. Az önce bize bir form doldurmuştunuz. Şimdi konuşmak için uygun musunuz?`,
+  );
   const brief = callbackBrief(name, opts.note, opts.source, opening);
   const model = assistant.data.model ?? {};
   const messages = model.messages ?? [];

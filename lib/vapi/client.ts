@@ -493,3 +493,23 @@ export function getPhoneNumber(id: string): Promise<VapiResult<VapiPhoneNumber>>
 export function assignPhoneNumber(id: string, assistantId: string | null): Promise<VapiResult<VapiPhoneNumber>> {
   return vapi<VapiPhoneNumber>("PATCH", `/phone-number/${encodeURIComponent(id)}`, { assistantId });
 }
+
+/* ───────────────────────────── recordings ───────────────────────────── */
+
+/**
+ * A playable link to a call's recording, minted fresh on every request.
+ *
+ * This Vapi org stores recordings privately: the plain `recordingUrl` the
+ * end-of-call report carries answers 400 to anyone who opens it, and the
+ * presigned variants expire after 30 minutes. So a URL saved at call time can
+ * never be played later — the panel has to ask for a new one each time.
+ * Mono (both sides mixed) rather than stereo: half the size, same content.
+ */
+export async function recordingLinkFor(callId: string): Promise<VapiResult<string | null>> {
+  const call = await vapi<{ artifact?: { presignedMonoUrl?: string; presignedStereoUrl?: string } }>(
+    "GET",
+    `/call/${encodeURIComponent(callId)}`,
+  );
+  if (!call.ok) return call;
+  return { ok: true, data: call.data.artifact?.presignedMonoUrl ?? call.data.artifact?.presignedStereoUrl ?? null };
+}

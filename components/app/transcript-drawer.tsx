@@ -6,6 +6,7 @@ import { Waveform } from "@/components/app/waveform";
 import { OutcomePill } from "@/components/app/outcome-pill";
 import { OUTCOME_TINT, type CallRow } from "@/lib/demo/data";
 import { cn } from "@/lib/utils";
+import { authedFetch } from "@/lib/supabase/authed-fetch";
 
 /**
  * The transcript + recording drawer, shared by /calls and /dashboard — they
@@ -53,7 +54,7 @@ export function TranscriptDrawer({
 
         <div className="border-b border-border px-4 py-3">
           {call.recordingUrl ? (
-            <RealPlayer url={call.recordingUrl} tint={tint} />
+            <RealPlayer callId={call.id} tint={tint} lang={lang} />
           ) : (
             <SimulatedPlayer call={call} tint={tint} />
           )}
@@ -101,23 +102,56 @@ export function TranscriptDrawer({
 }
 
 /** A genuine recording — native browser controls drive real playback. */
-function RealPlayer({ url, tint }: { url: string; tint: string }) {
+/**
+ * The stored `recordingUrl` only says a recording exists — it can't be played:
+ * Vapi keeps recordings private and its playable links expire in 30 minutes.
+ * So the player asks the server for a fresh link each time the drawer opens
+ * (app/api/calls/[id]/recording).
+ */
+function RealPlayer({ callId, tint, lang }: { callId: string; tint: string; lang: "tr" | "en" }) {
   const ref = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    authedFetch(`/api/calls/${encodeURIComponent(callId)}/recording`)
+      .then(async (res) => {
+        const body = (await res.json().catch(() => null)) as { url?: string } | null;
+        if (!alive) return;
+        if (res.ok && body?.url) setSrc(body.url);
+        else setFailed(true);
+      })
+      .catch(() => alive && setFailed(true));
+    return () => {
+      alive = false;
+    };
+  }, [callId]);
+
+  if (failed) {
+    return (
+      <p className="py-1.5 font-mono text-[11px] text-muted-foreground">
+        {lang === "tr" ? "Ses kaydı şu an açılamadı." : "The recording couldn't be loaded right now."}
+      </p>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2.5">
       <button
         onClick={() => (playing ? ref.current?.pause() : ref.current?.play())}
-        className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full transition-opacity hover:opacity-90"
+        disabled={!src}
+        className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-50"
         style={{ background: tint, color: "var(--color-primary-foreground)" }}
       >
         <Icon name={playing ? "pause" : "play"} className="h-3.5 w-3.5" />
       </button>
       <audio
         ref={ref}
-        src={url}
+        src={src ?? undefined}
         controls
+        preload="metadata"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}

@@ -19,10 +19,16 @@ export const MIN_PASSWORD_LENGTH = 8;
  * The packages sold (app.config.ts pricing): id → label, monthly price and
  * included minutes. Choosing a plan when a clinic is created sets its quota to
  * this; the quota stays editable per clinic for custom deals.
+ *
+ * Sized for dental clinics by number of dentists — the one question a buyer
+ * can answer without thinking. Minutes assume ~1.5 min per booked call (real
+ * Vapi average) and ~$0.07/min cost; recalibrate once real clinics' usage is in.
+ * An id no longer listed here reads as `klinik` (lib/admin/clinics.ts).
  */
 export const PLANS = {
-  klinik: { label: "Klinik", priceUsd: 500, minutes: 1000 },
-  klinik_pro: { label: "Klinik Pro", priceUsd: 1000, minutes: 2500 },
+  muayenehane: { label: "Muayenehane", priceUsd: 199, minutes: 500 },
+  klinik: { label: "Klinik", priceUsd: 399, minutes: 1500 },
+  poliklinik: { label: "Poliklinik", priceUsd: 799, minutes: 3000 },
 } as const;
 
 /** Billed per minute past a clinic's monthly quota. */

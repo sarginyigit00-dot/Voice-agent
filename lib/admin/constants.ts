@@ -22,13 +22,15 @@ export const MIN_PASSWORD_LENGTH = 8;
  *
  * Sized for dental clinics by number of dentists — the one question a buyer
  * can answer without thinking. Minutes assume ~1.5 min per booked call (real
- * Vapi average) and ~$0.07/min cost; recalibrate once real clinics' usage is in.
+ * Vapi average). Cost is ~$0.07/min on Vapi's own voices, ~$0.13 with
+ * ElevenLabs — quotas are kept tight so either voice leaves a margin;
+ * recalibrate once real clinics' usage is in. Larger clinics (6+ dentists,
+ * multi-branch) get a custom quote: pick Klinik and edit the quota.
  * An id no longer listed here reads as `klinik` (lib/admin/clinics.ts).
  */
 export const PLANS = {
-  muayenehane: { label: "Muayenehane", priceUsd: 199, minutes: 500 },
-  klinik: { label: "Klinik", priceUsd: 399, minutes: 1500 },
-  poliklinik: { label: "Poliklinik", priceUsd: 799, minutes: 3000 },
+  muayenehane: { label: "Muayenehane", priceUsd: 199, minutes: 300 },
+  klinik: { label: "Klinik", priceUsd: 499, minutes: 1000 },
 } as const;
 
 /** Billed per minute past a clinic's monthly quota. */

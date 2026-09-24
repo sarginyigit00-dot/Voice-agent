@@ -91,6 +91,26 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr", ctx:
         ? `# Randevu alma\nRandevu için ASLA saat uydurma. Sırayla:\n1. Uygun saatleri görmek için \`check_availability\` aracını çağır (belirli bir gün soruluyorsa \`date\` parametresini "YYYY-AA-GG" biçiminde ver).\n2. Aracın \`spoken\` alanındaki hazır söyleyişlerle saatleri arayana oku; ISO değerleri asla sesli okuma.\n3. Arayanın seçtiği saati \`book_appointment\` aracına, aracın sana verdiği ISO değeriyle gönder. Adını ve varsa e-postasını da ilet.\n4. Araç başarılı dönerse randevuyu arayana tekrar ederek onayla. Başarısız dönerse uydurma — aracın söylediğini aktar.`
         : `# Booking\nNever invent a time. In order:\n1. Call \`check_availability\` to see real openings (pass \`date\` as "YYYY-MM-DD" when a specific day is asked about).\n2. Read the times back using the tool's ready-made \`spoken\` phrases; never read ISO values aloud.\n3. Send the time they pick to \`book_appointment\`, using the exact ISO value the tool gave you. Include their name, and email if they gave one.\n4. If the tool succeeds, confirm the appointment back to the caller. If it fails, do not improvise — relay what the tool said.`,
     );
+    // Patients call to cancel or move, too — same tools, and never on a name alone.
+    sections.push(
+      tr
+        ? `# Randevu iptali ve erteleme
+Arayan mevcut randevusunu iptal etmek ya da başka saate almak isterse:
+1. Randevunun kimin adına ve hangi gün olduğunu sor. İkisini de almadan arama yapma.
+2. \`find_appointment\` aracını ad ve günle ("YYYY-AA-GG") çağır.
+3. Bulunursa aracın \`spoken\` cümlesiyle randevuyu oku ve ne istediğini teyit et: "İptal etmemi istiyorsunuz, doğru mu?" Arayan açıkça onaylamadan işlem yapma.
+4. İptal için \`cancel_appointment\`, erteleme için önce \`check_availability\` ile yeni saat bul, arayan seçince \`reschedule_appointment\` çağır. İkisinde de aracın verdiği appointmentId'yi aynen kullan.
+5. Bulunamazsa adı ve günü bir kez daha sor. Yine bulunamazsa uydurma; notunu al ve kliniğin geri döneceğini söyle.
+6. Arayanın söylemediği bir randevu bilgisini asla okuma, başka hastaların randevularından bahsetme.`
+        : `# Cancelling and rescheduling
+If the caller wants to cancel or move an existing appointment:
+1. Ask whose name it is under and which day. Don't search without both.
+2. Call \`find_appointment\` with the name and the day ("YYYY-MM-DD").
+3. If found, read it back with the tool's \`spoken\` line and confirm what they want: "You'd like me to cancel it, is that right?" Do nothing until they clearly say yes.
+4. To cancel, call \`cancel_appointment\`; to move, find a new time with \`check_availability\` first and call \`reschedule_appointment\` once they pick. Use the appointmentId the tool gave you, exactly.
+5. If nothing is found, ask for the name and day once more. If it still isn't found, don't improvise; take a note and say the clinic will call back.
+6. Never read out appointment details the caller didn't give, and never mention other patients' appointments.`,
+    );
   }
 
   sections.push(

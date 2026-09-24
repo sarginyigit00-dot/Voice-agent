@@ -187,6 +187,56 @@ const BOOKING_TOOLS = [
     },
     messages: [{ type: "request-start", content: "Hemen oluşturuyorum." }],
   },
+  {
+    type: "function",
+    function: {
+      name: "find_appointment",
+      description:
+        "Arayanın mevcut randevusunu adı ve randevu günüyle bulur. İptal ya da erteleme isteyen arayan için MUTLAKA önce bunu çağır; ikisini de arayandan almadan çağırma.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Randevunun kimin adına olduğu, arayanın söylediği gibi (ad soyad)." },
+          date: { type: "string", description: "Arayanın söylediği randevu günü, YYYY-MM-DD biçiminde." },
+        },
+        required: ["name", "date"],
+      },
+    },
+    messages: [{ type: "request-start", content: "Hemen bakıyorum." }],
+  },
+  {
+    type: "function",
+    function: {
+      name: "cancel_appointment",
+      description:
+        "find_appointment'ın bulduğu randevuyu iptal eder. Yalnızca arayan randevuyu duyup iptali açıkça onayladıktan sonra çağır.",
+      parameters: {
+        type: "object",
+        properties: {
+          appointmentId: { type: "string", description: "find_appointment'ın döndürdüğü appointmentId, aynen." },
+        },
+        required: ["appointmentId"],
+      },
+    },
+    messages: [{ type: "request-start", content: "Hemen iptal ediyorum." }],
+  },
+  {
+    type: "function",
+    function: {
+      name: "reschedule_appointment",
+      description:
+        "find_appointment'ın bulduğu randevuyu yeni bir saate taşır. Yeni saati önce check_availability ile bul, arayan seçip onaylayınca çağır.",
+      parameters: {
+        type: "object",
+        properties: {
+          appointmentId: { type: "string", description: "find_appointment'ın döndürdüğü appointmentId, aynen." },
+          start: { type: "string", description: "check_availability'nin döndürdüğü slots dizisindeki ISO-8601 değer, aynen." },
+        },
+        required: ["appointmentId", "start"],
+      },
+    },
+    messages: [{ type: "request-start", content: "Hemen güncelliyorum." }],
+  },
 ];
 
 /** Where the transfer tool would send the caller, or null when it can't be offered. */

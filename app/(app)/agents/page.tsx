@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchAgents, seedAgents, insertAgent, saveAgent, removeAgent, syncAgent } from "@/lib/agents/queries";
 import { STARTER_AGENTS } from "@/lib/agents/starter";
+import { authedFetch } from "@/lib/supabase/authed-fetch";
 import { useSession } from "@/components/auth/session";
 import { DAY_KEYS, DAY_LABEL, defaultWorkingHours, normalizeWorkingHours, type DayKey, type WorkingHours } from "@/lib/agents/hours";
 
@@ -26,11 +27,51 @@ export default function AgentsPage() {
   const [voice, setVoice] = useState<string>(AGENTS[0].voice);
   const [actions, setActions] = useState(BUILDER_ACTIONS);
   const [previewPlaying, setPreviewPlaying] = useState(false);
+  // The real sample behind the preview button (Vapi's clip for the voice this
+  // persona maps to). Demo mode has no session, so it keeps the animation only.
+  const previewAudio = useRef<HTMLAudioElement | null>(null);
+  const [previewVoiceId, setPreviewVoiceId] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   // The last Vapi push, shown under the save button of the agent it was for.
   const [vapiSync, setVapiSync] = useState<
     { agentId: string; state: "pending" | "ok" | "error"; message: string; warning?: string } | null
   >(null);
+  useEffect(() => {
+    previewAudio.current?.pause();
+    previewAudio.current = null;
+    setPreviewPlaying(false);
+    setPreviewVoiceId(null);
+    setPreviewError(false);
+  }, [voice]);
+
+  const togglePreview = async () => {
+    if (!live) {
+      setPreviewPlaying((p) => !p);
+      return;
+    }
+    const current = previewAudio.current;
+    if (current) {
+      if (previewPlaying) current.pause();
+      else void current.play();
+      return;
+    }
+    setPreviewError(false);
+    const res = await authedFetch(`/api/voices/preview?label=${encodeURIComponent(voice)}`).catch(() => null);
+    const body = (await res?.json().catch(() => null)) as { url?: string; voiceId?: string } | null;
+    if (!res?.ok || !body?.url) {
+      setPreviewError(true);
+      return;
+    }
+    const audio = new Audio(body.url);
+    audio.onplay = () => setPreviewPlaying(true);
+    audio.onpause = () => setPreviewPlaying(false);
+    audio.onended = () => setPreviewPlaying(false);
+    previewAudio.current = audio;
+    setPreviewVoiceId(body.voiceId ?? null);
+    void audio.play().catch(() => setPreviewError(true));
+  };
+
   const greetingRef = useRef<HTMLTextAreaElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const purposeRef = useRef<HTMLTextAreaElement>(null);
@@ -127,6 +168,8 @@ export default function AgentsPage() {
     voice: lang === "tr" ? "Ses" : "Voice",
     actions: lang === "tr" ? "Eylemler" : "Actions",
     preview: lang === "tr" ? "Sesi önizle" : "Preview voice",
+    previewNote: lang === "tr" ? "İngilizce örnek; aramalarda Türkçe konuşur" : "English sample; it speaks Turkish on calls",
+    previewError: lang === "tr" ? "Örnek şu an açılamadı" : "The sample couldn't be loaded",
     save: lang === "tr" ? "Değişiklikleri kaydet" : "Save changes",
     saved: lang === "tr" ? "Kaydedildi" : "Saved",
     deleteAgent: lang === "tr" ? "Ajanı sil" : "Delete agent",
@@ -462,7 +505,7 @@ export default function AgentsPage() {
             <div className="rounded-md border border-border bg-background/60 p-2.5">
               <div className="flex items-center gap-2.5">
                 <button
-                  onClick={() => setPreviewPlaying((p) => !p)}
+                  onClick={() => void togglePreview()}
                   className="grid h-8 w-8 shrink-0 place-items-center rounded-full"
                   style={{ background: "var(--color-violet)", color: "var(--color-primary-foreground)" }}
                 >
@@ -470,7 +513,11 @@ export default function AgentsPage() {
                 </button>
                 <Waveform data={[0.3, 0.7, 0.5, 0.9, 0.4, 0.8, 0.6, 0.3, 0.7, 0.5, 0.9, 0.4, 0.6, 0.8, 0.5]} animated playing={previewPlaying} width={220} height={26} className="flex-1" />
               </div>
-              <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">{L.preview} · {voice.split(" · ")[0]}</p>
+              <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">
+                {L.preview} · {voice.split(" · ")[0]}
+                {previewVoiceId && ` · ${previewVoiceId} — ${L.previewNote}`}
+                {previewError && ` · ${L.previewError}`}
+              </p>
             </div>
 
             <div>

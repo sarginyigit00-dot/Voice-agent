@@ -540,3 +540,20 @@ export async function recordingLinkFor(callId: string): Promise<VapiResult<strin
   if (!call.ok) return call;
   return { ok: true, data: call.data.artifact?.presignedMonoUrl ?? call.data.artifact?.presignedStereoUrl ?? null };
 }
+
+/* ───────────────────────────── voice preview ───────────────────────────── */
+
+/**
+ * Vapi's own sample clip for one of its bundled voices, for the /agents
+ * preview button. The clip is English (Vapi records one sample per voice) and
+ * the link is presigned for an hour, so it is fetched per click, never stored.
+ */
+export async function voicePreviewUrl(voiceId: string): Promise<VapiResult<string | null>> {
+  const list = await vapi<{ name?: string; slug?: string; providerId?: string; previewUrl?: string }[]>(
+    "GET",
+    "/voice-library/vapi",
+  );
+  if (!list.ok) return list;
+  const match = list.data.find((v) => [v.providerId, v.slug, v.name].includes(voiceId));
+  return { ok: true, data: match?.previewUrl ?? null };
+}

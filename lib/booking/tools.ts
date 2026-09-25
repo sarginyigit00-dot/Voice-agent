@@ -9,6 +9,7 @@ import { speakHours, speakInstantTr } from "@/lib/speech/tr";
 import { findByCall, record } from "@/lib/booking/store";
 import { hoursForDate, isWithinHours, type WorkingHours } from "@/lib/agents/hours";
 import type { ClinicContext } from "@/lib/clinics/server";
+import { toE164 } from "@/lib/vapi/client";
 import {
   appointmentFor,
   cancelAppointment,
@@ -162,13 +163,19 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
   }
 
   const offered = upcoming.slice(0, MAX_SPOKEN_SLOTS);
+  // The line doesn't always pass the caller's number (Netgsm today), and an
+  // appointment without one leaves the clinic unable to reach the patient.
+  const askPhone = !toE164(ctx.callerNumber);
   return JSON.stringify({
     ok: true,
     // ISO values are what book_appointment must be called back with — the
     // spoken forms are only for reading out loud.
     slots: offered,
     spoken: offered.map((s) => speakInstantTr(new Date(s), cfg.timeZone)),
-    note: "Hastaya bu saatleri oku. Seçtiği saati book_appointment'a slots dizisindeki ISO değeriyle gönder.",
+    askPhone,
+    note: askPhone
+      ? "Hastaya bu saatleri oku. Saati seçince, randevuyu oluşturmadan önce cep telefonu numarasını sor, rakamları gruplayarak tekrar edip teyit al. Seçilen saati slots dizisindeki ISO değeriyle, numarayı phone olarak book_appointment'a gönder."
+      : "Hastaya bu saatleri oku. Seçtiği saati book_appointment'a slots dizisindeki ISO değeriyle gönder. Numara sistemde var, sorma.",
   });
 }
 
@@ -234,7 +241,7 @@ async function checkRequestedSlot(
 /* ─────────────────────── book_appointment ─────────────────────── */
 
 /**
- * Args: { start: ISO-8601, name?, email?, notes? }
+ * Args: { start: ISO-8601, name?, email?, notes?, phone? }
  *
  * `start` must be one of the ISO values check_availability returned. We
  * re-verify it against Cal.com anyway — the model can hallucinate a time, and
@@ -272,15 +279,20 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
   const name = str(args, "name") ?? (ctx.callerName !== "Unknown" ? ctx.callerName : "Telefonla arayan");
   const email = str(args, "email");
   const notes = str(args, "notes");
+  // The line's own caller number wins; the one the patient said on the call is
+  // for when the line didn't pass one. A number that doesn't parse is dropped
+  // rather than sent — Cal.com rejects the whole booking over a bad phone, and
+  // a patient must never lose the appointment over it.
+  const phone = toE164(ctx.callerNumber) ?? toE164(str(args, "phone") ?? "");
 
   const booking = await createBooking(cfg, {
     start,
     name,
     email,
-    phone: ctx.callerNumber || null,
+    phone,
     // Without an email from the patient the confirmation goes to the clinic's
     // inbox, so the phone number has to be visible on the booking itself.
-    notes: [notes, ctx.callerNumber ? `Telefon: ${ctx.callerNumber}` : null]
+    notes: [notes, phone ? `Telefon: ${phone}` : null]
       .filter(Boolean)
       .join(" · "),
     metadata: { callId: ctx.callId, source: "randevox-voice" },
@@ -300,7 +312,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     startsAt: start.toISOString(),
     attendeeName: name,
     attendeeEmail: email,
-    attendeePhone: ctx.callerNumber || null,
+    attendeePhone: phone,
     agentId: ctx.agentId,
     clinicId: ctx.clinic?.id ?? null,
     source: "in-call",

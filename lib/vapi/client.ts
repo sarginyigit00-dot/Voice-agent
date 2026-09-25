@@ -181,6 +181,10 @@ const BOOKING_TOOLS = [
           name: { type: "string", description: "Arayanın adı soyadı." },
           email: { type: "string", description: "Arayan verdiyse e-posta adresi." },
           notes: { type: "string", description: "Kısa not: hangi hizmet için arıyor." },
+          phone: {
+            type: "string",
+            description: "Arayanın söylediği cep telefonu numarası, rakamlarla (ör. 05321234567). Yalnızca check_availability askPhone: true döndürdüyse sor ve gönder.",
+          },
         },
         required: ["start"],
       },

@@ -486,6 +486,16 @@ alter table public.clinics
   add column if not exists lead_form_key text;
 create unique index if not exists clinics_lead_form_key_idx on public.clinics (lead_form_key);
 
+-- Who answers the line (lib/vapi/routing.ts). The number is left without a
+-- fixed assistant and asks the webhook per call: the day agent answers inside
+-- its working hours (= the clinic's opening hours), the after-hours agent
+-- outside them. Plain text, no FK: callback_agent_id already links clinics to
+-- agents, and a second FK makes every clinics↔agents embed ambiguous (PGRST201).
+alter table public.clinics
+  add column if not exists day_agent_id text;
+alter table public.clinics
+  add column if not exists after_hours_agent_id text;
+
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics (id) on delete cascade,

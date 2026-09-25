@@ -5,7 +5,8 @@ import { logCall } from "@/lib/calls/log";
 import { isBookingTool, runBookingTool, type ToolContext } from "@/lib/booking/tools";
 import { computeSentiment } from "@/lib/calls/sentiment";
 import { cleanTranscript } from "@/lib/calls/transcript";
-import { resolveCallOwner } from "@/lib/clinics/server";
+import { clinicOpeningHours, isAfterHoursAgent, resolveCallOwner } from "@/lib/clinics/server";
+import { routeInboundCall } from "@/lib/vapi/routing";
 import { findByCall } from "@/lib/booking/store";
 import { toE164, webhookSecret } from "@/lib/vapi/client";
 import { emitEvent } from "@/lib/automation/emit";
@@ -50,6 +51,12 @@ export async function POST(req: Request) {
   const message = body?.message;
   if (!message) return NextResponse.json({ ok: true });
 
+  // Inbound call on a number in routing mode: pick the day or after-hours agent (lib/vapi/routing.ts).
+  if (message.type === "assistant-request") {
+    const routed = await routeInboundCall(message.call?.phoneNumberId);
+    if ("error" in routed) return NextResponse.json({ error: routed.error });
+    return NextResponse.json({ assistantId: routed.assistantId });
+  }
   if (message.type === "tool-calls") return handleToolCalls(message as VapiToolCallsMessage);
   if (message.type === "end-of-call-report") return handleEndOfCall(message as VapiEndOfCallMessage);
 
@@ -185,7 +192,11 @@ async function handleToolCalls(message: VapiToolCallsMessage) {
         callerNumber: call.customer?.number ?? "",
         callerName: call.customer?.name ?? "Unknown",
         agentId: owner.agent.id,
-        workingHours: owner.agent.workingHours,
+        // The after-hours line answers at night but books into the clinic's
+        // opening hours — never into its own.
+        workingHours: isAfterHoursAgent(owner.clinic, owner.agent.id)
+          ? ((owner.clinic && (await clinicOpeningHours(owner.clinic))) ?? owner.agent.workingHours)
+          : owner.agent.workingHours,
       }
     : null;
 

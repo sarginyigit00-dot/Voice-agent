@@ -1,5 +1,5 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { agentInClinic, type ClinicContext } from "@/lib/clinics/server";
+import { agentInClinic, clinicOpeningHours, isAfterHoursAgent, type ClinicContext } from "@/lib/clinics/server";
 import { getKnowledge } from "@/lib/clinics/knowledge";
 import {
   assignPhoneNumber,
@@ -40,7 +40,9 @@ export async function syncAgentToVapi(
   if (!found) return { ok: false, message: "Ajan bulunamadı." };
   const { agent, vapiAssistantId } = found;
 
-  const res = await upsertAssistant(agent, clinic, vapiAssistantId, await getKnowledge(clinic.id));
+  // The after-hours agent books into the clinic's opening hours, not its own.
+  const openingHours = isAfterHoursAgent(clinic, agent.id) ? await clinicOpeningHours(clinic) : null;
+  const res = await upsertAssistant(agent, clinic, vapiAssistantId, await getKnowledge(clinic.id), openingHours);
   if (!res.ok) return { ok: false, message: `Vapi: ${res.error}` };
   const id = res.data.id;
 

@@ -6,6 +6,7 @@ import { LEAD_STATUSES, newLeadFormKey, type LeadStatus } from "@/lib/leads/call
 import {
   assignPhoneNumber,
   isVapiConfigured,
+  routePhoneNumber,
   listPhoneNumbers,
   type VapiPhoneNumber,
   type VapiResult,
@@ -51,8 +52,14 @@ export interface AdminClinic {
   leadCounts: Record<LeadStatus, number>;
   /** Names only — for picking which agent answers the line. */
   agents: { id: string; name: string; active: boolean; vapiAssistantId: string | null }[];
-  /** Live from Vapi: the number and who answers it. Null when the clinic has no number yet. */
-  phone: { number: string | null; inboundAgentId: string | null; error?: string } | null;
+  /**
+   * Live from Vapi: the number and who answers it. Null when the clinic has no
+   * number yet. `routed` = the number asks our webhook per call (day agent in
+   * opening hours, after-hours agent outside) instead of a fixed assistant.
+   */
+  phone: { number: string | null; inboundAgentId: string | null; routed?: boolean; error?: string } | null;
+  /** The after-hours line (lib/vapi/routing.ts). Null = the day agent answers around the clock. */
+  afterHoursAgentId: string | null;
   createdAt: string;
   calendarConnected: boolean;
   members: AdminClinicMember[];
@@ -71,6 +78,7 @@ function phoneFor(
   id: string | null,
   numbers: VapiResult<VapiPhoneNumber[]> | null,
   agents: AdminClinic["agents"],
+  dayAgentId: string | null,
 ): AdminClinic["phone"] {
   if (!id) return null;
   if (!numbers) return { number: null, inboundAgentId: null, error: "Vapi bağlı değil (VAPI_API_KEY yok)." };
@@ -78,6 +86,16 @@ function phoneFor(
   const n = numbers.data.find((x) => x.id === id);
   if (!n) return { number: null, inboundAgentId: null, error: "Bu numara ID'si Vapi'de yok." };
 
+  // Routing mode: no fixed assistant — the webhook picks the day or after-hours agent per call.
+  if (!n.assistantId && n.server?.url) {
+    const day = agents.find((a) => a.id === dayAgentId);
+    return {
+      number: n.number ?? n.sipUri ?? null,
+      inboundAgentId: day?.id ?? null,
+      routed: true,
+      error: day ? undefined : "Numara yönlendirme modunda ama gündüz ajanı seçili değil — aramalar karşılanmaz.",
+    };
+  }
   const inbound = agents.find((a) => a.vapiAssistantId && a.vapiAssistantId === n.assistantId);
   return {
     number: n.number ?? n.sipUri ?? null,
@@ -160,7 +178,8 @@ export async function listClinics(
       leadFormKey: c.lead_form_key,
       leadCounts: leadCountsFor(c.id),
       agents: clinicAgents,
-      phone: phoneFor(c.vapi_phone_number_id, numbers, clinicAgents),
+      phone: phoneFor(c.vapi_phone_number_id, numbers, clinicAgents, c.day_agent_id ?? null),
+      afterHoursAgentId: c.after_hours_agent_id ?? null,
       createdAt: c.created_at,
       calendarConnected: connected.has(c.id),
       members: (members.data ?? [])
@@ -422,9 +441,52 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
         assistantId = data.vapi_assistant_id;
       }
 
-      const res = await assignPhoneNumber(clinic.vapiPhoneNumberId, assistantId);
+      // Detach: no day agent, no routing — the line rings out unanswered.
+      if (!assistantId) {
+        await supabase.from("clinics").update({ day_agent_id: null }).eq("id", clinic.id);
+        const res = await assignPhoneNumber(clinic.vapiPhoneNumberId, null);
+        if (!res.ok) return fail(`Vapi: ${res.error}`);
+        return ok("Numara ajandan ayrıldı.");
+      }
+
+      // The chosen agent becomes the day agent, and the number asks our webhook
+      // per call — so an after-hours agent can take over outside opening hours.
+      const { error: saveError } = await supabase.from("clinics").update({ day_agent_id: agentId }).eq("id", clinic.id);
+      if (saveError) return fail(saveError.message);
+      const res = await routePhoneNumber(clinic.vapiPhoneNumberId);
       if (!res.ok) return fail(`Vapi: ${res.error}`);
-      return ok(assistantId ? "Numara ajana bağlandı; gelen aramaları artık bu ajan karşılar." : "Numara ajandan ayrıldı.");
+      return ok("Numara bağlandı: mesai saatlerinde bu ajan karşılar; mesai dışı ajanı seçiliyse klinik kapalıyken o karşılar.");
+    }
+
+    case "setAfterHours": {
+      // Empty agentId = no after-hours line: the day agent answers around the clock.
+      const clinic = clinicId ? await clinicById(clinicId) : null;
+      if (!clinic) return fail("Klinik bulunamadı.");
+      const agentId = str("agentId") || null;
+      if (agentId) {
+        if (agentId === clinic.dayAgentId) return fail("Mesai dışı ajanı, gündüz ajanıyla aynı olamaz.");
+        const { data, error } = await supabase
+          .from("agents")
+          .select("vapi_assistant_id")
+          .eq("id", agentId)
+          .eq("clinic_id", clinic.id)
+          .maybeSingle();
+        if (error) return fail(error.message);
+        if (!data) return fail("Ajan bu klinikte değil.");
+        if (!data.vapi_assistant_id) return fail("Bu ajan henüz Vapi'de kurulu değil — önce \"Ajanları Vapi'ye kur\".");
+      }
+      const { error } = await supabase.from("clinics").update({ after_hours_agent_id: agentId }).eq("id", clinic.id);
+      if (error) return fail(error.message);
+
+      // Its prompt changes (closed-clinic rules, booking into opening hours) — and so
+      // does the previous after-hours agent's, now an ordinary one again.
+      const fresh = await clinicById(clinic.id);
+      const touched = [agentId, clinic.afterHoursAgentId].filter((id, i, all): id is string => !!id && all.indexOf(id) === i);
+      for (const id of touched) {
+        const r = fresh ? await syncAgentToVapi(id, fresh) : { ok: false, message: "Klinik okunamadı." };
+        if (!r.ok) return fail(`Kaydedildi, ama ajan Vapi'de güncellenemedi: ${r.message}`);
+      }
+      return ok(agentId ? "Mesai dışı ajanı ayarlandı; klinik kapalıyken aramaları o karşılar." : "Mesai dışı ajanı kaldırıldı; gündüz ajanı 7/24 karşılar.");
     }
 
     case "setCallback": {

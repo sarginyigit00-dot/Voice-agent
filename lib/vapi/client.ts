@@ -3,6 +3,7 @@ import type { Agent } from "@/lib/demo/data";
 import type { ClinicContext } from "@/lib/clinics/server";
 import { composeSystemPrompt } from "@/lib/agents/prompt";
 import type { ClinicKnowledge } from "@/lib/clinics/knowledge-shape";
+import type { WorkingHours } from "@/lib/agents/hours";
 
 /**
  * Vapi's REST API — server-side only (it carries the private key).
@@ -319,14 +320,20 @@ function transferToolId(clinic: ClinicContext, number: string): Promise<VapiResu
 }
 
 /** The library tools this agent should carry, created or refreshed on the way. */
-async function toolIdsFor(agent: Agent, clinic: ClinicContext, secret: string): Promise<VapiResult<string[]>> {
+async function toolIdsFor(
+  agent: Agent,
+  clinic: ClinicContext,
+  secret: string,
+  afterHours: boolean,
+): Promise<VapiResult<string[]>> {
   const ids: string[] = [];
   if (agent.actionIds.includes("book")) {
     const booking = await bookingToolIds(secret);
     if (!booking.ok) return booking;
     ids.push(...booking.data);
   }
-  const transferTo = transferTarget(agent, clinic);
+  // Nobody is at the clinic after hours to take a transfer.
+  const transferTo = afterHours ? null : transferTarget(agent, clinic);
   if (transferTo) {
     const transfer = await transferToolId(clinic, transferTo);
     if (!transfer.ok) return transfer;
@@ -365,6 +372,8 @@ export function buildAssistant(
   secret: string,
   toolIds: string[],
   knowledge: ClinicKnowledge | null = null,
+  /** Set for the clinic's after-hours agent: the opening hours it books into. */
+  openingHours: WorkingHours | null = null,
 ) {
   // "{klinik}" in a greeting becomes the clinic's name, so the starter
   // greetings work for every clinic without being retyped.
@@ -383,7 +392,11 @@ export function buildAssistant(
       messages: [
         {
           role: "system",
-          content: composeSystemPrompt(spoken, "tr", { knowledge, canTransfer: transferTarget(agent, clinic) !== null }),
+          content: composeSystemPrompt(spoken, "tr", {
+            knowledge,
+            canTransfer: !openingHours && transferTarget(agent, clinic) !== null,
+            afterHours: openingHours ? { openingHours } : undefined,
+          }),
         },
       ],
       // Emptied explicitly: assistants synced before the library held their tools inline.
@@ -462,12 +475,13 @@ export async function upsertAssistant(
   clinic: ClinicContext,
   existingId: string | null,
   knowledge: ClinicKnowledge | null = null,
+  openingHours: WorkingHours | null = null,
 ): Promise<VapiResult<{ id: string; created: boolean }>> {
   const secret = webhookSecret();
   if (!secret) return { ok: false, status: 0, error: "VAPI_WEBHOOK_SECRET tanımlı değil." };
-  const toolIds = await toolIdsFor(agent, clinic, secret);
+  const toolIds = await toolIdsFor(agent, clinic, secret, Boolean(openingHours));
   if (!toolIds.ok) return { ...toolIds, error: `Araç kütüphanesi: ${toolIds.error}` };
-  const body = buildAssistant(agent, clinic, secret, toolIds.data, knowledge);
+  const body = buildAssistant(agent, clinic, secret, toolIds.data, knowledge, openingHours);
 
   if (existingId) {
     const updated = await vapi<{ id: string }>("PATCH", `/assistant/${encodeURIComponent(existingId)}`, body);
@@ -560,6 +574,8 @@ export interface VapiPhoneNumber {
   sipUri?: string;
   provider?: string;
   assistantId?: string | null;
+  /** Set in routing mode (routePhoneNumber): Vapi asks this URL which assistant answers. */
+  server?: { url?: string } | null;
 }
 
 export function listPhoneNumbers(): Promise<VapiResult<VapiPhoneNumber[]>> {
@@ -573,6 +589,21 @@ export function getPhoneNumber(id: string): Promise<VapiResult<VapiPhoneNumber>>
 /** Which assistant answers this number. Null detaches it — the line then rings out unanswered. */
 export function assignPhoneNumber(id: string, assistantId: string | null): Promise<VapiResult<VapiPhoneNumber>> {
   return vapi<VapiPhoneNumber>("PATCH", `/phone-number/${encodeURIComponent(id)}`, { assistantId });
+}
+
+/**
+ * Puts a number in routing mode: no fixed assistant, so on every inbound call
+ * Vapi asks our webhook which one to use (`assistant-request`, answered by
+ * lib/vapi/routing.ts — day agent in opening hours, after-hours agent outside).
+ * The secret header is what lets the webhook trust the request.
+ */
+export function routePhoneNumber(id: string): Promise<VapiResult<VapiPhoneNumber>> {
+  const secret = webhookSecret();
+  if (!secret) return Promise.resolve({ ok: false, status: 0, error: "VAPI_WEBHOOK_SECRET tanımlı değil." });
+  return vapi<VapiPhoneNumber>("PATCH", `/phone-number/${encodeURIComponent(id)}`, {
+    assistantId: null,
+    server: { url: webhookUrl(), headers: { "x-vapi-secret": secret } },
+  });
 }
 
 /* ───────────────────────────── recordings ───────────────────────────── */

@@ -312,7 +312,9 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
 function PhoneForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
   const provisioned = clinic.agents.filter((a) => a.vapiAssistantId);
   const inbound = clinic.agents.find((a) => a.id === clinic.phone?.inboundAgentId);
+  const night = clinic.agents.find((a) => a.id === clinic.afterHoursAgentId);
   const [agentId, setAgentId] = useState(clinic.phone?.inboundAgentId ?? "");
+  const [nightId, setNightId] = useState(clinic.afterHoursAgentId ?? "");
 
   return (
     <Block
@@ -332,6 +334,11 @@ function PhoneForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; 
               <span className="text-booked">{inbound.name}</span>
             ) : (
               <span className="text-missed">hiçbir ajana bağlı değil — aramalar cevapsız kalır</span>
+            )}
+            {inbound && clinic.phone?.routed && (
+              <span className="text-muted-foreground">
+                {night ? ` · mesai dışında ${night.name}` : " · mesai dışı ajanı yok, 7/24 aynı ajan"}
+              </span>
             )}
           </>
         )}
@@ -366,6 +373,32 @@ function PhoneForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; 
           {"Ajanları Vapi'ye kur"}
         </ActionButton>
       </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-full max-w-[240px]">
+          <Field label="Mesai dışında karşılayan ajan">
+            <select value={nightId} onChange={(e) => setNightId(e.target.value)} className={inputClass}>
+              <option value="">— yok (gündüz ajanı 7/24) —</option>
+              {provisioned
+                .filter((a) => a.id !== clinic.phone?.inboundAgentId)
+                .map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                    {a.active ? "" : " (duraklatılmış)"}
+                  </option>
+                ))}
+            </select>
+          </Field>
+        </div>
+        <ActionButton
+          disabled={busy || !clinic.phone?.routed}
+          onClick={() => void act({ action: "setAfterHours", clinicId: clinic.id, agentId: nightId })}
+        >
+          Kaydet
+        </ActionButton>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        {"Mesai saatleri, gündüz ajanının çalışma saatleridir. Mesai dışı ajanı randevuyu bu saatlere verir, aktarma yapmaz."}
+      </p>
     </Block>
   );
 }

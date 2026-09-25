@@ -1,7 +1,7 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { AGENTS, type Agent } from "@/lib/demo/data";
-import { normalizeWorkingHours } from "@/lib/agents/hours";
+import { normalizeWorkingHours, type WorkingHours } from "@/lib/agents/hours";
 
 /**
  * Multi-tenancy, server side.
@@ -38,10 +38,17 @@ export interface ClinicContext {
   callbackAgentId: string | null;
   /** The Vapi number outbound calls go out on, when it isn't the inbound one. */
   vapiOutboundPhoneNumberId: string | null;
+  /**
+   * Who answers the line. The day agent's working hours ARE the clinic's
+   * opening hours; outside them the after-hours agent picks up, if one is set
+   * (lib/vapi/routing.ts). Null after-hours = the day agent answers around the clock.
+   */
+  dayAgentId: string | null;
+  afterHoursAgentId: string | null;
 }
 
 const CLINIC_COLUMNS =
-  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, message_channel, callback_agent_id, vapi_outbound_phone_number_id";
+  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, message_channel, callback_agent_id, vapi_outbound_phone_number_id, day_agent_id, after_hours_agent_id";
 
 interface ClinicRow {
   id: string;
@@ -55,6 +62,8 @@ interface ClinicRow {
   message_channel: string | null;
   callback_agent_id: string | null;
   vapi_outbound_phone_number_id: string | null;
+  day_agent_id: string | null;
+  after_hours_agent_id: string | null;
 }
 
 function clinicFromRow(r: ClinicRow): ClinicContext {
@@ -70,6 +79,8 @@ function clinicFromRow(r: ClinicRow): ClinicContext {
     messageChannel: isMessageChannel(r.message_channel) ? r.message_channel : "off",
     callbackAgentId: r.callback_agent_id,
     vapiOutboundPhoneNumberId: r.vapi_outbound_phone_number_id,
+    dayAgentId: r.day_agent_id,
+    afterHoursAgentId: r.after_hours_agent_id,
   };
 }
 
@@ -232,4 +243,31 @@ export async function requireMember(req: Request): Promise<MemberCheck> {
   if (!clinic) return { ok: false, status: 403, error: "Hesabınız henüz bir kliniğe bağlı değil." };
 
   return { ok: true, user, clinic };
+}
+
+/* ───────────────────────── opening hours ───────────────────────── */
+
+/**
+ * The clinic's opening hours: the day agent's working hours. The after-hours
+ * agent answers when these are closed, and still books INTO them — its own
+ * hours only say when it answers, never when patients can come in.
+ * Null when no day agent is set.
+ */
+export async function clinicOpeningHours(clinic: ClinicContext): Promise<WorkingHours | null> {
+  if (!clinic.dayAgentId) return null;
+  const supabase = getSupabaseServer();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("agents")
+    .select("working_hours")
+    .eq("id", clinic.dayAgentId)
+    .eq("clinic_id", clinic.id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return normalizeWorkingHours(data.working_hours);
+}
+
+/** Whether this agent is the clinic's after-hours line (and so books into the day agent's hours). */
+export function isAfterHoursAgent(clinic: ClinicContext | null, agentId: string): boolean {
+  return Boolean(clinic?.afterHoursAgentId && clinic.afterHoursAgentId === agentId && clinic.dayAgentId !== agentId);
 }

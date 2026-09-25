@@ -3,6 +3,7 @@ import { summarizeHours } from "@/lib/agents/hours";
 import { speakHours } from "@/lib/speech/tr";
 import { knowledgeSection, type ClinicKnowledge } from "@/lib/clinics/knowledge-shape";
 import type { L } from "@/lib/i18n/config";
+import type { WorkingHours } from "@/lib/agents/hours";
 
 /** What the prompt needs to know about the line it runs on, beyond the agent itself. */
 export interface PromptContext {
@@ -15,6 +16,12 @@ export interface PromptContext {
    * told "aktarıyorum" into silence.
    */
   canTransfer?: boolean;
+  /**
+   * Set when this agent is the clinic's after-hours line (lib/vapi/routing.ts
+   * only hands it calls while the clinic is closed). It books into the
+   * clinic's opening hours — the day agent's — never into its own.
+   */
+  afterHours?: { openingHours: WorkingHours };
 }
 
 /**
@@ -64,8 +71,10 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr", ctx:
   const facts = knowledgeSection(ctx.knowledge ?? null, lang);
   if (facts) sections.push(facts);
 
+  // The hours patients can come in: the clinic's, even on the after-hours line.
+  const opening = ctx.afterHours?.openingHours ?? agent.workingHours;
   // Turkish gets the spoken form, so the model never reads "09:00" aloud.
-  const hours = tr ? speakHours(agent.workingHours) : summarizeHours(agent.workingHours, lang);
+  const hours = tr ? speakHours(opening) : summarizeHours(opening, lang);
   // Filled in by Vapi (Liquid) when each call starts — a date written here at
   // sync time would go stale, and without one the model guesses the year.
   const today = `{{"now" | date: "%Y-%m-%d, %A", "${agent.workingHours.timeZone}"}}`;
@@ -76,9 +85,17 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr", ctx:
   );
   sections.push(
     tr
-      ? `# Çalışma saatleri\nKlinik şu saatlerde açık (${agent.workingHours.timeZone}):\n${hours}\n\nBu saatlerin dışına randevu verme. Arayan kapalı bir saat isterse bunu söyle ve açık olan en yakın saatleri öner.`
-      : `# Working hours\nThe clinic is open (${agent.workingHours.timeZone}):\n${hours}\n\nNever book outside these hours. If the caller asks for a closed time, say so and offer the nearest open slots.`,
+      ? `# Çalışma saatleri\nKlinik şu saatlerde açık (${opening.timeZone}):\n${hours}\n\nBu saatlerin dışına randevu verme. Arayan kapalı bir saat isterse bunu söyle ve açık olan en yakın saatleri öner.`
+      : `# Working hours\nThe clinic is open (${opening.timeZone}):\n${hours}\n\nNever book outside these hours. If the caller asks for a closed time, say so and offer the nearest open slots.`,
   );
+
+  if (ctx.afterHours) {
+    sections.push(
+      tr
+        ? `# Mesai dışı\nSen kliniğin mesai dışı hattısın: bu aramalar klinik kapalıyken geliyor. Kliniğin kapalı olduğunu kısaca söyle ama arayanı geri çevirme; randevusunu yukarıdaki açık saatlere alabilirsin.\n- Şu an klinikte kimse yok: kimseye aktarma yapma, "bağlıyorum" deme.\n- Acil durum (şiddetli ağrı, durmayan kanama, yüzde ya da boyunda şişlik, yüz ve ağız yaralanması, yüksek ateşle birlikte diş ağrısı): tıbbi tavsiye verme. "Bu acil bir durum olabilir. Lütfen en yakın acil servise gidin ya da 112'yi arayın." de. Ardından adını ve durumunu not al, kliniğin sabah ilk iş arayacağını söyle.\n- Acil olmayan bir soruda ya da bilmediğin bir konuda notunu al; klinik açılınca döneceğini söyle.`
+        : `# After hours\nYou are the clinic's after-hours line: these calls come in while the clinic is closed. Say briefly that it's closed, but don't turn the caller away; you can book them into the opening hours above.\n- Nobody is at the clinic now: never transfer, never say "putting you through".\n- Emergencies (severe pain, bleeding that won't stop, swelling in the face or neck, a mouth or face injury, tooth pain with a high fever): give no medical advice. Say "This may be an emergency. Please go to the nearest emergency department or call 112." Then take their name and situation and say the clinic will call first thing in the morning.\n- For anything else you can't answer, take a note and say the clinic will get back to them once it opens.`,
+    );
+  }
 
   if (canBook) {
     sections.push(

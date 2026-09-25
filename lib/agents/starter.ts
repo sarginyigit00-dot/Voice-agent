@@ -77,14 +77,16 @@ export const STARTER_AGENTS: Agent[] = [
     active: false,
     callsToday: 0,
     purpose: {
-      tr: "Mesai dışı mesaj alır ve acil olanları yönlendirir.",
-      en: "Takes after-hours messages and escalates urgent ones.",
+      tr: "Klinik kapalıyken aramaları karşılar, açık saatlere randevu alır, acil durumu yönlendirir.",
+      en: "Answers while the clinic is closed, books into opening hours and points emergencies onward.",
     },
+    // It answers from evening to early morning, so no "iyi akşamlar" at 7 a.m.
     greeting: {
-      tr: "{klinik}, iyi akşamlar. Şu an mesai saatleri dışındayız ama size yardımcı olabilirim.",
-      en: "{klinik}, good evening. We are closed right now, but I can still help you.",
+      tr: "{klinik}, merhaba. Şu an mesai saatlerimiz dışındayız ama randevunuzu alabilirim. Size nasıl yardımcı olabilirim?",
+      en: "{klinik}, hello. We're closed right now, but I can still book you in. How can I help?",
     },
-    actionIds: ["sms", "transfer"],
+    // Books into the clinic's opening hours; nobody is there to take a transfer.
+    actionIds: ["book", "sms"],
     systemPrompt: "",
     // The mirror image of the daytime line: open exactly when the clinic isn't.
     workingHours: {

@@ -96,19 +96,19 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr", ctx:
       tr
         ? `# Randevu iptali ve erteleme
 Arayan mevcut randevusunu iptal etmek ya da başka saate almak isterse:
-1. Randevunun kimin adına ve hangi gün olduğunu sor. İkisini de almadan arama yapma.
+1. Aramak için randevunun kimin adına ve hangi gün olduğu gerekir. Arayan bunlardan birini zaten söylediyse ("yarınki randevum") tekrar sorma, sadece eksik olanı sor. "Yarın", "cuma" gibi günleri kendin tarihe çevir.
 2. \`find_appointment\` aracını ad ve günle ("YYYY-AA-GG") çağır.
 3. Bulunursa aracın \`spoken\` cümlesiyle randevuyu oku ve ne istediğini teyit et: "İptal etmemi istiyorsunuz, doğru mu?" Arayan açıkça onaylamadan işlem yapma.
 4. İptal için \`cancel_appointment\`, erteleme için önce \`check_availability\` ile yeni saat bul, arayan seçince \`reschedule_appointment\` çağır. İkisinde de aracın verdiği appointmentId'yi aynen kullan.
-5. Bulunamazsa adı ve günü bir kez daha sor. Yine bulunamazsa uydurma; notunu al ve kliniğin geri döneceğini söyle.
+5. Bulunamazsa günü tekrar sorma; sadece randevunun hangi isimle alındığını bir kez sor ve yeniden dene. Yine bulunamazsa uydurma; notunu al ve kliniğin geri döneceğini söyle. İptal için arayanı yeni randevu almaya yönlendirme.
 6. Arayanın söylemediği bir randevu bilgisini asla okuma, başka hastaların randevularından bahsetme.`
         : `# Cancelling and rescheduling
 If the caller wants to cancel or move an existing appointment:
-1. Ask whose name it is under and which day. Don't search without both.
+1. A search needs the name it's under and the day. If the caller already gave one ("my appointment tomorrow"), don't ask again; ask only for what's missing. Turn "tomorrow" or "Friday" into the date yourself.
 2. Call \`find_appointment\` with the name and the day ("YYYY-MM-DD").
 3. If found, read it back with the tool's \`spoken\` line and confirm what they want: "You'd like me to cancel it, is that right?" Do nothing until they clearly say yes.
 4. To cancel, call \`cancel_appointment\`; to move, find a new time with \`check_availability\` first and call \`reschedule_appointment\` once they pick. Use the appointmentId the tool gave you, exactly.
-5. If nothing is found, ask for the name and day once more. If it still isn't found, don't improvise; take a note and say the clinic will call back.
+5. If nothing is found, don't ask for the day again; ask once which name the appointment was booked under and search again. If it still isn't found, don't improvise; take a note and say the clinic will call back. Don't steer a caller who wants to cancel into booking a new appointment.
 6. Never read out appointment details the caller didn't give, and never mention other patients' appointments.`,
     );
   }

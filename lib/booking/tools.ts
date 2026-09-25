@@ -337,15 +337,20 @@ function nameTokens(raw: string): string[] {
 }
 
 /**
- * Every word the caller said must match a word on the booking — by prefix
- * either way, since transcription clips and pads names ("Sarı" / "Sarıy").
- * At least one of those words has to be a real name, not an initial.
+ * The shorter of the two names must be fully contained in the longer one —
+ * word by word, by prefix either way, since transcription clips and pads names
+ * ("Sarı" / "Sarıy"). Patients book with a first name and call back with their
+ * full name (or the other way round), so either side may be the shorter one;
+ * the first real call failed exactly there ("Yiğit" booked, "Yiğit Sargın" said).
+ * At least one matched word has to be a real name, not an initial.
  */
 function nameMatches(spoken: string, booked: string): boolean {
   const said = nameTokens(spoken);
   const have = nameTokens(booked);
-  if (!said.length || !said.some((t) => t.length >= 3)) return false;
-  return said.every((t) => have.some((h) => h.startsWith(t) || t.startsWith(h)));
+  if (!said.length || !have.length) return false;
+  const [shorter, longer] = said.length <= have.length ? [said, have] : [have, said];
+  if (!shorter.some((t) => t.length >= 3)) return false;
+  return shorter.every((t) => longer.some((l) => l.startsWith(t) || t.startsWith(l)));
 }
 
 const CALLER_SIDE = "hasta, telefonla";
@@ -391,7 +396,10 @@ async function findAppointment(args: ToolArgs, ctx: ToolContext): Promise<string
   if (!matches.length) {
     return JSON.stringify({
       ok: false,
-      spoken: "Bu isimle o gün için bir randevu bulamadım. Adınızı ya da günü bir kez daha söyler misiniz?",
+      // The day is usually right — a misheard or differently given name is the
+      // common miss — so ask about the name only, once.
+      spoken: "O gün için bu isimle bir randevu bulamadım. Randevuyu hangi isimle almıştınız?",
+      note: "Günü tekrar sorma. Arayan farklı bir isim söylerse bir kez daha dene; yine bulunamazsa notunu al ve kliniğin geri döneceğini söyle.",
     });
   }
   if (matches.length > 1) {

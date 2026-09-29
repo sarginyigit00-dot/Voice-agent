@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncCallsToCrm } from "@/lib/crm/sync";
+import { notifyError } from "@/lib/notify/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +22,6 @@ export async function GET(request: Request) {
   }
 
   const result = await syncCallsToCrm();
+  if (result.status === "error") await notifyError({ source: "cron/crm-sync", message: `CRM senkronu hata verdi: ${result.note ?? ""}` });
   return NextResponse.json(result, { status: result.status === "error" ? 500 : 200 });
 }

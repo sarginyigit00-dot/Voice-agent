@@ -10,6 +10,7 @@ import { routeInboundCall } from "@/lib/vapi/routing";
 import { findByCall } from "@/lib/booking/store";
 import { toE164, webhookSecret } from "@/lib/vapi/client";
 import { emitEvent } from "@/lib/automation/emit";
+import { notifyCaught, notifyError } from "@/lib/notify/telegram";
 import { localParts } from "@/lib/automation/format";
 import { markLeadCallEnded } from "@/lib/leads/callback";
 import type { Outcome } from "@/lib/demo/data";
@@ -174,6 +175,7 @@ async function handleToolCalls(message: VapiToolCallsMessage) {
   const owner = await resolveCallOwner(call.assistantId);
   if (!owner) {
     console.error(`[vapi] tool-calls from unknown assistant ${call.assistantId ?? "(none)"} — refused`);
+    await notifyError({ source: "vapi/webhook", message: "Bilinmeyen assistant'tan tool-call reddedildi", context: { assistantId: call.assistantId ?? "(yok)" } });
   }
 
   // Every tool call still gets an answer, or the model stalls mid-sentence —
@@ -212,6 +214,7 @@ async function handleToolCalls(message: VapiToolCallsMessage) {
           result = await runBookingTool(toolCall.name, args, ctx);
         } catch (e) {
           console.error(`[vapi] tool ${toolCall.name} threw:`, e);
+          await notifyCaught("vapi/webhook tool", e, { tool: toolCall.name, assistantId: call.assistantId });
           result = JSON.stringify({
             ok: false,
             spoken: "Sistemde bir sorun oldu. Sizi bir yetkiliye aktarayım.",
@@ -278,6 +281,7 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
     // this call belong to a clinic. Logged so the operator can spot an
     // assistant pointed at this URL that was never linked to an agent.
     console.error(`[vapi] end-of-call-report from unknown assistant ${call.assistantId ?? "(none)"} — not logged`);
+    await notifyError({ source: "vapi/webhook", message: "Bilinmeyen assistant'ın araması kaydedilmedi", context: { assistantId: call.assistantId ?? "(yok)" } });
     return NextResponse.json({ ok: true, ignored: "unknown assistant" });
   }
   const { agent, clinic } = owner;

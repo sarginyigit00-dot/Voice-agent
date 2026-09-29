@@ -10,6 +10,7 @@ import { findByCall, record } from "@/lib/booking/store";
 import { hoursForDate, isWithinHours, type WorkingHours } from "@/lib/agents/hours";
 import type { ClinicContext } from "@/lib/clinics/server";
 import { toE164 } from "@/lib/vapi/client";
+import { notifyError } from "@/lib/notify/telegram";
 import {
   appointmentFor,
   cancelAppointment,
@@ -142,6 +143,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
   const slots = await getSlots(cfg, { start, end });
   if (!slots.ok) {
     console.error("[booking] check_availability failed:", slots.error);
+    await notifyError({ source: "booking/check_availability", message: String(slots.error) });
     return JSON.stringify({
       ok: false,
       spoken: "Takvimi şu an sorgulayamadım. Bir yetkiliye aktarabilirim ya da sizi geri arayabiliriz.",
@@ -300,6 +302,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
 
   if (!booking.ok) {
     console.error("[booking] book_appointment failed:", booking.error);
+    await notifyError({ source: "booking/book_appointment", message: String(booking.error) });
     return JSON.stringify({
       ok: false,
       spoken: "Randevuyu kaydederken bir sorun oldu. Sizi bir yetkiliye aktarayım.",
@@ -443,6 +446,7 @@ async function cancelByPhone(args: ToolArgs, ctx: ToolContext): Promise<string> 
   const result = await cancelAppointment(ctx.clinic, appointment, CALLER_SIDE);
   if (!result.ok) {
     console.error("[booking] cancel_appointment failed:", result.error);
+    await notifyError({ source: "booking/cancel_appointment", message: String(result.error) });
     return JSON.stringify({ ok: false, spoken: "İptal ederken bir sorun oldu. Notunuzu alayım, klinik sizi en kısa sürede arasın." });
   }
   return JSON.stringify({
@@ -470,6 +474,7 @@ async function rescheduleByPhone(args: ToolArgs, ctx: ToolContext): Promise<stri
   const result = await rescheduleAppointment(ctx.clinic, appointment, checked.start, CALLER_SIDE);
   if (!result.ok) {
     console.error("[booking] reschedule_appointment failed:", result.error);
+    await notifyError({ source: "booking/reschedule_appointment", message: String(result.error) });
     return JSON.stringify({ ok: false, spoken: "Randevuyu değiştirirken bir sorun oldu. Notunuzu alayım, klinik sizi en kısa sürede arasın." });
   }
   return JSON.stringify({

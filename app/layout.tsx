@@ -10,6 +10,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/i18n/language-provider";
 import { SessionProvider } from "@/components/auth/session";
+import { ErrorListener } from "@/components/error-listener";
 import appConfig from "@/app.config";
 import { DEFAULT_LANG } from "@/lib/i18n/config";
 
@@ -79,6 +80,7 @@ export default function RootLayout({
               re-reading localStorage from a fresh mount each time.
             */}
             <SessionProvider>{children}</SessionProvider>
+            <ErrorListener />
           </LanguageProvider>
         </ThemeProvider>
       </body>

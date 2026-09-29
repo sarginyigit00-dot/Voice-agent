@@ -181,8 +181,8 @@ export default function AgentsPage() {
         : "Services, pricing policy, address, what not to answer. This is what the agent knows.",
     systemPromptPlaceholder:
       lang === "tr"
-        ? "Örn: Hizmetler: konsültasyon (ücretsiz, 30 dk), FUE saç ekimi…\nFiyat sorulursa telefonda rakam verme.\nTıbbi soruları doktora aktar."
-        : "e.g. Services: consultation (free, 30 min), FUE transplant…\nDon't quote prices on the phone.\nHand medical questions to a doctor.",
+        ? "Örn: Hizmetler: implant konsültasyonu (ücretsiz, 30 dk), diş implantı, gülüş tasarımı…\nFiyat sorulursa telefonda rakam verme.\nTıbbi soruları hekime aktar."
+        : "e.g. Services: implant consultation (free, 30 min), dental implants, smile design…\nDon't quote prices on the phone.\nHand medical questions to a dentist.",
     hours: lang === "tr" ? "Çalışma saatleri" : "Working hours",
     hoursHint:
       lang === "tr"

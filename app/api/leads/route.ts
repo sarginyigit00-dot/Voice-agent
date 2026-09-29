@@ -3,10 +3,10 @@ import { intakeLead, isLeadSource, processLead } from "@/lib/leads/callback";
 
 /**
  * POST /api/leads?key=<clinic's form key> — a clinic's lead form, from its
- * own website (cross-origin, JSON or a plain HTML form) or relayed by n8n
- * from a Meta lead ad. Fields: name, phone, consent, note?, source?.
- * The call starts right after the response (lib/leads/callback.ts).
- * Setup and a ready form: n8n/HIZLI-GERI-DONUS.md.
+ * own website (cross-origin, JSON or a plain HTML form) or relayed by
+ * whatever the clinic uses from a Meta lead ad. Fields: name, phone, consent,
+ * note?, source?. The call starts right after the response (lib/leads/callback.ts).
+ * Setup and a ready form: HIZLI-GERI-DONUS.md.
  */
 
 const CORS = {

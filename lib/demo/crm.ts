@@ -86,9 +86,9 @@ function earlierCalls(today: Date, lang: Lang): CrmRecord[] {
         { tr: "Fiyat listesi e-postayla gönderildi", en: "Pricing sheet emailed" },
       ],
       transcript: [
-        { speaker: "agent", atSec: 0, text: { tr: "Briteline Temizlik, ben Randevox. Nasıl yardımcı olabilirim?", en: "Brightline Cleaning, this is Randevox. How can I help?" } },
-        { speaker: "caller", atSec: 5, text: { tr: "Daire temizliği ne kadar tutuyor?", en: "How much does an apartment cleaning cost?" } },
-        { speaker: "agent", atSec: 10, text: { tr: "İki odalı bir daire için 120 dolardan başlıyor. Size fiyat listesini gönderebilirim.", en: "It starts at $120 for a two-bedroom. I can email you the full pricing sheet." } },
+        { speaker: "agent", atSec: 0, text: { tr: "Estetenova Diş Kliniği, ben Randevox. Nasıl yardımcı olabilirim?", en: "Estetenova Dental, this is Randevox. How can I help?" } },
+        { speaker: "caller", atSec: 5, text: { tr: "Diş beyazlatma ne kadar tutuyor?", en: "How much does teeth whitening cost?" } },
+        { speaker: "agent", atSec: 10, text: { tr: "Fiyat, yönteme ve dişlerinizin durumuna göre değişiyor. Size fiyat listemizi gönderebilirim.", en: "It depends on the method and the state of your teeth. I can email you our price list." } },
         { speaker: "caller", atSec: 18, text: { tr: "Olur, gönderin. Sonra tekrar arayacağım.", en: "Yes please. I'll call back after I look at it." } },
       ],
     },
@@ -128,7 +128,7 @@ function earlierCalls(today: Date, lang: Lang): CrmRecord[] {
         { tr: "Randevu eklendi — Sal 09:00", en: "Appointment created — Tue 09:00" },
       ],
       transcript: [
-        { speaker: "agent", atSec: 0, text: { tr: "Cedar Diş Kliniği, ben Randevox. Nasıl yardımcı olabilirim?", en: "Cedar Dental, this is Randevox. How can I help?" } },
+        { speaker: "agent", atSec: 0, text: { tr: "Estetenova Diş Kliniği, ben Randevox. Nasıl yardımcı olabilirim?", en: "Estetenova Dental, this is Randevox. How can I help?" } },
         { speaker: "caller", atSec: 5, text: { tr: "Altı aylık kontrolüm için randevu almam gerekiyor.", en: "I need to book my six-month check-up." } },
         { speaker: "agent", atSec: 11, text: { tr: "Salı sabahı 09:00 uygun mu?", en: "Would Tuesday morning at 09:00 work?" } },
         { speaker: "caller", atSec: 16, text: { tr: "Uygun, teşekkürler.", en: "That works, thank you." } },

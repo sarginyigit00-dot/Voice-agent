@@ -62,8 +62,8 @@ const EXTRA_VARS: EnvCheck[] = [
   // Error alerts to Telegram — see lib/notify/telegram.ts.
   { name: "TELEGRAM_BOT_TOKEN", set: false, optional: true },
   { name: "TELEGRAM_CHAT_ID", set: false, optional: true },
-  // Faz 3: events to n8n and the routes n8n calls back — see lib/automation/emit.ts.
-  { name: "N8N_EVENTS_URL", set: false, optional: true },
+  // Faz 3: events to the automation app (Modal) and the routes it calls back — see lib/automation/emit.ts.
+  { name: "AUTOMATION_EVENTS_URL", set: false, optional: true },
   { name: "AUTOMATION_SECRET", set: false, optional: true },
 ];
 

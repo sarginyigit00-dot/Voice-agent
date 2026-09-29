@@ -5,10 +5,8 @@ başvuru klinik açılınca aranır. Başarısız arama en fazla 3 kez denenir; 
 aranmaz. Aramalar /calls'ta diğer aramalar gibi görünür.
 
 ```
-Klinik sitesi formu ─┐
-                     ├─► POST /api/leads?key=… ─► ajan arar (Vapi)
-Meta reklam formu ─► n8n ┘
-n8n (5 dk) ─► /api/automation/lead-callbacks ─► bekleyenleri arar
+Klinik sitesi formu ──────────► POST /api/leads?key=… ─► ajan arar (Vapi)
+Otomasyon uygulaması (Modal, 5 dk) ─► /api/automation/lead-callbacks ─► bekleyenleri arar
 ```
 
 ## 1. Admin
@@ -28,7 +26,7 @@ Form adresine `POST` edilir. JSON ya da düz HTML form olur.
 | `phone` | evet | `0532…`, `+90532…` |
 | `consent` | evet | `true` / `on`. **Açık rıza kutusu işaretlenmeden gönderilmemeli.** |
 | `name` | hayır | Ajan hitap ederken kullanır |
-| `note` | hayır | Ajana iletilir (ör. "saç ekimi fiyatı") |
+| `note` | hayır | Ajana iletilir (ör. "implant fiyatı") |
 | `source` | hayır | `web` (varsayılan), `meta` |
 | `website` | — | Gizli bırakılacak bot tuzağı; doluysa başvuru yok sayılır |
 
@@ -58,19 +56,20 @@ Hazır form (adresi admin'deki ile değiştir):
 Yanıtlar: `200 {ok:true}`; aynı numara 24 saat içinde tekrar gelirse `{ok:true, duplicate:true}` ve
 ikinci arama yapılmaz. `400 consent` / `400 phone`; `404 unknown_form` (adres yenilenmiş ya da yanlış).
 
-## 3. Meta reklam formu (n8n)
+## 3. Meta reklam formu (klinik kendi otomasyonunu bağlar)
 
 Meta'da Lead Ads formunda telefon alanı ve açık rıza sorusu (custom disclaimer) olmalı.
-n8n'de kliniğe bir akış:
+Klinik kendi tercih ettiği araçla (n8n, Zapier, Make, Facebook'un kendi entegrasyonu…) forma
+bir akış kurar:
 1. **Facebook Lead Ads Trigger** (sayfa ve form seçilir).
 2. **HTTP Request** → `POST` form adresi, JSON gövde:
-   `{ "name": "{{ $json.full_name }}", "phone": "{{ $json.phone_number }}", "consent": true, "source": "meta" }`
+   `{ "name": "{{ full_name }}", "phone": "{{ phone_number }}", "consent": true, "source": "meta" }`
    (alan adları formdaki sorulara göre değişir).
 
-## 4. Bekleyenler (n8n)
+## 4. Bekleyenler
 
-`randevox-lead-callbacks.json` bir kez içeri alınır ve aktif edilir; tüm klinikler için tek akış.
-`RANDEVOX_URL` ve `AUTOMATION_SECRET` değişkenleri zaten n8n'de var.
+Otomasyon uygulaması (`automation/app.py`, `lead_callbacks` işi) her 5 dakikada bir
+`/api/automation/lead-callbacks`'i çağırır — kurulumu için `automation/README.md`.
 
 ## Test
 

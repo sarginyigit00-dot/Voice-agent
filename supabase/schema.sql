@@ -42,7 +42,7 @@ create table if not exists public.clinics (
   notify_email text,
   -- legacy, superseded by message_channel; kept in step until dropped
   whatsapp_enabled boolean not null default false,
-  -- patient messages via n8n: 'off' | 'sms' (Netgsm) | 'whatsapp'
+  -- patient messages via the automation app (Modal): 'off' | 'sms' (Netgsm) | 'whatsapp'
   message_channel text not null default 'off' check (message_channel in ('off', 'sms', 'whatsapp')),
   -- optional: forward every finished call to this clinic's own CRM
   crm_webhook_url text,
@@ -362,7 +362,7 @@ alter table public.appointments
 alter table public.appointments
   add column if not exists clinic_id uuid references public.clinics (id) on delete cascade;
 
--- Faz 3: set by n8n through /api/automation/reminders/sent, so a reminder
+-- Faz 3: set by the automation app through /api/automation/reminders/sent, so a reminder
 -- goes out once. Cleared again when the appointment is rescheduled.
 alter table public.appointments
   add column if not exists reminder_24h_sent_at timestamptz;
@@ -470,8 +470,8 @@ create policy "Members read their clinic's knowledge"
   using (clinic_id in (select public.my_clinic_ids()));
 
 -- ─────────────────────────────────────────────────────────────────────────
---  Hızlı geri dönüş — a clinic's lead form (website, or a Meta lead ad via
---  n8n) posts to app/api/leads?key=<lead_form_key>, and the clinic's
+--  Hızlı geri dönüş — a clinic's lead form (website, or a Meta lead ad relayed
+--  by whatever the clinic uses) posts to app/api/leads?key=<lead_form_key>, and the clinic's
 --  callback agent phones the lead (lib/leads/callback.ts). Written only by
 --  the service role; members may read their own clinic's leads.
 -- ─────────────────────────────────────────────────────────────────────────

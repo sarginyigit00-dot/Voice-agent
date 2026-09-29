@@ -1,7 +1,7 @@
 ﻿"use client";
 
 /**
- * / — the editorial landing page, aimed at HAIR TRANSPLANT CLINICS.
+ * / — the editorial landing page, aimed at multi-dentist private DENTAL CLINICS (implant & aesthetic focus).
  *
  * Runs on the scoped `.ed-light` palette (warm paper canvas, soft ink, Signal
  * Blue as the single "on" switch, Ember for accents) — see globals.css. The
@@ -154,8 +154,8 @@ function Hero() {
 
             <p className="ed-body max-w-xl text-pretty text-muted-foreground">
               {lang === "tr"
-                ? "Randevox kliniğinizin telefonunu ilk çalışta açar: randevu alır, greft ve fiyat sorularını sizin verdiğiniz bilgiyle yanıtlar, yurtdışından arayan hastayla kendi dilinde konuşur. Gece, hafta sonu, siz ameliyattayken bile."
-                : "Randevox answers your clinic's phone on the first ring: books appointments, answers graft and pricing questions from the information you provide, and speaks to international patients in their own language. Nights, weekends, even while you're operating."}
+                ? "Randevox kliniğinizin telefonunu ilk çalışta açar: randevu alır, implant ve tedavi sorularını sizin verdiğiniz bilgiyle yanıtlar, yabancı hastayla İngilizce konuşur. Gece, hafta sonu, hekimleriniz koltuktayken bile."
+                : "Randevox answers your clinic's phone on the first ring: books appointments, answers implant and treatment questions from the information you provide, and speaks English with international patients. Nights, weekends, even while your dentists are chairside."}
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -323,26 +323,26 @@ function Features() {
     },
     {
       icon: "list-checks",
-      title: { tr: "Greft ve fiyat sorularını yanıtlar", en: "Answers graft & price questions" },
+      title: { tr: "İmplant ve tedavi sorularını yanıtlar", en: "Answers implant & treatment questions" },
       body: {
-        tr: "Yalnızca sizin verdiğiniz bilgiyle konuşur. Bilmediği bir şeyi uydurmaz — analiz gerektiren soruyu randevuya çevirir.",
+        tr: "Yalnızca sizin verdiğiniz bilgiyle konuşur. Bilmediği bir şeyi uydurmaz — muayene gerektiren soruyu randevuya çevirir.",
         en: "Speaks only from the information you give it. It never invents an answer — it turns those questions into a booking.",
       },
     },
     {
       icon: "languages",
-      title: { tr: "Yurtdışı hastayla kendi dilinde", en: "International patients, their language" },
+      title: { tr: "Yabancı hastayla İngilizce", en: "International patients, in English" },
       body: {
-        tr: "İngilizce, Arapça, Almanca ve 30+ dil. Hastanın dilini ilk cümleden algılar, konaklama ve transfer sorularını yanıtlar.",
-        en: "English, Arabic, German and 30+ more. It detects the language from the first sentence and handles travel questions.",
+        tr: "Türkçe ve İngilizce konuşur. Tedavi için gelen yabancı hastanın randevu, tedavi süreci ve seyahat sorularını yanıtlar.",
+        en: "Speaks Turkish and English. It handles booking, treatment-process and travel questions from patients coming in from abroad.",
       },
     },
     {
       icon: "moon",
-      title: { tr: "Siz ameliyattayken açık", en: "Open while you're operating" },
+      title: { tr: "Hekimleriniz koltukta iken açık", en: "Open while your dentists are chairside" },
       body: {
-        tr: "Operasyon, mesai dışı, hafta sonu, tatil — telefon boşta çalmaz. Her arama karşılanır, hiçbiri sesli mesaja düşmez.",
-        en: "Surgery, after hours, weekends, holidays — the phone is never left ringing and nothing drops to voicemail.",
+        tr: "Tedavi, mesai dışı, hafta sonu, tatil — telefon boşta çalmaz. Her arama karşılanır, hiçbiri sesli mesaja düşmez.",
+        en: "Treatments, after hours, weekends, holidays — the phone is never left ringing and nothing drops to voicemail.",
       },
     },
     {
@@ -408,10 +408,10 @@ function Guardrails() {
       title: { tr: "Söyleyebilir", en: "It may say" },
       caption: { tr: "Sizin yazdığınız bilgiler", en: "The facts you write" },
       items: [
-        { tr: "Kliniğimizde 2.000–4.000 greft aralığı yaygın.", en: "2,000–4,000 grafts is the common range here." },
-        { tr: "Saç analizi ücretsiz.", en: "The hair analysis is free." },
-        { tr: "Pakete transfer, 4 gece konaklama ve kontrol dahil.", en: "The package covers transfer, 4 nights and the check-up." },
-        { tr: "Operasyon yaklaşık 6–8 saat sürüyor.", en: "The procedure takes about 6–8 hours." },
+        { tr: "İmplant konsültasyonu ve muayene ücretsiz.", en: "The implant consultation and exam are free." },
+        { tr: "Tek implant için iki seans gerekiyor.", en: "A single implant takes two visits." },
+        { tr: "Gülüş tasarımı için önce panoramik film çekiyoruz.", en: "For smile design we start with a panoramic X-ray." },
+        { tr: "Randevu Salı ve Perşembe günleri müsait.", en: "Appointments are open on Tuesdays and Thursdays." },
       ],
     },
     {
@@ -432,7 +432,7 @@ function Guardrails() {
       title: { tr: "Size devreder", en: "It hands over" },
       caption: { tr: "Anında, bağlamıyla birlikte", en: "Instantly, with the context" },
       items: [
-        { tr: "Operasyon sonrası ağrı veya şikâyet", en: "Post-op pain or a complaint" },
+        { tr: "Tedavi sonrası ağrı veya şikâyet", en: "Post-treatment pain or a complaint" },
         { tr: "İade ve iptal talebi", en: "Refund or cancellation requests" },
         { tr: "Israrla doktorla görüşme isteği", en: "Insisting on speaking to the doctor" },
         { tr: "Basın, iş birliği, tedarikçi", en: "Press, partnerships, suppliers" },
@@ -497,8 +497,8 @@ function Guardrails() {
               <span className="ed-eyebrow">{appConfig.name}</span>
               <span className="rounded-[20px] border border-violet bg-violet px-4 py-3 text-[15px] leading-relaxed text-primary-foreground">
                 {lang === "tr"
-                  ? "Sonuç kişiden kişiye değişiyor, ben garanti veremem. Doktorumuz analizde saç yapınıza bakıp size gerçekçi bir beklenti anlatır — Salı 14:00'e alayım mı?"
-                  : "Results vary from person to person, so I can't promise that. Our doctor will look at your hair in the analysis and give you a realistic expectation — shall I book you Tuesday at 14:00?"}
+                  ? "Sonuç kişiden kişiye değişiyor, ben garanti veremem. Hekimimiz muayenede çene yapınıza bakıp size gerçekçi bir beklenti anlatır — Salı 14:00'e alayım mı?"
+                  : "Results vary from person to person, so I can't promise that. Our dentist will examine you and give you a realistic expectation — shall I book you Tuesday at 14:00?"}
               </span>
             </div>
           </div>
@@ -532,8 +532,8 @@ function HowItWorks() {
       n: "02",
       title: { tr: "Bilgilerinizi verin", en: "Give it your information" },
       body: {
-        tr: "Paketleriniz, greft aralıklarınız, doktor takviminiz ve hangi soruda kime aktaracağı — bir formda anlatırsınız.",
-        en: "Your packages, graft ranges, doctor calendar and who to transfer to for what — described once in a form.",
+        tr: "Tedavileriniz, hekimleriniz, çalışma saatleriniz ve hangi soruda kime aktaracağı — bir formda anlatırsınız.",
+        en: "Your treatments, dentists, opening hours and who to transfer to for what — described once in a form.",
       },
     },
     {
@@ -590,15 +590,15 @@ function Faq() {
     {
       q: { tr: "Fiyat bilgisini nereden alıyor? Yanlış rakam söyler mi?", en: "Where does pricing come from? Can it quote wrong?" },
       a: {
-        tr: "Yalnızca sizin girdiğiniz paket ve greft aralıklarından konuşur. Kapsam dışı bir soru geldiğinde rakam uydurmaz — analiz gerektiğini söyleyip randevuya çevirir veya sizi arar. Neyi söyleyip neyi söylemeyeceğini siz belirlersiniz.",
-        en: "Only from the packages and graft ranges you enter. For anything outside that it does not improvise a number — it explains an analysis is needed and turns it into a booking, or escalates to you. You define what it may and may not say.",
+        tr: "Yalnızca sizin girdiğiniz tedavi ve fiyat bilgilerinden konuşur. Kapsam dışı bir soru geldiğinde rakam uydurmaz — muayene gerektiğini söyleyip randevuya çevirir veya sizi arar. Neyi söyleyip neyi söylemeyeceğini siz belirlersiniz.",
+        en: "Only from the treatments and prices you enter. For anything outside that it does not improvise a number — it explains an exam is needed and turns it into a booking, or escalates to you. You define what it may and may not say.",
       },
     },
     {
       q: { tr: "Yurtdışından arayan hastalarla hangi dillerde konuşuyor?", en: "Which languages does it handle for international patients?" },
       a: {
-        tr: "Türkçe, İngilizce, Arapça, Almanca dahil 30+ dil. Hastanın dilini ilk cümlelerden algılar ve aynı dilde devam eder — konaklama, transfer ve paket sorularını da o dilde yanıtlar.",
-        en: "30+ languages including Turkish, English, Arabic and German. It detects the language from the first sentences and continues in it — including travel, transfer and package questions.",
+        tr: "Türkçe ve İngilizce. Yabancı hasta İngilizce aradığında ajan aynı dilde devam eder; randevu, tedavi süreci ve seyahat sorularını yanıtlar.",
+        en: "Turkish and English. When an international patient calls in English, the agent continues in English — booking, treatment-process and travel questions included.",
       },
     },
     {

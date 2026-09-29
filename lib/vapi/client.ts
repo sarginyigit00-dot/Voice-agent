@@ -147,7 +147,7 @@ async function vapi<T>(method: "GET" | "POST" | "PATCH" | "DELETE", path: string
 /* ───────────────────────────── tools ───────────────────────────── */
 
 /** Mirrors lib/booking/tools.ts — the names and arguments it dispatches on. */
-const BOOKING_TOOLS = [
+export const BOOKING_TOOLS = [
   {
     type: "function",
     function: {
@@ -181,7 +181,8 @@ const BOOKING_TOOLS = [
           },
           name: { type: "string", description: "Arayanın adı soyadı." },
           email: { type: "string", description: "Arayan verdiyse e-posta adresi." },
-          notes: { type: "string", description: "Kısa not: hangi hizmet için arıyor." },
+          service: { type: "string", description: "Arayanın randevu istediği hizmet, kısaca (ör. dolgu, muayene)." },
+          notes: { type: "string", description: "Kısa ek not, varsa." },
           phone: {
             type: "string",
             description: "Arayanın söylediği cep telefonu numarası, rakamlarla (ör. 05321234567). Yalnızca check_availability askPhone: true döndürdüyse sor ve gönder.",
@@ -424,6 +425,17 @@ export function buildAssistant(
     // When the caller does talk over the agent, stop — but not on a cough or
     // an "hı hı": two real words, and then stay quiet long enough to listen.
     stopSpeakingPlan: { numWords: 2, voiceSeconds: 0.3, backoffSeconds: 1.5 },
+    // Dead air: nudge twice ("Orada mısınız?"), then hang up rather than
+    // bill an empty line. Phone lines also carry street noise — filter it.
+    silenceTimeoutSeconds: 25,
+    maxDurationSeconds: 600,
+    backgroundDenoisingEnabled: true,
+    messagePlan: {
+      idleMessages: ["Orada mısınız?", "Sizi duyamıyorum, hâlâ hatta mısınız?"],
+      idleTimeoutSeconds: 8,
+      maxIdleMessages: 2,
+      silenceTimeoutMessage: "Sizi duyamıyorum, isterseniz daha sonra tekrar arayabilirsiniz. İyi günler.",
+    },
     server: { url: webhookUrl(), headers: { "x-vapi-secret": secret } },
     // Only the two the webhook acts on — the rest is traffic for nothing.
     serverMessages: ["tool-calls", "end-of-call-report"],
@@ -457,6 +469,20 @@ export function buildAssistant(
               description: "Arayanın üzerinde anlaştığı randevu saati, ISO-8601. Anlaşılmadıysa boş.",
             },
             callerEmail: { type: "string", description: "Arayan verdiyse e-posta adresi." },
+            // Read by the webhook for the clinic's follow-up email (lib/notify/email.ts).
+            callbackRequested: {
+              type: "boolean",
+              description: "Ajan arayana kliniğin onu geri arayacağını söyledi mi (notunu aldım, klinik sizi arasın gibi)? Söylediyse true.",
+            },
+            patientName: { type: "string", description: "Arayanın söylediği adı soyadı. Söylemediyse boş." },
+            callbackPhone: {
+              type: "string",
+              description: "Arayanın geri aranmak için söylediği telefon numarası, yalnızca rakamlar. Söylemediyse boş.",
+            },
+            callbackReason: {
+              type: "string",
+              description: "Klinik neden geri arayacak: arayanın sorusu ya da isteği, tek kısa cümle. Geri arama sözü yoksa boş.",
+            },
           },
         },
       },

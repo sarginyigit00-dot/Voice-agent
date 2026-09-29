@@ -1,6 +1,6 @@
 /**
  * Appointment times as a patient reads them, in the clinic's own time zone —
- * n8n drops these straight into SMS text and WhatsApp template variables, so it never has
+ * the automation app drops these straight into SMS text and WhatsApp template variables, so it never has
  * to do time-zone arithmetic of its own.
  */
 export function localParts(iso: string, timeZone: string): { date: string; time: string } {

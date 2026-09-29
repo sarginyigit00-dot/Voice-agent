@@ -50,6 +50,20 @@ export const metadata: Metadata = {
   title: `${appConfig.name} — ${appConfig.tagline[DEFAULT_LANG]}`,
   description: appConfig.description[DEFAULT_LANG],
   applicationName: appConfig.name,
+  keywords: [
+    "diş kliniği randevu asistanı",
+    "diş kliniği yapay zekâ telefon",
+    "implant kliniği randevu",
+    "diş kliniği çağrı karşılama",
+    "AI voice agent dental clinic",
+    "dental clinic phone answering",
+  ],
+  openGraph: {
+    title: `${appConfig.name} — ${appConfig.tagline[DEFAULT_LANG]}`,
+    description: appConfig.description[DEFAULT_LANG],
+    siteName: appConfig.name,
+    type: "website",
+  },
 };
 
 export default function RootLayout({

@@ -4,9 +4,10 @@ import { isAutomationRequest } from "@/lib/automation/emit";
 import { REMINDER_WINDOWS, isReminderKind } from "@/lib/automation/reminders";
 
 /**
- * n8n marks a reminder as sent: POST { id, kind }. The `is null` guard makes
- * it idempotent — a retried call changes nothing, and the row has already
- * left /api/automation/due-reminders, so the patient never gets it twice.
+ * The automation app marks a reminder as sent: POST { id, kind }. The `is
+ * null` guard makes it idempotent — a retried call changes nothing, and the
+ * row has already left /api/automation/due-reminders, so the patient never
+ * gets it twice.
  */
 export async function POST(req: Request) {
   if (!isAutomationRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

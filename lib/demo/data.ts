@@ -98,18 +98,18 @@ export const CALLS: CallRow[] = [
   {
     id: "c1", caller: "Ayşe Yıldırım", number: "+90 532 555 0241", agentId: "ag1",
     time: "14:32", duration: "3:12", durationSec: 192, outcome: "booked", sentiment: "positive", wave: wA, recordingUrl: null,
-    summary: { tr: "Salı 10:00 için temizlik randevusu aldı, adres doğrulandı.", en: "Booked a cleaning appointment for Tue 10:00, address confirmed." },
+    summary: { tr: "Salı 10:00 için implant konsültasyonu randevusu aldı, telefonu doğrulandı.", en: "Booked an implant consultation for Tue 10:00, phone number confirmed." },
     actions: [
       { tr: "Takvime randevu eklendi — Sal 10:00", en: "Calendar event created — Tue 10:00" },
       { tr: "Onay SMS'i gönderildi", en: "Confirmation SMS sent" },
     ],
     transcript: [
-      { who: "agent", at: 0, text: { tr: "Briteline Temizlik'e hoş geldiniz, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Thanks for calling Brightline Cleaning, this is Randevox. How can I help?" } },
-      { who: "caller", at: 4, text: { tr: "Merhaba, evime bir temizlik randevusu almak istiyorum.", en: "Hi, I'd like to book a cleaning for my apartment." } },
+      { who: "agent", at: 0, text: { tr: "Estetenova Diş Kliniği, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Thanks for calling Estetenova Dental, this is Randevox. How can I help?" } },
+      { who: "caller", at: 4, text: { tr: "Merhaba, diş implantı için bir görüşme almak istiyorum.", en: "Hi, I'd like to book a consultation for a dental implant." } },
       { who: "agent", at: 9, text: { tr: "Memnuniyetle. Bu hafta salı sabahı 10:00 uygun mu?", en: "Happy to help. Would Tuesday morning at 10:00 work for you?" } },
       { who: "caller", at: 15, text: { tr: "Evet, salı 10 harika.", en: "Yes, Tuesday at 10 is great." } },
-      { who: "agent", at: 19, text: { tr: "Harika — adresinizi alabilir miyim?", en: "Perfect — can I grab your address?" } },
-      { who: "caller", at: 23, text: { tr: "412 Cedar Caddesi, daire 5.", en: "412 Cedar Street, apartment 5." } },
+      { who: "agent", at: 19, text: { tr: "Harika — adınızı ve telefon numaranızı teyit edebilir miyim?", en: "Perfect — can I confirm your name and phone number?" } },
+      { who: "caller", at: 23, text: { tr: "Ayşe Yıldırım, 0532 555 02 41.", en: "Ayşe Yıldırım, 0532 555 02 41." } },
       { who: "agent", at: 29, text: { tr: "Randevunuzu Salı 10:00'a aldım ve onay mesajı gönderiyorum. Başka bir şey var mı?", en: "I've booked Tuesday 10:00 and I'm sending a confirmation text. Anything else?" } },
       { who: "caller", at: 37, text: { tr: "Hayır, teşekkürler!", en: "No, that's all, thank you!" } },
     ],
@@ -117,30 +117,30 @@ export const CALLS: CallRow[] = [
   {
     id: "c2", caller: "Emre Doğan", number: "+90 533 555 0316", agentId: "ag2",
     time: "14:18", duration: "1:54", durationSec: 114, outcome: "resolved", sentiment: "positive", wave: wB, recordingUrl: null,
-    summary: { tr: "Sıcak aday — 50+ koltuk, bu çeyrek bütçesi var. Satışa iletildi.", en: "Hot lead — 50+ seats, budget this quarter. Forwarded to sales." },
+    summary: { tr: "Sıcak aday — 6 diş için gülüş tasarımı istiyor, bu ay başlamak istiyor. Hasta danışmanına iletildi.", en: "Hot lead — wants smile design for 6 teeth, wants to start this month. Forwarded to the patient coordinator." },
     actions: [
       { tr: "Aday sıcak olarak puanlandı (87/100)", en: "Lead scored hot (87/100)" },
-      { tr: "Slack #sales kanalına bildirim", en: "Slack #sales notified" },
+      { tr: "Hasta danışmanına bildirim gitti", en: "Patient coordinator notified" },
     ],
     transcript: [
-      { who: "agent", at: 0, text: { tr: "Randevox'a hoş geldiniz, ben dijital asistanınız. Hangi konuda arıyorsunuz?", en: "Welcome to Randevox, I'm your digital assistant. What brings you in today?" } },
-      { who: "caller", at: 5, text: { tr: "Ekibim için sesli ajanlara bakıyoruz, fiyatları merak ediyorum.", en: "We're evaluating voice agents for my team, curious about pricing." } },
-      { who: "agent", at: 11, text: { tr: "Tabii. Kaç kişilik bir ekip için düşünüyorsunuz?", en: "Of course. Roughly how many people are on your team?" } },
-      { who: "caller", at: 16, text: { tr: "Şu an 50 civarı, hızlı büyüyoruz.", en: "Around 50 right now, growing fast." } },
-      { who: "agent", at: 21, text: { tr: "Anladım. Bütçe bu çeyrekte mi ayrıldı?", en: "Got it. Is budget allocated for this quarter?" } },
-      { who: "caller", at: 27, text: { tr: "Evet, bu çeyrekte karar vermek istiyoruz.", en: "Yes, we want to decide this quarter." } },
-      { who: "agent", at: 33, text: { tr: "Mükemmel — sizi satış ekibimize bağlıyorum, ayrıntıları konuşalım.", en: "Perfect — I'll connect you with our sales team to dig into the details." } },
+      { who: "agent", at: 0, text: { tr: "Estetenova Diş Kliniği, ben dijital asistanınız. Hangi konuda arıyorsunuz?", en: "Estetenova Dental, I'm your digital assistant. What brings you in today?" } },
+      { who: "caller", at: 5, text: { tr: "Ön dişlerim için gülüş tasarımına bakıyorum, süreci merak ediyorum.", en: "I'm looking at smile design for my front teeth, curious about the process." } },
+      { who: "agent", at: 11, text: { tr: "Tabii. Kaç diş için düşünüyorsunuz?", en: "Of course. Roughly how many teeth are you thinking about?" } },
+      { who: "caller", at: 16, text: { tr: "Üst çenede altı diş.", en: "Six teeth in the upper jaw." } },
+      { who: "agent", at: 21, text: { tr: "Anladım. Ne zaman başlamayı düşünüyorsunuz?", en: "Got it. When are you hoping to start?" } },
+      { who: "caller", at: 27, text: { tr: "Bu ay içinde başlamak isterim.", en: "I'd like to start this month." } },
+      { who: "agent", at: 33, text: { tr: "Mükemmel — sizi hasta danışmanımıza bağlıyorum, ayrıntıları konuşalım.", en: "Perfect — I'll connect you with our patient coordinator to go through the details." } },
     ],
   },
   {
     id: "c3", caller: "Unknown", number: "+90 216 555 0187", agentId: "ag1",
     time: "13:55", duration: "0:48", durationSec: 48, outcome: "transferred", sentiment: "neutral", wave: wC, recordingUrl: null,
-    summary: { tr: "Faturalandırma sorusu — ajan canlı temsilciye transfer etti.", en: "Billing question — agent warm-transferred to a live rep." },
-    actions: [{ tr: "Faturalandırma ekibine transfer", en: "Transferred to billing team" }],
+    summary: { tr: "Tedavi sonrası şikâyet — ajan resepsiyona canlı transfer etti.", en: "Post-treatment complaint — agent warm-transferred to the front desk." },
+    actions: [{ tr: "Resepsiyona transfer", en: "Transferred to front desk" }],
     transcript: [
       { who: "agent", at: 0, text: { tr: "Merhaba, ben Randevox. Nasıl yardımcı olabilirim?", en: "Hi, this is Randevox. How can I help?" } },
-      { who: "caller", at: 4, text: { tr: "Faturamda bir hata var sanırım.", en: "I think there's an error on my invoice." } },
-      { who: "agent", at: 8, text: { tr: "Üzgünüm. Sizi hemen faturalandırma uzmanımıza bağlıyorum.", en: "Sorry about that. I'll connect you to a billing specialist right away." } },
+      { who: "caller", at: 4, text: { tr: "Geçen hafta implant taktırdım, dikiş yerim ağrıyor.", en: "I had an implant placed last week and the stitch area hurts." } },
+      { who: "agent", at: 8, text: { tr: "Geçmiş olsun. Tıbbi bir konu olduğu için sizi hemen resepsiyona bağlıyorum.", en: "I'm sorry to hear that. As it's a medical matter I'm connecting you to the front desk right away." } },
     ],
   },
   {
@@ -152,7 +152,7 @@ export const CALLS: CallRow[] = [
       { tr: "Hatırlatma 24s öncesine ayarlandı", en: "Reminder set for 24h prior" },
     ],
     transcript: [
-      { who: "agent", at: 0, text: { tr: "Cedar Diş Kliniği, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Cedar Dental, this is Randevox. How can I help you today?" } },
+      { who: "agent", at: 0, text: { tr: "Estetenova Diş Kliniği, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Estetenova Dental, this is Randevox. How can I help you today?" } },
       { who: "caller", at: 5, text: { tr: "Rutin bir kontrol için randevu almak istiyorum.", en: "I'd like to schedule a routine check-up." } },
       { who: "agent", at: 10, text: { tr: "Tabii. Perşembe öğleden sonra 15:30 sizin için uygun mu?", en: "Sure. Would Thursday afternoon at 15:30 work?" } },
       { who: "caller", at: 16, text: { tr: "Perşembe gayet iyi.", en: "Thursday works fine." } },
@@ -172,17 +172,17 @@ export const CALLS: CallRow[] = [
   {
     id: "c6", caller: "Merve Çetin", number: "+90 536 555 0619", agentId: "ag3",
     time: "12:48", duration: "4:05", durationSec: 245, outcome: "resolved", sentiment: "positive", wave: wC, recordingUrl: null,
-    summary: { tr: "Reçete yenileme talebini ajan kendi başına çözdü.", en: "Agent resolved a prescription-refill request end to end." },
+    summary: { tr: "Randevu erteleme talebini ajan kendi başına çözdü.", en: "Agent resolved an appointment-reschedule request end to end." },
     actions: [
-      { tr: "Yenileme talebi eczaneye gönderildi", en: "Refill request sent to pharmacy" },
+      { tr: "Randevu Cuma 11:00'e taşındı", en: "Appointment moved to Fri 11:00" },
       { tr: "Hasta bilgilendirildi", en: "Patient notified" },
     ],
     transcript: [
-      { who: "agent", at: 0, text: { tr: "Cedar Klinik, ben Randevox. Nasıl yardımcı olabilirim?", en: "Cedar Clinic, this is Randevox. How can I help?" } },
-      { who: "caller", at: 5, text: { tr: "Reçetemi yenilemem gerekiyor.", en: "I need to refill my prescription." } },
-      { who: "agent", at: 9, text: { tr: "Tabii, doğum tarihinizi alabilir miyim?", en: "Sure, can I get your date of birth?" } },
-      { who: "caller", at: 14, text: { tr: "12 Mart 1990.", en: "March 12th, 1990." } },
-      { who: "agent", at: 19, text: { tr: "Teşekkürler. Yenileme talebinizi eczanenize ilettim, hazır olunca bilgilendirileceksiniz.", en: "Thank you. I've sent the refill to your pharmacy; you'll be notified when it's ready." } },
+      { who: "agent", at: 0, text: { tr: "Estetenova Diş Kliniği, ben Randevox. Nasıl yardımcı olabilirim?", en: "Estetenova Dental, this is Randevox. How can I help?" } },
+      { who: "caller", at: 5, text: { tr: "Perşembeki randevumu ertelemem gerekiyor.", en: "I need to move my Thursday appointment." } },
+      { who: "agent", at: 9, text: { tr: "Tabii, adınızı alabilir miyim?", en: "Sure, can I get your name?" } },
+      { who: "caller", at: 14, text: { tr: "Merve Çetin.", en: "Merve Çetin." } },
+      { who: "agent", at: 19, text: { tr: "Teşekkürler. Randevunuzu Cuma 11:00'e aldım, onay mesajı geliyor.", en: "Thank you. I've moved you to Friday 11:00 and a confirmation is on its way." } },
     ],
   },
   {
@@ -198,17 +198,17 @@ export const CALLS: CallRow[] = [
   {
     id: "c8", caller: "Ceren Aydın", number: "+90 545 555 0852", agentId: "ag2",
     time: "11:54", duration: "2:57", durationSec: 177, outcome: "booked", sentiment: "positive", wave: wB, recordingUrl: null,
-    summary: { tr: "Emlak görüntüleme randevusu aldı — Cumartesi 11:00.", en: "Booked a property viewing — Saturday 11:00." },
+    summary: { tr: "Diş beyazlatma randevusu aldı — Cumartesi 11:00.", en: "Booked a teeth-whitening appointment — Saturday 11:00." },
     actions: [
-      { tr: "Görüntüleme planlandı — Cmt 11:00", en: "Viewing scheduled — Sat 11:00" },
+      { tr: "Beyazlatma planlandı — Cmt 11:00", en: "Whitening scheduled — Sat 11:00" },
       { tr: "Konum bağlantısı gönderildi", en: "Location link sent" },
     ],
     transcript: [
-      { who: "agent", at: 0, text: { tr: "Harborline Emlak, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Harborline Realty, this is Randevox. How can I help?" } },
-      { who: "caller", at: 5, text: { tr: "Cedar Caddesi'ndeki daireyi görmek istiyorum.", en: "I'd like to view the Cedar Street apartment." } },
+      { who: "agent", at: 0, text: { tr: "Estetenova Diş Kliniği, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Estetenova Dental, this is Randevox. How can I help?" } },
+      { who: "caller", at: 5, text: { tr: "Diş beyazlatma için randevu almak istiyorum.", en: "I'd like to book a teeth-whitening session." } },
       { who: "agent", at: 11, text: { tr: "Tabii. Cumartesi 11:00 sizin için uygun mu?", en: "Of course. Would Saturday at 11:00 suit you?" } },
       { who: "caller", at: 17, text: { tr: "Cumartesi mükemmel.", en: "Saturday is perfect." } },
-      { who: "agent", at: 21, text: { tr: "Görüntülemeyi Cumartesi 11:00'a aldım ve konum bağlantısını gönderiyorum.", en: "I've scheduled the viewing for Saturday 11:00 and I'm texting you the location." } },
+      { who: "agent", at: 21, text: { tr: "Beyazlatmayı Cumartesi 11:00'a aldım ve konum bağlantısını gönderiyorum.", en: "I've scheduled the whitening for Saturday 11:00 and I'm texting you the location." } },
     ],
   },
 ];
@@ -258,28 +258,28 @@ export const AGENTS: Agent[] = [
   {
     id: "ag1", name: "Ön Büro", voice: "Defne · warm female", active: true, callsToday: 142,
     purpose: { tr: "Gelen aramaları karşılar, randevu alır, yönlendirir.", en: "Greets inbound calls, books appointments and routes." },
-    greeting: { tr: "Briteline'a hoş geldiniz, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Thanks for calling Brightline, this is Randevox. How can I help?" },
+    greeting: { tr: "Estetenova Diş Kliniği'ne hoş geldiniz, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Thanks for calling Estetenova Dental, this is Randevox. How can I help?" },
     actionIds: ["book", "transfer", "sms"],
     systemPrompt:
-      "Brightline'a gelen aramaları karşılıyorsun.\n\nHizmetler: saç ekimi konsültasyonu (ücretsiz, 30 dk), FUE saç ekimi, sakal ekimi, PRP tedavisi.\nFiyat sorulursa: konsültasyon ücretsizdir, ekim fiyatı greft sayısına göre değişir ve kesin fiyat ancak muayeneden sonra verilir. Telefonda rakam verme.\nAdres: Nispetiye Cad. No:12, Etiler, İstanbul.\n\nTıbbi soru sorulursa (ilaç, iyileşme süreci, komplikasyon) cevaplama — doktora aktar.",
+      "Estetenova Diş Kliniği'ne gelen aramaları karşılıyorsun.\n\nHizmetler: implant konsültasyonu (ücretsiz, 30 dk), diş implantı, zirkonyum kaplama, gülüş tasarımı, ortodonti (şeffaf plak), diş beyazlatma, genel muayene ve dolgu.\nFiyat sorulursa: konsültasyon ücretsizdir; tedavi fiyatı çene yapısına ve gereken işleme göre değişir, kesin fiyat ancak hekim muayenesinden sonra verilir. Telefonda rakam verme.\nAdres: Nispetiye Cad. No:12, Etiler, İstanbul.\n\nTıbbi soru sorulursa (ilaç, iyileşme süreci, komplikasyon) cevaplama — hekime aktar.",
     workingHours: defaultWorkingHours(),
   },
   {
     id: "ag2", name: "Hasta Danışmanı", voice: "Kerem · confident male", active: true, callsToday: 98,
-    purpose: { tr: "Müşteri adaylarını nitelendirir ve satışa iletir.", en: "Qualifies leads and forwards them to sales." },
-    greeting: { tr: "Randevox'a hoş geldiniz! Hangi konuda yardımcı olabilirim?", en: "Welcome to Randevox! What can I help you with today?" },
+    purpose: { tr: "İmplant ve estetik adaylarını nitelendirir, hasta danışmanına iletir.", en: "Qualifies implant and aesthetic leads and forwards them to the patient coordinator." },
+    greeting: { tr: "Estetenova Diş Kliniği'ne hoş geldiniz! Hangi konuda yardımcı olabilirim?", en: "Welcome to Estetenova Dental! What can I help you with today?" },
     actionIds: ["qualify", "crm"],
     systemPrompt:
-      "Gelen adayın ne aradığını, bütçesini ve ne zaman başlamak istediğini öğren.\nBu üçü netleşmeden satış ekibine aktarma.\nFiyat pazarlığına girme; indirim sorulursa satış ekibinin dönüş yapacağını söyle.",
+      "Gelen adayın hangi tedaviyi (implant, gülüş tasarımı, ortodonti vb.) istediğini, kaç diş için düşündüğünü ve ne zaman başlamak istediğini öğren.\nBu üçü netleşmeden hasta danışmanına aktarma.\nFiyat pazarlığına girme; indirim sorulursa hasta danışmanının dönüş yapacağını söyle.",
     workingHours: defaultWorkingHours(),
   },
   {
     id: "ag3", name: "Randevu Masası", voice: "Deniz · calm neutral", active: true, callsToday: 67,
     purpose: { tr: "Hasta randevuları ve rutin talepleri yönetir.", en: "Handles patient bookings and routine requests." },
-    greeting: { tr: "Cedar Klinik, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Cedar Clinic, this is Randevox. How can I help you today?" },
+    greeting: { tr: "Estetenova Diş Kliniği, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Estetenova Dental, this is Randevox. How can I help you today?" },
     actionIds: ["book", "sms"],
     systemPrompt:
-      "Cedar Klinik hasta karşılama hattısın.\n\nRandevu alırken hastanın adını ve telefonunu mutlaka teyit et.\nİlk kez arayan hastalara konsültasyonun 30 dakika sürdüğünü ve ücretsiz olduğunu söyle.\nRandevu iptali veya erteleme talebi gelirse, hastayı resepsiyona aktar — bunu telefonda sen yapma.",
+      "Estetenova Diş Kliniği hasta karşılama hattısın.\n\nRandevu alırken hastanın adını ve telefonunu mutlaka teyit et.\nİlk kez arayan hastalara konsültasyonun 30 dakika sürdüğünü ve ücretsiz olduğunu söyle.\nRandevu iptali veya erteleme talebi gelirse, hastayı resepsiyona aktar — bunu telefonda sen yapma.",
     workingHours: defaultWorkingHours(),
   },
   {
@@ -288,7 +288,7 @@ export const AGENTS: Agent[] = [
     greeting: { tr: "Şu an kapalıyız. Mesajınızı bırakın, sabah ilk iş dönüş yapalım.", en: "We're closed right now. Leave a message and we'll call back first thing." },
     actionIds: ["sms", "transfer"],
     systemPrompt:
-      "Klinik kapalıyken arayanları karşılıyorsun. Randevu ALMA — bu hat randevu veremez.\nHastanın adını, telefonunu ve konusunu al, ertesi gün ilk iş dönüleceğini söyle.\nAcil bir durum tarif edilirse (kanama, şiddetli ağrı, ateş) hemen nöbetçi doktora aktar.",
+      "Klinik kapalıyken arayanları karşılıyorsun. Randevu ALMA — bu hat randevu veremez.\nHastanın adını, telefonunu ve konusunu al, ertesi gün ilk iş dönüleceğini söyle.\nAcil bir durum tarif edilirse (durmayan kanama, yüzde şişlik, şiddetli diş ağrısı, kırık diş, ateş) hemen nöbetçi hekime aktar.",
     // The mirror image of the daytime line: open exactly when the clinic isn't.
     workingHours: {
       timeZone: "Europe/Istanbul",
@@ -335,7 +335,7 @@ export const minutes = {
   label: { tr: "Bu ay kullanılan dakika", en: "Minutes used this month" } as L,
   used: 1612,
   cap: 2000,
-  sub: { tr: "2.000 dakikalık Growth planının %81'i", en: "81% of your 2,000-minute Growth plan" } as L,
+  sub: { tr: "2.000 dakikalık paketin %81'i", en: "81% of your 2,000-minute plan" } as L,
 };
 
 /* ════════════════════════════ MARKETING ════════════════════════════ */
@@ -344,17 +344,17 @@ export const MARKETING_LOGOS = ["Brightline", "Cedar Health", "Harborline", "Nor
 
 /** Marquee strip of recent call outcomes. */
 export const TICKER: { symbol: string; text: L; tone: Outcome }[] = [
-  { symbol: "BOOKED", text: { tr: "Diş kontrolü · Per 15:30", en: "Dental check-up · Thu 15:30" }, tone: "booked" },
-  { symbol: "QUALIFIED", text: { tr: "50+ koltuk · satışa iletildi", en: "50+ seats · sent to sales" }, tone: "resolved" },
-  { symbol: "TRANSFERRED", text: { tr: "Faturalandırma · canlı temsilci", en: "Billing · live rep" }, tone: "transferred" },
-  { symbol: "BOOKED", text: { tr: "Daire görüntüleme · Cmt 11:00", en: "Apartment viewing · Sat 11:00" }, tone: "booked" },
-  { symbol: "RESOLVED", text: { tr: "Reçete yenilendi", en: "Prescription refilled" }, tone: "resolved" },
-  { symbol: "BOOKED", text: { tr: "Temizlik · Sal 10:00", en: "Cleaning · Tue 10:00" }, tone: "booked" },
+  { symbol: "BOOKED", text: { tr: "İmplant konsültasyonu · Per 15:30", en: "Implant consultation · Thu 15:30" }, tone: "booked" },
+  { symbol: "QUALIFIED", text: { tr: "Gülüş tasarımı adayı · danışmana iletildi", en: "Smile design lead · sent to coordinator" }, tone: "resolved" },
+  { symbol: "TRANSFERRED", text: { tr: "Tedavi sonrası şikâyet · resepsiyon", en: "Post-treatment complaint · front desk" }, tone: "transferred" },
+  { symbol: "BOOKED", text: { tr: "Diş beyazlatma · Cmt 11:00", en: "Teeth whitening · Sat 11:00" }, tone: "booked" },
+  { symbol: "RESOLVED", text: { tr: "Randevu ertelendi", en: "Appointment rescheduled" }, tone: "resolved" },
+  { symbol: "BOOKED", text: { tr: "Diş taşı temizliği · Sal 10:00", en: "Dental cleaning · Tue 10:00" }, tone: "booked" },
 ];
 
 /** The streaming-transcript script for the interactive landing demo. */
 export const DEMO_SCRIPT: Turn[] = [
-  { who: "agent", at: 0, text: { tr: "Briteline'a hoş geldiniz, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Thanks for calling Brightline, this is Randevox. How can I help?" } },
+  { who: "agent", at: 0, text: { tr: "Estetenova Diş Kliniği, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Thanks for calling Estetenova Dental, this is Randevox. How can I help?" } },
   { who: "caller", at: 3, text: { tr: "Merhaba, bir randevu almak istiyorum.", en: "Hi, I'd like to book an appointment." } },
   { who: "agent", at: 6, text: { tr: "Memnuniyetle. Salı sabahı 10:00 uygun mu?", en: "Happy to help. Would Tuesday morning at 10:00 work?" } },
   { who: "caller", at: 10, text: { tr: "Evet, salı harika.", en: "Yes, Tuesday is great." } },
@@ -368,7 +368,7 @@ export interface UseCase {
 }
 
 export const USE_CASES: UseCase[] = [
-  { icon: "stethoscope", title: { tr: "Klinikler", en: "Clinics" }, body: { tr: "Randevu al, yeniden planla, reçete yenile.", en: "Book, reschedule and refill — no front desk needed." } },
+  { icon: "stethoscope", title: { tr: "Diş klinikleri", en: "Dental clinics" }, body: { tr: "İmplant ve estetik görüşmelerini randevuya çevir, yeniden planla, hatırlat.", en: "Turn implant and aesthetic enquiries into bookings, reschedule and remind." } },
   { icon: "home", title: { tr: "Emlak", en: "Real estate" }, body: { tr: "Görüntüleme planla, adayları nitelendir.", en: "Schedule viewings and qualify buyers around the clock." } },
   { icon: "utensils", title: { tr: "Restoranlar", en: "Restaurants" }, body: { tr: "Rezervasyon al, sipariş notu tut.", en: "Take reservations and capture orders, even at peak." } },
   { icon: "briefcase", title: { tr: "Ajanslar", en: "Agencies" }, body: { tr: "Müşteri aramalarını karşıla, brief topla.", en: "Answer client calls and collect briefs automatically." } },

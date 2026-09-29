@@ -517,7 +517,7 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
       const outbound = clinic.vapiOutboundPhoneNumberId ?? clinic.vapiPhoneNumberId;
       return ok(
         outbound
-          ? "Hızlı geri dönüş açıldı. Form adresini kliniğin sitesine ve n8n'e ver."
+          ? "Hızlı geri dönüş açıldı. Form adresini kliniğin sitesine ve (varsa) Meta reklam otomasyonuna ver."
           : "Hızlı geri dönüş açıldı, ama klinikte Vapi numarası yok — Ayarlar'dan ekle, yoksa kimse aranamaz.",
       );
     }
@@ -526,7 +526,7 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
       if (!clinicId) return fail("Klinik seçilmedi.");
       const { error } = await supabase.from("clinics").update({ lead_form_key: newLeadFormKey() }).eq("id", clinicId);
       if (error) return fail(error.message);
-      return ok("Yeni form adresi oluşturuldu. Eski adres artık çalışmaz; kliniğin formunu ve n8n'i güncelle.");
+      return ok("Yeni form adresi oluşturuldu. Eski adres artık çalışmaz; kliniğin formunu ve (varsa) Meta reklam otomasyonunu güncelle.");
     }
 
     default:

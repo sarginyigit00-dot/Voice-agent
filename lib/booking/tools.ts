@@ -98,7 +98,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
   if (!cfg) {
     return JSON.stringify({
       ok: false,
-      spoken: "Takvim sistemine şu anda bağlanamıyorum. Sizi bir yetkiliye aktarayım.",
+      spoken: "Takvim sistemine şu anda bağlanamıyorum. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
     });
   }
 
@@ -146,7 +146,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
     await notifyError({ source: "booking/check_availability", message: String(slots.error) });
     return JSON.stringify({
       ok: false,
-      spoken: "Takvimi şu an sorgulayamadım. Bir yetkiliye aktarabilirim ya da sizi geri arayabiliriz.",
+      spoken: "Takvimi şu an sorgulayamadım. Notunuzu alayım, klinik sizi geri arasın.",
     });
   }
 
@@ -160,7 +160,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
       ok: false,
       spoken: date
         ? "O gün için boş yerimiz kalmamış. Başka bir güne bakmamı ister misiniz?"
-        : "Önümüzdeki hafta için boş yerimiz görünmüyor. Sizi bir yetkiliye aktarayım.",
+        : "Önümüzdeki hafta için boş yerimiz görünmüyor. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
     });
   }
 
@@ -243,7 +243,7 @@ async function checkRequestedSlot(
 /* ─────────────────────── book_appointment ─────────────────────── */
 
 /**
- * Args: { start: ISO-8601, name?, email?, notes?, phone? }
+ * Args: { start: ISO-8601, name?, email?, service?, notes?, phone? }
  *
  * `start` must be one of the ISO values check_availability returned. We
  * re-verify it against Cal.com anyway — the model can hallucinate a time, and
@@ -254,7 +254,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
   if (!cfg) {
     return JSON.stringify({
       ok: false,
-      spoken: "Randevu sistemine şu anda bağlanamıyorum. Sizi bir yetkiliye aktarayım.",
+      spoken: "Randevu sistemine şu anda bağlanamıyorum. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
     });
   }
 
@@ -280,6 +280,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
 
   const name = str(args, "name") ?? (ctx.callerName !== "Unknown" ? ctx.callerName : "Telefonla arayan");
   const email = str(args, "email");
+  const service = str(args, "service");
   const notes = str(args, "notes");
   // The line's own caller number wins; the one the patient said on the call is
   // for when the line didn't pass one. A number that doesn't parse is dropped
@@ -294,7 +295,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     phone,
     // Without an email from the patient the confirmation goes to the clinic's
     // inbox, so the phone number has to be visible on the booking itself.
-    notes: [notes, phone ? `Telefon: ${phone}` : null]
+    notes: [service ? `Hizmet: ${service}` : null, notes, phone ? `Telefon: ${phone}` : null]
       .filter(Boolean)
       .join(" · "),
     metadata: { callId: ctx.callId, source: "randevox-voice" },
@@ -305,7 +306,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     await notifyError({ source: "booking/book_appointment", message: String(booking.error) });
     return JSON.stringify({
       ok: false,
-      spoken: "Randevuyu kaydederken bir sorun oldu. Sizi bir yetkiliye aktarayım.",
+      spoken: "Randevuyu kaydederken bir sorun oldu. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
     });
   }
 

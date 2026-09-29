@@ -128,7 +128,8 @@ once Supabase is connected. CRM is the one action with a real implementation —
 call is additionally forwarded there for an external CRM (Zapier/Make/n8n etc.) — that part
 stays optional (the env `CRM_WEBHOOK_URL` is only used without Supabase). As a safety net for calls the webhook path missed, `app/api/cron/crm-sync`
 (`lib/crm/sync.ts`, scheduled nightly in `vercel.json` — Vercel's plan runs crons daily at
-most, which is why the 5-minute polls live in n8n instead — protected by `CRON_SECRET`)
+most, which is why the 5-minute polls live in the automation app (Modal, `automation/app.py`)
+instead — protected by `CRON_SECRET`)
 re-scans the `calls` table and upserts anything not yet in `crm_records` — `crm_records.call_id`
 is uniquely indexed, so both paths are idempotent. The other four actions report a `"demo"` result until a project wires their
 real call in. `app/api/actions/test` lets Settings → Integrations → CRM fire a fake call at

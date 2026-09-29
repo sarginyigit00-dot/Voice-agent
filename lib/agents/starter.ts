@@ -6,7 +6,7 @@ import { defaultWorkingHours } from "@/lib/agents/hours";
  * page on first sign-in.
  *
  * Deliberately NOT the demo array (`lib/demo/data.ts` → AGENTS). That one is a
- * sales surface: it ships a fully written hair-transplant clinic, complete
+ * sales surface: it ships a fully written dental clinic, complete
  * with a street address in Etiler and a price policy. Seeding a real clinic
  * from it handed its receptionist another clinic's facts to read out loud.
  *
@@ -41,8 +41,8 @@ export const STARTER_AGENTS: Agent[] = [
     active: true,
     callsToday: 0,
     purpose: {
-      tr: "Müşteri adaylarını nitelendirir ve satışa iletir.",
-      en: "Qualifies leads and forwards them to sales.",
+      tr: "Hasta adaylarını nitelendirir ve hasta danışmanına iletir.",
+      en: "Qualifies patient leads and forwards them to the patient coordinator.",
     },
     greeting: {
       tr: "{klinik}, merhaba. Hangi konuda yardımcı olabilirim?",

@@ -7,14 +7,15 @@ import type { Outcome } from "@/lib/demo/data";
 
 /**
  * Hızlı geri dönüş: a patient fills in a clinic's lead form (its website, or a
- * Meta lead ad relayed by n8n), and the clinic's callback agent phones them
- * within a minute.
+ * Meta lead ad relayed by whatever the clinic uses), and the clinic's
+ * callback agent phones them within a minute.
  *
  * - app/api/leads takes the form (`?key=` names the clinic, never an id) and
  *   calls `processLead` right after answering.
- * - Outside the agent's working hours a lead waits; n8n polls
- *   app/api/automation/lead-callbacks every few minutes and `processDueLeads`
- *   phones it once the clinic opens. Failed calls retry the same way.
+ * - Outside the agent's working hours a lead waits; the automation app
+ *   (automation/app.py) polls app/api/automation/lead-callbacks every few
+ *   minutes and `processDueLeads` phones it once the clinic opens. Failed
+ *   calls retry the same way.
  * - The call itself is an ordinary call on the agent's own assistant, so the
  *   webhook logs it to /calls like any other; `markLeadCallEnded` only notes
  *   the outcome back on the lead.
@@ -179,7 +180,7 @@ export async function processLead(leadId: string): Promise<LeadStatus | null> {
   return status;
 }
 
-/** n8n's poll: everything still owed a call, oldest first. */
+/** The automation app's poll: everything still owed a call, oldest first. */
 export async function processDueLeads(): Promise<Record<string, number>> {
   const supabase = getSupabaseServer();
   if (!supabase) return {};

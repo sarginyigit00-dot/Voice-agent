@@ -2,26 +2,27 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { ClinicContext } from "@/lib/clinics/server";
 
 /**
- * The seam between Randevox and n8n (Faz 3). Randevox owns everything that
- * happens while a caller is on the line; n8n owns what happens after —
- * SMS or WhatsApp to the patient, email to the clinic, reminders. One shared set of
- * n8n workflows serves every clinic: whatever a workflow needs to know about
- * the clinic travels inside the event, so n8n never holds the service-role key.
+ * The seam between Randevox and the automation app (Modal, `automation/app.py`,
+ * Faz 3). Randevox owns everything that happens while a caller is on the
+ * line; the automation app owns what happens after — SMS or WhatsApp to the
+ * patient, email to the clinic, reminders. One shared app serves every
+ * clinic: whatever a job needs to know about the clinic travels inside the
+ * event, so it never holds the service-role key.
  *
  * Two directions, one secret (AUTOMATION_SECRET):
- * - Randevox → n8n: `emitEvent` POSTs to N8N_EVENTS_URL, body signed with
- *   HMAC-SHA256 in `x-randevox-signature`.
- * - n8n → Randevox: /api/automation/* routes check `Authorization: Bearer`.
+ * - Randevox → automation: `emitEvent` POSTs to AUTOMATION_EVENTS_URL, body
+ *   signed with HMAC-SHA256 in `x-randevox-signature`.
+ * - automation → Randevox: /api/automation/* routes check `Authorization: Bearer`.
  */
 
-export type AutomationEventType = "call.completed" | "appointment.cancelled" | "appointment.rescheduled";
+export type AutomationEventType = "call.completed" | "appointment.booked" | "appointment.cancelled" | "appointment.rescheduled";
 
 function secret(): string | null {
   return process.env.AUTOMATION_SECRET?.trim() || null;
 }
 
 export function isAutomationConfigured(): boolean {
-  return Boolean(process.env.N8N_EVENTS_URL?.trim() && secret());
+  return Boolean(process.env.AUTOMATION_EVENTS_URL?.trim() && secret());
 }
 
 export function signBody(body: string, key: string): string {
@@ -36,7 +37,7 @@ function clinicForEvent(c: ClinicContext) {
     timeZone: c.timeZone,
     notifyEmail: c.notifyEmail,
     messageChannel: c.messageChannel,
-    // Read by n8n flows from before the SMS channel; drop once live n8n is updated.
+    // Read by the automation app from before the SMS channel existed; kept for older events.
     whatsappEnabled: c.messageChannel === "whatsapp",
   };
 }
@@ -44,14 +45,14 @@ function clinicForEvent(c: ClinicContext) {
 /**
  * Best-effort, like forwardToWebhook in lib/actions/executors/crm.ts: 5 s
  * timeout, never throws. The database is the source of truth; a lost event
- * costs a message, never a record. Returns whether n8n accepted it.
+ * costs a message, never a record. Returns whether the automation app accepted it.
  */
 export async function emitEvent(
   clinic: ClinicContext | null,
   type: AutomationEventType,
   data: Record<string, unknown>,
 ): Promise<boolean> {
-  const url = process.env.N8N_EVENTS_URL?.trim();
+  const url = process.env.AUTOMATION_EVENTS_URL?.trim();
   const key = secret();
   // No clinic means demo mode — nothing real happened, so nothing to tell anyone.
   if (!url || !key || !clinic) return false;
@@ -73,10 +74,10 @@ export async function emitEvent(
       body,
       signal: controller.signal,
     });
-    if (!res.ok) console.error(`[automation] n8n rejected ${type}: HTTP ${res.status}`);
+    if (!res.ok) console.error(`[automation] rejected ${type}: HTTP ${res.status}`);
     return res.ok;
   } catch (e) {
-    console.error(`[automation] could not reach n8n for ${type}:`, e instanceof Error ? e.message : e);
+    console.error(`[automation] could not reach automation app for ${type}:`, e instanceof Error ? e.message : e);
     return false;
   } finally {
     clearTimeout(timeout);
@@ -84,8 +85,8 @@ export async function emitEvent(
 }
 
 /**
- * Gate for the routes n8n calls. Fails closed: with no AUTOMATION_SECRET
- * configured nothing gets in — same stance as /api/cron/crm-sync.
+ * Gate for the routes the automation app calls. Fails closed: with no
+ * AUTOMATION_SECRET configured nothing gets in — same stance as /api/cron/crm-sync.
  */
 export function isAutomationRequest(req: Request): boolean {
   const key = secret();

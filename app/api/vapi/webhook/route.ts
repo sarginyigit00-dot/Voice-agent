@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { runAgentActions } from "@/lib/actions/run";
 import type { CallActionPayload } from "@/lib/actions/types";
 import { logCall } from "@/lib/calls/log";
@@ -13,6 +13,7 @@ import { emitEvent } from "@/lib/automation/emit";
 import { notifyCaught, notifyError } from "@/lib/notify/telegram";
 import { localParts } from "@/lib/automation/format";
 import { markLeadCallEnded } from "@/lib/leads/callback";
+import { sendFollowUpEmail } from "@/lib/notify/email";
 import type { Outcome } from "@/lib/demo/data";
 
 /**
@@ -240,13 +241,24 @@ async function handleToolCalls(message: VapiToolCallsMessage) {
  * without it the post-call booking net simply reports that the time was never
  * established, which is the honest outcome.
  */
-function extracted(message: VapiEndOfCallMessage): { requestedStart?: string; callerEmail?: string } {
+function extracted(message: VapiEndOfCallMessage): {
+  requestedStart?: string;
+  callerEmail?: string;
+  callback: { requested: boolean; name?: string; phone?: string; reason?: string };
+} {
   const data = message.analysis?.structuredData ?? {};
   const start = data.requestedStart ?? data.requested_start ?? data.appointmentTime;
   const email = data.callerEmail ?? data.caller_email ?? data.email;
+  const text = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 300) : undefined);
   return {
     requestedStart: typeof start === "string" && start.trim() ? start.trim() : undefined,
     callerEmail: typeof email === "string" && email.includes("@") ? email.trim() : undefined,
+    callback: {
+      requested: data.callbackRequested === true || data.callbackRequested === "true",
+      name: text(data.patientName),
+      phone: text(data.callbackPhone),
+      reason: text(data.callbackReason),
+    },
   };
 }
 
@@ -325,7 +337,7 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
   // A no-op unless this was a Hızlı geri dönüş call.
   await markLeadCallEnded(payload.callId, payload.outcome);
 
-  // After the log, so n8n never hears about a call the panel doesn't have.
+  // After the log, so the automation app never hears about a call the panel doesn't have.
   // Suspended clinics run no actions, and that includes messages.
   if (clinic && clinic.status !== "suspended") {
     await emitEvent(clinic, "call.completed", {
@@ -349,6 +361,24 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
           }
         : null,
     });
+  }
+
+  // After the response, so Vapi never waits on the mail server. Unbooked calls
+  // and promised call-backs reach the clinic's inbox (lib/notify/email.ts).
+  if (clinic) {
+    const { callback } = extracted(message);
+    const bookedPhone = appointment?.attendeePhone ?? "";
+    after(() =>
+      sendFollowUpEmail(clinic, {
+        startedAt: payload.startedAt,
+        agentName: payload.agentName,
+        summary: payload.summary,
+        callerNumber: payload.number || bookedPhone,
+        callerSpoke: transcript.some((t) => t.speaker === "caller"),
+        booked: Boolean(appointment),
+        callback,
+      }).then(() => undefined),
+    );
   }
 
   return NextResponse.json({ ok: true, results });

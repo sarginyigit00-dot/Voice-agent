@@ -82,58 +82,58 @@ export interface AppConfig {
 
 export const appConfig: AppConfig = {
   name: "Randevox",
-  tagline: { tr: "İnsan gibi konuşan, hiçbir aramayı kaçırmayan AI telefon ajanları.", en: "AI phone agents that sound human and never miss a call." },
+  tagline: { tr: "Diş klinikleri için, hiçbir aramayı kaçırmayan AI telefon ajanı.", en: "The AI phone agent for dental clinics that never misses a call." },
   description: {
-    tr: "Randevox, telefonu açan, randevu alan, müşteri adaylarını nitelendiren ve yönlendiren AI sesli telefon ajanlarıdır — 7/24. Bir numara al, ajanını tarif et, gerisini o halletsin. Hepsi tek karanlık bir kokpitte.",
-    en: "Randevox is AI voice phone agents that answer calls, book appointments, qualify leads and route them — 24/7. Get a number, describe your agent, and let it handle the rest. All in one dark cockpit.",
+    tr: "Randevox, diş kliniklerinin telefonunu 7/24 açan, implant ve estetik görüşmelerini randevuya çeviren, hasta adaylarını nitelendiren ve doğru kişiye yönlendiren AI sesli telefon ajanıdır. Hekimleriniz koltuktayken hiçbir arama kaçmaz.",
+    en: "Randevox is an AI voice phone agent for dental clinics: it answers 24/7, turns implant and aesthetic enquiries into bookings, qualifies patient leads and routes them to the right person. While your dentists are chairside, no call is missed.",
   },
   domain: "randevoxai.com",
   logoText: "R",
   accentName: "blue",
 
   marketing: {
-    badge: { tr: "Kaçan arama, kaçan hastadır.", en: "A missed call is a missed patient." },
+    badge: { tr: "Kaçan arama, kaçan implanttır.", en: "A missed call is a missed implant." },
     heroTitle: {
-      tr: "İnsan gibi konuşan AI telefon ajanları,",
-      en: "AI phone agents that sound human,",
+      tr: "Diş kliniğinizin telefonunu açan AI ajan,",
+      en: "The AI agent that answers your dental clinic's phone,",
     },
     heroAccent: {
-      tr: "hiçbir aramayı kaçırmaz.",
-      en: "and never miss a call.",
+      tr: "hiçbir hastayı kaçırmaz.",
+      en: "and never misses a patient.",
     },
     heroSubtitle: {
-      tr: "Randevox telefonu ilk çalışta açar, randevu alır, müşteri adaylarını nitelendirir ve doğru kişiye yönlendirir — gece, hafta sonu, yoğunken bile. Bir numara al, ajanını dakikalar içinde kur.",
-      en: "Randevox answers on the first ring, books appointments, qualifies leads and routes them to the right person — nights, weekends, even when you're slammed. Get a number and launch your agent in minutes.",
+      tr: "Randevox telefonu ilk çalışta açar, implant ve estetik görüşmelerini randevuya çevirir, hasta adaylarını nitelendirir ve doğru kişiye yönlendirir — gece, hafta sonu, hekimleriniz koltuktayken bile.",
+      en: "Randevox answers on the first ring, turns implant and aesthetic enquiries into bookings, qualifies patient leads and routes them to the right person — nights, weekends, even while your dentists are chairside.",
     },
-    heroCtaPrimary: { tr: "Bir numara al", en: "Get a number" },
+    heroCtaPrimary: { tr: "Kliniğinizde deneyin", en: "Try it in your clinic" },
     heroCtaSecondary: { tr: "Canlı demoyu dinle", en: "Hear the live demo" },
     features: [
       { icon: "audio-lines", title: { tr: "İnsan gibi sesler", en: "Human-like voices" }, body: { tr: "Düşük gecikmeli, doğal duraklamalı ve araya girilebilen sesler. Arayanlar bir bot ile konuştuklarını çoğu zaman fark etmez.", en: "Low-latency, natural-sounding voices with real pauses and barge-in. Most callers never realize they're talking to a bot." } },
       { icon: "calendar-check", title: { tr: "Randevu alır", en: "Books appointments" }, body: { tr: "Takvimine canlı bağlanır, uygunluğu okur, slot teklif eder ve aramayı kapatmadan rezervasyonu onaylar.", en: "Connects live to your calendar, reads availability, offers slots and confirms the booking before the call ends." } },
-      { icon: "filter", title: { tr: "Müşteri adayını nitelendirir", en: "Qualifies leads" }, body: { tr: "Senin sorularını sorar, yanıtları puanlar ve yalnızca ciddi adayları sana iletir. Gerisini kayda geçirip bekletir.", en: "Asks your questions, scores the answers and passes only serious leads to you. The rest are logged and kept for later." } },
-      { icon: "clock", title: { tr: "7/24 açık", en: "24/7 coverage" }, body: { tr: "Mesai dışı, tatil, pik saatler — fark etmez. Her arama anında karşılanır, hiçbiri sesli mesaja düşmez.", en: "After hours, holidays, peak load — it doesn't matter. Every call is answered instantly; none drop to voicemail." } },
-      { icon: "languages", title: { tr: "Çok dilli", en: "Multi-language" }, body: { tr: "Türkçe, İngilizce ve 30+ dil. Ajan arayanın dilini algılar ve aynı dilde sorunsuz devam eder.", en: "Turkish, English and 30+ languages. The agent detects the caller's language and continues seamlessly in it." } },
-      { icon: "workflow", title: { tr: "CRM senkronu", en: "CRM sync" }, body: { tr: "Her arama özet, transkript ve eylem maddeleriyle müşteri kaydına düşer. Kimin ne sorduğunu sonradan okuyabilirsin.", en: "Every call lands on the customer record with a summary, transcript and action items — so you can read later who asked what." } },
+      { icon: "filter", title: { tr: "Hasta adayını nitelendirir", en: "Qualifies patient leads" }, body: { tr: "Hangi tedaviyi, kaç diş için, ne zaman istediğini sorar ve yalnızca ciddi implant ve estetik adaylarını hasta danışmanınıza iletir.", en: "Asks which treatment, for how many teeth and when, and passes only serious implant and aesthetic leads to your patient coordinator." } },
+      { icon: "clock", title: { tr: "7/24 açık", en: "24/7 coverage" }, body: { tr: "Mesai dışı, tatil, hekimlerin koltukta olduğu yoğun saatler — fark etmez. Her arama anında karşılanır, hiçbiri sesli mesaja düşmez.", en: "After hours, holidays, dentists busy chairside — it doesn't matter. Every call is answered instantly; none drop to voicemail." } },
+      { icon: "languages", title: { tr: "Türkçe ve İngilizce", en: "Turkish and English" }, body: { tr: "Yabancı hasta İngilizce aradığında ajan aynı dilde devam eder; randevu ve tedavi süreci sorularını yanıtlar.", en: "When an international patient calls in English, the agent continues in English and handles booking and treatment-process questions." } },
+      { icon: "workflow", title: { tr: "Hasta kaydı", en: "Patient records" }, body: { tr: "Her arama özet, transkript ve eylem maddeleriyle hasta kaydına düşer. Kimin hangi tedaviyi sorduğunu sonradan okuyabilirsiniz.", en: "Every call lands on the patient record with a summary, transcript and action items — so you can read later who asked about which treatment." } },
     ],
     stats: [
       { value: "7/24", label: { tr: "kesintisiz açık hat", en: "line that always answers" } },
-      { value: "30+", label: { tr: "konuşulan dil", en: "languages spoken" } },
+      { value: "TR · EN", label: { tr: "konuşulan dil", en: "languages spoken" } },
       { value: "İlk çalışta", label: { tr: "telefonu açar", en: "answers, on the first ring" } },
       { value: "0", label: { tr: "sesli mesaja düşen arama", en: "calls dropped to voicemail" } },
     ],
     // Turnkey packages (lib/admin/constants.ts PLANS holds the same prices and minutes).
     // Not shown on the site — pricing is discussed on the demo call.
     pricing: [
-      { name: "Muayenehane", price: "$199", period: "/mo", tagline: { tr: "1–2 hekimli muayenehaneler için. Sekreterinizi değiştirmez, kaçırdıklarını yakalar.", en: "For 1–2 dentist practices. Keeps your receptionist, catches what they miss." }, features: [{ tr: "Ayda 300 dakika", en: "300 minutes / month" }, { tr: "7/24 telefon karşılama: tüm hat ya da sadece meşgul / mesai dışı", en: "24/7 answering: the whole line, or only when busy / after hours" }, { tr: "Takvime gerçek randevu", en: "Real bookings into your calendar" }, { tr: "Ses kaydı, transkript ve özet", en: "Recording, transcript and summary" }, { tr: "Randevusuz aramada kliniğe e-posta", en: "Email to the clinic when a call ends without a booking" }, { tr: "Aşım: dakikası 0,30 $", en: "Overage: $0.30 / minute" }], cta: { tr: "Demo talep et", en: "Request a demo" } },
-      { name: "Klinik", price: "$499", period: "/mo", tagline: { tr: "3–5 hekimli klinikler için. Telefonu baştan sona ajan yönetir.", en: "For 3–5 dentist clinics. The agent runs the whole phone line." }, features: [{ tr: "Ayda 1.000 dakika", en: "1,000 minutes / month" }, { tr: "Muayenehane paketindeki her şey", en: "Everything in Muayenehane" }, { tr: "Canlı aktarma: ajanın çözemediği ya da yetkili isteyen arama size bağlanır", en: "Live transfer: calls the agent can't resolve, or that ask for a person, reach you" }, { tr: "Mesai dışı için ayrı ajan", en: "A separate after-hours agent" }, { tr: "Dahili CRM", en: "Built-in CRM" }, { tr: "Aylık performans raporu", en: "Monthly performance report" }, { tr: "Aşım: dakikası 0,30 $", en: "Overage: $0.30 / minute" }], cta: { tr: "Demo talep et", en: "Request a demo" }, featured: true },
-      { name: "Poliklinik", price: "$899", period: "/mo", tagline: { tr: "6+ hekimli poliklinik ve ADSM'ler için. Yoğun hat, bol dakika.", en: "For polyclinics with 6+ dentists. A busy line, plenty of minutes." }, features: [{ tr: "Ayda 2.500 dakika", en: "2,500 minutes / month" }, { tr: "Klinik paketindeki her şey", en: "Everything in Klinik" }, { tr: "Öncelikli destek", en: "Priority support" }, { tr: "Aylık optimizasyon görüşmesi", en: "Monthly optimisation call" }, { tr: "Aşım: dakikası 0,30 $", en: "Overage: $0.30 / minute" }], cta: { tr: "Demo talep et", en: "Request a demo" } },
+      { name: "Muayenehane", price: "$199", period: "/mo", tagline: { tr: "1–2 hekimli diş muayenehaneleri için. Sekreterinizi değiştirmez, kaçırdıklarını yakalar.", en: "For 1–2 dentist practices. Keeps your receptionist, catches what they miss." }, features: [{ tr: "Ayda 300 dakika", en: "300 minutes / month" }, { tr: "7/24 telefon karşılama: tüm hat ya da sadece meşgul / mesai dışı", en: "24/7 answering: the whole line, or only when busy / after hours" }, { tr: "Takvime gerçek randevu", en: "Real bookings into your calendar" }, { tr: "Ses kaydı, transkript ve özet", en: "Recording, transcript and summary" }, { tr: "Randevusuz aramada kliniğe e-posta", en: "Email to the clinic when a call ends without a booking" }, { tr: "Aşım: dakikası 0,30 $", en: "Overage: $0.30 / minute" }], cta: { tr: "Demo talep et", en: "Request a demo" } },
+      { name: "Klinik", price: "$499", period: "/mo", tagline: { tr: "3–5 hekimli implant ve estetik odaklı klinikler için. Telefonu baştan sona ajan yönetir.", en: "For 3–5 dentist implant and aesthetic clinics. The agent runs the whole phone line." }, features: [{ tr: "Ayda 1.000 dakika", en: "1,000 minutes / month" }, { tr: "Muayenehane paketindeki her şey", en: "Everything in Muayenehane" }, { tr: "Canlı aktarma: ajanın çözemediği ya da yetkili isteyen arama size bağlanır", en: "Live transfer: calls the agent can't resolve, or that ask for a person, reach you" }, { tr: "Mesai dışı için ayrı ajan", en: "A separate after-hours agent" }, { tr: "Dahili CRM", en: "Built-in CRM" }, { tr: "Aylık performans raporu", en: "Monthly performance report" }, { tr: "Aşım: dakikası 0,30 $", en: "Overage: $0.30 / minute" }], cta: { tr: "Demo talep et", en: "Request a demo" }, featured: true },
+      { name: "Poliklinik", price: "$899", period: "/mo", tagline: { tr: "6+ hekimli diş poliklinikleri ve ADSM'ler için. Yoğun hat, bol dakika.", en: "For dental polyclinics with 6+ dentists. A busy line, plenty of minutes." }, features: [{ tr: "Ayda 2.500 dakika", en: "2,500 minutes / month" }, { tr: "Klinik paketindeki her şey", en: "Everything in Klinik" }, { tr: "Öncelikli destek", en: "Priority support" }, { tr: "Aylık optimizasyon görüşmesi", en: "Monthly optimisation call" }, { tr: "Aşım: dakikası 0,30 $", en: "Overage: $0.30 / minute" }], cta: { tr: "Demo talep et", en: "Request a demo" } },
     ],
     faq: [
       { q: { tr: "Ajan gerçekten insan gibi mi konuşuyor?", en: "Does the agent really sound human?" }, a: { tr: "Evet. Düşük gecikmeli akışlı sesler, doğal duraklamalar ve araya girme (barge-in) desteği var. Arayan ajanın sözünü kesebilir, ajan da uyum sağlar — donuk bir IVR menüsü gibi değil.", en: "Yes. It uses low-latency streaming voices with natural pauses and barge-in support, so callers can interrupt and the agent adapts — nothing like a clunky IVR menu." } },
-      { q: { tr: "Randevuyu nasıl alıyor?", en: "How does it book appointments?" }, a: { tr: "Ajan, kullandığınız takvime (Google Takvim dahil) canlı bağlanır, gerçek uygunluğu okur, arayana slot teklif eder ve aramayı kapatmadan randevuyu onaylayıp davet gönderir.", en: "The agent connects live to the calendar you already use (Google Calendar included), reads real availability, offers slots to the caller and confirms the booking — sending the invite before the call ends." } },
-      { q: { tr: "Bir aramayı insana aktarabilir mi?", en: "Can it transfer a call to a human?" }, a: { tr: "Evet. Kuralı sen koyarsın — belirli niyetler, sıcak adaylar veya bir anahtar ifade — Randevox aramayı canlı olarak doğru ekibe veya kişiye transfer eder, bağlamı da yanında taşır.", en: "Yes. You set the rules — certain intents, hot leads or a keyphrase — and Randevox warm-transfers the call live to the right team or person, carrying the context with it." } },
-      { q: { tr: "Hangi diller destekleniyor?", en: "Which languages are supported?" }, a: { tr: "Türkçe ve İngilizce dahil 30+ dil. Ajan arayanın dilini ilk cümlelerden algılar ve aynı dilde devam eder.", en: "30+ languages including Turkish and English. The agent detects the caller's language from the first sentences and continues in it." } },
-      { q: { tr: "CRM'ime veya araçlarıma bağlanır mı?", en: "Does it connect to my CRM or tools?" }, a: { tr: "Evet — her arama özet, transkript ve çıkarılan eylem maddeleriyle panelinizdeki müşteri kaydına düşer. Kendi CRM'inizi kullanıyorsanız oraya da aktarabiliriz.", en: "Yes — every call lands on the customer record in your panel with a summary, transcript and extracted action items. If you already use your own CRM, we can forward it there too." } },
+      { q: { tr: "Randevuyu nasıl alıyor?", en: "How does it book appointments?" }, a: { tr: "Ajan, kullandığınız takvime (Google Takvim dahil) canlı bağlanır, hekimlerin gerçek uygunluğunu okur, arayana slot teklif eder ve aramayı kapatmadan randevuyu onaylayıp davet gönderir.", en: "The agent connects live to the calendar you already use (Google Calendar included), reads your dentists' real availability, offers slots to the caller and confirms the booking — sending the invite before the call ends." } },
+      { q: { tr: "Bir aramayı insana aktarabilir mi?", en: "Can it transfer a call to a human?" }, a: { tr: "Evet. Kuralı siz koyarsınız — tedavi sonrası şikâyet, acil durum, sıcak implant adayı veya bir anahtar ifade — Randevox aramayı canlı olarak doğru kişiye transfer eder, bağlamı da yanında taşır.", en: "Yes. You set the rules — a post-treatment complaint, an emergency, a hot implant lead or a keyphrase — and Randevox warm-transfers the call live to the right person, carrying the context with it." } },
+      { q: { tr: "Hangi diller destekleniyor?", en: "Which languages are supported?" }, a: { tr: "Türkçe ve İngilizce. Yabancı hasta İngilizce aradığında ajan aynı dilde devam eder.", en: "Turkish and English. When an international patient calls in English, the agent continues in English." } },
+      { q: { tr: "CRM'ime veya araçlarıma bağlanır mı?", en: "Does it connect to my CRM or tools?" }, a: { tr: "Evet — her arama özet, transkript ve çıkarılan eylem maddeleriyle panelinizdeki hasta kaydına düşer. Kendi CRM'inizi veya klinik yazılımınızı kullanıyorsanız oraya da aktarabiliriz.", en: "Yes — every call lands on the patient record in your panel with a summary, transcript and extracted action items. If you already use your own CRM or clinic software, we can forward it there too." } },
     ],
   },
 

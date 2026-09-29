@@ -8,9 +8,9 @@ import { HOUR, REMINDER_WINDOWS, isReminderKind } from "@/lib/automation/reminde
 export const dynamic = "force-dynamic";
 
 /**
- * Which appointments are due a reminder right now — polled by the n8n
- * reminder workflow every 15 minutes, once per kind (windows in
- * lib/automation/reminders.ts). After sending, n8n calls
+ * Which appointments are due a reminder right now — polled by the automation
+ * app (automation/app.py, `reminders`) every 15 minutes, once per kind
+ * (windows in lib/automation/reminders.ts). After sending, it calls
  * /api/automation/reminders/sent, and the row drops out of this list.
  *
  * Booked less than an hour ago → skipped: the confirmation just went out.

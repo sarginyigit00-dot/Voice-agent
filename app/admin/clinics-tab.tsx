@@ -288,7 +288,7 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
             />
           </Field>
           <Field label="Hasta mesajları (onay, hatırlatma)">
-            {/* SMS needs the NETGSM_* variables on n8n; WhatsApp needs Meta-approved templates. */}
+            {/* SMS needs the NETGSM_* variables on the automation app; WhatsApp needs Meta-approved templates. */}
             <select value={f.messageChannel} onChange={set("messageChannel")} className={inputClass}>
               <option value="off">Kapalı</option>
               <option value="sms">SMS (Netgsm, yalnızca TR cep)</option>
@@ -414,7 +414,7 @@ const LEAD_STATUS_LABEL = {
 
 /**
  * Hızlı geri dönüş: which agent phones new leads, and the form URL that
- * feeds it. Steps and a ready-made form: n8n/HIZLI-GERI-DONUS.md.
+ * feeds it. Steps and a ready-made form: HIZLI-GERI-DONUS.md.
  */
 function CallbackForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
   const provisioned = clinic.agents.filter((a) => a.vapiAssistantId);
@@ -426,7 +426,7 @@ function CallbackForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
   return (
     <Block
       title={`Hızlı geri dönüş — ${current ? `açık (${current.name})` : "kapalı"}`}
-      hint="Kliniğin formunu dolduran hastayı seçilen ajan hemen arar; mesai dışındaysa klinik açılınca. Kurulum: n8n/HIZLI-GERI-DONUS.md."
+      hint="Kliniğin formunu dolduran hastayı seçilen ajan hemen arar; mesai dışındaysa klinik açılınca. Kurulum: HIZLI-GERI-DONUS.md."
     >
       <div className="flex flex-wrap items-end gap-2">
         <div className="w-full max-w-[240px]">

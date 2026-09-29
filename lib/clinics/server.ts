@@ -14,7 +14,7 @@ import { normalizeWorkingHours, type WorkingHours } from "@/lib/agents/hours";
  * Nothing else stands between one clinic and another's patients.
  */
 
-/** How patient messages (confirmation, reminders, cancel/reschedule) leave n8n. */
+/** How patient messages (confirmation, reminders, cancel/reschedule) leave the automation app. */
 export type MessageChannel = "off" | "sms" | "whatsapp";
 
 export const isMessageChannel = (v: unknown): v is MessageChannel => v === "off" || v === "sms" || v === "whatsapp";
@@ -32,7 +32,7 @@ export interface ClinicContext {
   crmWebhookUrl: string | null;
   /** The clinic's line in Vapi — its phone-number id, not the number itself. */
   vapiPhoneNumberId: string | null;
-  /** Patient messages via n8n: Netgsm SMS, or WhatsApp once Meta approves the templates. */
+  /** Patient messages via the automation app: Netgsm SMS, or WhatsApp once Meta approves the templates. */
   messageChannel: MessageChannel;
   /** Hızlı geri dönüş: the agent that phones new leads. Null = off. */
   callbackAgentId: string | null;

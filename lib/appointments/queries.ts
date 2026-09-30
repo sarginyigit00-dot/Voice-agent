@@ -12,7 +12,7 @@ import { authedFetch } from "@/lib/supabase/authed-fetch";
  * so Cal.com is the one that decides whether the cancellation is real.
  */
 
-export type AppointmentStatus = "booked" | "cancelled";
+export type AppointmentStatus = "booked" | "cancelled" | "completed" | "no_show";
 
 export interface Appointment {
   id: string;
@@ -23,7 +23,7 @@ export interface Appointment {
   attendeeEmail: string | null;
   attendeePhone: string | null;
   agentId: string | null;
-  source: "in-call" | "post-call";
+  source: "in-call" | "post-call" | "manual";
   status: AppointmentStatus;
   cancelledAt: string | null;
   createdAt: string;
@@ -38,7 +38,7 @@ interface AppointmentRowDb {
   attendee_email: string | null;
   attendee_phone: string | null;
   agent_id: string | null;
-  source: "in-call" | "post-call";
+  source: "in-call" | "post-call" | "manual";
   status: AppointmentStatus;
   cancelled_at: string | null;
   created_at: string;
@@ -96,6 +96,49 @@ export async function cancelAppointment(id: string): Promise<{ ok: boolean; erro
     });
     const body = await res.json().catch(() => null);
     if (!res.ok) return { ok: false, error: body?.error ?? `İptal başarısız (${res.status}).` };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/** Marks a past appointment as attended ("completed"), missed ("no_show"), or back to "booked". */
+export async function markAttendance(
+  id: string,
+  status: "completed" | "no_show" | "booked",
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await authedFetch("/api/appointments/attendance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error ?? `Kaydedilemedi (${res.status}).` };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export interface NewAppointmentInput {
+  name: string;
+  phone: string;
+  email?: string;
+  notes?: string;
+  start: string;
+}
+
+/** Books by hand from the panel: Cal.com first, our row second, then the patient's confirmation. */
+export async function createAppointment(input: NewAppointmentInput): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await authedFetch("/api/appointments/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error ?? `Randevu oluşturulamadı (${res.status}).` };
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

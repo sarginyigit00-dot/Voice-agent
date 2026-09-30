@@ -7,6 +7,8 @@ import { AGENTS, demoAppointments, type Agent } from "@/lib/demo/data";
 import {
   fetchAppointments,
   cancelAppointment,
+  markAttendance,
+  createAppointment,
   fetchAvailableSlots,
   rescheduleAppointment,
   type Appointment,
@@ -48,6 +50,13 @@ export default function AppointmentsPage() {
   const [rescheduling, setRescheduling] = useState(false);
   const [slots, setSlots] = useState<AvailableSlot[] | null>(null);
   const [slotsError, setSlotsError] = useState<string | null>(null);
+  // "New appointment" form. `newSlots` is the same Cal.com list the reschedule picker uses.
+  const [creating, setCreating] = useState(false);
+  const [newSlots, setNewSlots] = useState<AvailableSlot[] | null>(null);
+  const [newSlotsError, setNewSlotsError] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", phone: "", email: "", notes: "", start: "" });
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   // "Now" is genuinely time-dependent, so it is captured once when the list
   // loads rather than read during render — reading the clock while rendering
   // is impure and would also differ between the server and client passes.
@@ -98,6 +107,18 @@ export default function AppointmentsPage() {
     bookedVia: lang === "tr" ? "Nasıl alındı" : "Booked via",
     inCall: lang === "tr" ? "Görüşme sırasında" : "During the call",
     postCall: lang === "tr" ? "Görüşme sonrası" : "After the call",
+    manual: lang === "tr" ? "Panelden" : "From the panel",
+    newAppt: lang === "tr" ? "Yeni randevu" : "New appointment",
+    fName: lang === "tr" ? "Hasta adı" : "Patient name",
+    fPhone: lang === "tr" ? "Telefon" : "Phone",
+    fEmail: lang === "tr" ? "E-posta (isteğe bağlı)" : "Email (optional)",
+    fNotes: lang === "tr" ? "Not (isteğe bağlı)" : "Note (optional)",
+    fSlot: lang === "tr" ? "Saat seçin" : "Pick a time",
+    fSave: lang === "tr" ? "Randevuyu oluştur" : "Create appointment",
+    fSaving: lang === "tr" ? "Oluşturuluyor…" : "Creating…",
+    fNeedSlot: lang === "tr" ? "Lütfen bir saat seçin." : "Please pick a time.",
+    fNeedName: lang === "tr" ? "Ad ve telefon gerekli." : "Name and phone are required.",
+    fHint: lang === "tr" ? "Telefon numarasına onay mesajı ve hatırlatmalar gider." : "The patient gets a confirmation and reminders on this number.",
     calendarRef: lang === "tr" ? "Takvim kaydı" : "Calendar ref",
     callRef: lang === "tr" ? "Arama kaydı" : "Call ref",
     cancel: lang === "tr" ? "Randevuyu iptal et" : "Cancel appointment",
@@ -105,6 +126,11 @@ export default function AppointmentsPage() {
     cancelledOn: lang === "tr" ? "İptal edildi" : "Cancelled",
     demoCancelHint: lang === "tr" ? "Demo modda iptal ve erteleme yapılamaz." : "Cancelling and rescheduling are disabled in demo mode.",
     booked: lang === "tr" ? "Onaylı" : "Booked",
+    completed: lang === "tr" ? "Geldi" : "Attended",
+    noShow: lang === "tr" ? "Gelmedi" : "No-show",
+    awaiting: lang === "tr" ? "İşaretlenmedi" : "Unmarked",
+    undo: lang === "tr" ? "Geri al" : "Undo",
+    didAttend: lang === "tr" ? "Hasta geldi mi?" : "Did the patient come?",
     close: lang === "tr" ? "Kapat" : "Close",
     reschedule: lang === "tr" ? "Ertele" : "Reschedule",
     rescheduling: lang === "tr" ? "Erteleniyor…" : "Rescheduling…",
@@ -120,7 +146,7 @@ export default function AppointmentsPage() {
       const starts = Date.parse(r.startsAt);
       if (filter === "cancelled") return r.status === "cancelled";
       if (filter === "upcoming") return r.status === "booked" && starts >= now;
-      if (filter === "past") return r.status === "booked" && starts < now;
+      if (filter === "past") return r.status !== "cancelled" && starts < now;
       return true;
     });
     // Upcoming reads soonest-first; everything else reads most-recent-first.
@@ -174,6 +200,62 @@ export default function AppointmentsPage() {
     );
   };
 
+  const handleAttendance = async (appointment: Appointment, status: "completed" | "no_show" | "booked") => {
+    setError(null);
+    if (isDemoData) {
+      setError(L.demoCancelHint);
+      return;
+    }
+    setBusyId(appointment.id);
+    const result = await markAttendance(appointment.id, status);
+    setBusyId(null);
+    if (!result.ok) {
+      setError(result.error ?? "Kaydedilemedi.");
+      return;
+    }
+    setRows((list) => (list ?? []).map((r) => (r.id === appointment.id ? { ...r, status } : r)));
+  };
+
+  const openCreate = async () => {
+    setError(null);
+    setFormError(null);
+    if (isDemoData) {
+      setError(L.demoCancelHint);
+      return;
+    }
+    setForm({ name: "", phone: "", email: "", notes: "", start: "" });
+    setCreating(true);
+    setNewSlotsError(null);
+    const result = await fetchAvailableSlots();
+    if (!result.ok) setNewSlotsError(result.error ?? "Uygun saatler alınamadı.");
+    setNewSlots(result.slots);
+  };
+
+  const handleCreate = async () => {
+    setFormError(null);
+    if (!form.name.trim() || !form.phone.trim()) return setFormError(L.fNeedName);
+    if (!form.start) return setFormError(L.fNeedSlot);
+    setSaving(true);
+    const result = await createAppointment({
+      name: form.name,
+      phone: form.phone,
+      email: form.email || undefined,
+      notes: form.notes || undefined,
+      start: form.start,
+    });
+    if (!result.ok) {
+      setSaving(false);
+      setFormError(result.error ?? "Randevu oluşturulamadı.");
+      return;
+    }
+    // Refetch: the new row's id, agent and normalized phone all come from the server.
+    const fresh = await fetchAppointments();
+    if (fresh) setRows(fresh);
+    setNow(Date.now());
+    setSaving(false);
+    setCreating(false);
+  };
+
   const startReschedule = async () => {
     setError(null);
     if (isDemoData) {
@@ -212,9 +294,18 @@ export default function AppointmentsPage() {
 
   const counts = {
     upcoming: rows?.filter((r) => r.status === "booked" && Date.parse(r.startsAt) >= now).length ?? 0,
-    past: rows?.filter((r) => r.status === "booked" && Date.parse(r.startsAt) < now).length ?? 0,
+    past: rows?.filter((r) => r.status !== "cancelled" && Date.parse(r.startsAt) < now).length ?? 0,
     cancelled: rows?.filter((r) => r.status === "cancelled").length ?? 0,
     all: rows?.length ?? 0,
+  };
+
+  const statusBadge = (r: Appointment) => {
+    if (r.status === "cancelled") return { label: L.cancelledOn, color: "var(--color-missed)" };
+    if (r.status === "completed") return { label: L.completed, color: "var(--color-booked)" };
+    if (r.status === "no_show") return { label: L.noShow, color: "var(--color-missed)" };
+    // Still "booked" but the time has passed: waiting for staff to mark it.
+    if (Date.parse(r.startsAt) < now) return { label: L.awaiting, color: "var(--color-muted-foreground)" };
+    return { label: L.booked, color: "var(--color-booked)" };
   };
 
   const FILTERS: { key: Filter; label: string }[] = [
@@ -231,11 +322,20 @@ export default function AppointmentsPage() {
           <h1 className="font-display text-[20px] font-bold tracking-tight">{L.title}</h1>
           <p className="text-[13px] text-muted-foreground">{L.sub}</p>
         </div>
-        {isDemoData && (
-          <span className="rounded px-2 py-1 font-mono text-[10px] uppercase tracking-wider" style={{ background: "var(--color-muted)", color: "var(--color-muted-foreground)" }}>
-            {L.demoBadge}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {isDemoData && (
+            <span className="rounded px-2 py-1 font-mono text-[10px] uppercase tracking-wider" style={{ background: "var(--color-muted)", color: "var(--color-muted-foreground)" }}>
+              {L.demoBadge}
+            </span>
+          )}
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-1.5 rounded-md border border-violet/50 bg-violet-soft px-3 py-1.5 text-[12.5px] font-semibold text-violet transition-colors hover:bg-violet-soft/70"
+          >
+            <Icon name="calendar-clock" className="h-3.5 w-3.5" />
+            {L.newAppt}
+          </button>
+        </div>
       </div>
 
       {/* filters — scrollable so six chips never overflow a narrow phone */}
@@ -279,6 +379,7 @@ export default function AppointmentsPage() {
           <ul className="divide-y divide-border">
             {filtered.map((r) => {
               const cancelled = r.status === "cancelled";
+              const badge = statusBadge(r);
               return (
                 <li key={r.id}>
                   <button
@@ -307,14 +408,12 @@ export default function AppointmentsPage() {
                     <span
                       className="inline-flex w-fit items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-wider"
                       style={{
-                        color: cancelled ? "var(--color-missed)" : "var(--color-booked)",
-                        background: cancelled
-                          ? "color-mix(in oklch, var(--color-missed) 14%, transparent)"
-                          : "color-mix(in oklch, var(--color-booked) 14%, transparent)",
+                        color: badge.color,
+                        background: `color-mix(in oklch, ${badge.color} 14%, transparent)`,
                       }}
                     >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: cancelled ? "var(--color-missed)" : "var(--color-booked)" }} />
-                      {cancelled ? L.cancelledOn : L.booked}
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: badge.color }} />
+                      {badge.label}
                     </span>
 
                     <Icon name="chevron-right" className="hidden h-3.5 w-3.5 text-muted-foreground md:block" />
@@ -325,6 +424,90 @@ export default function AppointmentsPage() {
           </ul>
         )}
       </div>
+
+      {/* new appointment drawer */}
+      {creating && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-background/70 backdrop-blur-sm" onClick={() => !saving && setCreating(false)}>
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label={L.newAppt}
+            onClick={(e) => e.stopPropagation()}
+            className="h-full w-full max-w-md overflow-y-auto border-l border-border bg-card p-4"
+          >
+            <header className="flex items-start justify-between gap-3">
+              <h2 className="font-display text-[16px] font-bold">{L.newAppt}</h2>
+              <button onClick={() => setCreating(false)} aria-label={L.close} className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted">
+                <Icon name="x" className="h-4 w-4" />
+              </button>
+            </header>
+
+            <div className="mt-4 space-y-3">
+              {(
+                [
+                  ["name", L.fName, "text"],
+                  ["phone", L.fPhone, "tel"],
+                  ["email", L.fEmail, "email"],
+                  ["notes", L.fNotes, "text"],
+                ] as const
+              ).map(([key, label, type]) => (
+                <label key={key} className="block">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                  <input
+                    type={type}
+                    value={form[key]}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] outline-none focus:border-violet/50"
+                  />
+                </label>
+              ))}
+              <p className="text-[11px] text-muted-foreground">{L.fHint}</p>
+
+              <div>
+                <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{L.fSlot}</p>
+                {newSlots === null ? (
+                  <p className="py-3 text-center text-[12px] text-muted-foreground">{L.loadingSlots}</p>
+                ) : newSlotsError ? (
+                  <p className="text-[12px]" style={{ color: "var(--color-destructive)" }}>{newSlotsError}</p>
+                ) : newSlots.length === 0 ? (
+                  <p className="py-3 text-center text-[12px] text-muted-foreground">{L.noSlots}</p>
+                ) : (
+                  <ul className="grid max-h-64 grid-cols-2 gap-1.5 overflow-y-auto">
+                    {newSlots.map((slot) => (
+                      <li key={slot.start}>
+                        <button
+                          onClick={() => setForm((f) => ({ ...f, start: slot.start }))}
+                          aria-pressed={form.start === slot.start}
+                          className={cn(
+                            "w-full rounded-md border px-2 py-1.5 text-left font-mono text-[11px] transition-colors",
+                            form.start === slot.start
+                              ? "border-violet/50 bg-violet-soft text-violet"
+                              : "border-border hover:border-violet/50 hover:text-violet",
+                          )}
+                        >
+                          {slot.spoken}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {formError && (
+                <p className="text-[12px]" style={{ color: "var(--color-destructive)" }}>{formError}</p>
+              )}
+
+              <button
+                onClick={handleCreate}
+                disabled={saving}
+                className="w-full rounded-md bg-violet px-3 py-2 text-[12.5px] font-semibold text-white disabled:opacity-50"
+              >
+                {saving ? L.fSaving : L.fSave}
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* detail drawer */}
       {open && (
@@ -353,7 +536,7 @@ export default function AppointmentsPage() {
                 { k: L.phone, v: open.attendeePhone ?? "—" },
                 { k: L.email, v: open.attendeeEmail ?? "—" },
                 { k: L.agent, v: agentName(open.agentId) },
-                { k: L.bookedVia, v: open.source === "in-call" ? L.inCall : L.postCall },
+                { k: L.bookedVia, v: open.source === "in-call" ? L.inCall : open.source === "manual" ? L.manual : L.postCall },
                 { k: L.calendarRef, v: open.bookingUid },
                 { k: L.callRef, v: open.callId },
               ].map((row) => (
@@ -369,6 +552,43 @@ export default function AppointmentsPage() {
                 {L.cancelledOn}
                 {open.cancelledAt ? ` · ${fmtDate(open.cancelledAt)} ${fmtTime(open.cancelledAt)}` : ""}
               </p>
+            ) : open.status !== "booked" || Date.parse(open.startsAt) < now ? (
+              <div className="mt-4 rounded-md border border-border p-3">
+                {open.status === "booked" ? (
+                  <>
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{L.didAttend}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAttendance(open, "completed")}
+                        disabled={busyId === open.id}
+                        className="flex-1 rounded-md border px-3 py-2 text-[12.5px] font-semibold disabled:opacity-50"
+                        style={{ borderColor: "color-mix(in oklch, var(--color-booked) 45%, transparent)", color: "var(--color-booked)" }}
+                      >
+                        {L.completed}
+                      </button>
+                      <button
+                        onClick={() => handleAttendance(open, "no_show")}
+                        disabled={busyId === open.id}
+                        className="flex-1 rounded-md border px-3 py-2 text-[12.5px] font-semibold disabled:opacity-50"
+                        style={{ borderColor: "color-mix(in oklch, var(--color-missed) 45%, transparent)", color: "var(--color-missed)" }}
+                      >
+                        {L.noShow}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12.5px] font-semibold">{open.status === "completed" ? L.completed : L.noShow}</span>
+                    <button
+                      onClick={() => handleAttendance(open, "booked")}
+                      disabled={busyId === open.id}
+                      className="font-mono text-[10.5px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+                    >
+                      {L.undo}
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : rescheduling ? (
               <div className="mt-4 rounded-md border border-border p-3">
                 <div className="mb-2 flex items-center justify-between">

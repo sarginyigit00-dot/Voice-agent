@@ -24,7 +24,7 @@ export interface AppointmentRecord {
   agentId: string | null;
   /** Null only in demo mode — the column is NOT NULL, so a real write needs it. */
   clinicId: string | null;
-  source: "in-call" | "post-call";
+  source: "in-call" | "post-call" | "manual";
 }
 
 /** The appointment already booked for this call, if any. */
@@ -58,11 +58,11 @@ export async function findByCall(callId: string): Promise<AppointmentRecord | nu
  * itself already exists on Cal.com by this point, and losing our local copy is
  * far better than telling a patient on the phone that it didn't work.
  */
-export async function record(appointment: AppointmentRecord): Promise<void> {
+export async function record(appointment: AppointmentRecord): Promise<string | null> {
   const supabase = getSupabaseServer();
-  if (!supabase) return;
+  if (!supabase) return null;
 
-  const { error } = await supabase.from("appointments").upsert(
+  const { data, error } = await supabase.from("appointments").upsert(
     {
       call_id: appointment.callId,
       booking_uid: appointment.bookingUid,
@@ -75,7 +75,8 @@ export async function record(appointment: AppointmentRecord): Promise<void> {
       source: appointment.source,
     },
     { onConflict: "call_id" },
-  );
+  ).select("id").single();
 
   if (error) console.error("[appointments] failed to record booking:", error.message);
+  return data?.id ?? null;
 }

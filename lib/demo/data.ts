@@ -446,6 +446,8 @@ export interface DemoAppointment {
   agentId: string | null;
   source: "in-call" | "post-call";
   status: "booked" | "cancelled";
+  service?: string | null;
+  doctor?: string | null;
   cancelledAt: string | null;
   createdAt: string;
 }
@@ -462,7 +464,7 @@ export function demoAppointments(): DemoAppointment[] {
   };
 
   const rows: Omit<DemoAppointment, "id" | "createdAt">[] = [
-    { callId: "call-d1", bookingUid: "bk_9fa21", startsAt: at(0, 15), attendeeName: "Elif Demir", attendeeEmail: "elif.demir@example.com", attendeePhone: "+90 532 555 0182", agentId: "ag1", source: "in-call", status: "booked", cancelledAt: null },
+    { callId: "call-d1", bookingUid: "bk_9fa21", startsAt: at(0, 15), attendeeName: "Elif Demir", attendeeEmail: "elif.demir@example.com", attendeePhone: "+90 532 555 0182", agentId: "ag1", source: "in-call", status: "booked", service: "Diş taşı temizliği", doctor: "Dt. Ayşe Kaya", cancelledAt: null },
     { callId: "call-d2", bookingUid: "bk_7cd40", startsAt: at(1, 10), attendeeName: "Mert Kaya", attendeeEmail: null, attendeePhone: "+90 555 555 0114", agentId: "ag3", source: "in-call", status: "booked", cancelledAt: null },
     { callId: "call-d3", bookingUid: "bk_1ba88", startsAt: at(1, 16), attendeeName: "Zeynep Arslan", attendeeEmail: "z.arslan@example.com", attendeePhone: "+90 533 555 0177", agentId: "ag1", source: "in-call", status: "booked", cancelledAt: null },
     { callId: "call-d4", bookingUid: "bk_4ee12", startsAt: at(3, 11), attendeeName: "Ahmet Yıldız", attendeeEmail: null, attendeePhone: "+90 542 555 0163", agentId: "ag3", source: "post-call", status: "booked", cancelledAt: null },

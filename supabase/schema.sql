@@ -362,6 +362,13 @@ alter table public.appointments
 alter table public.appointments
   add column if not exists clinic_id uuid references public.clinics (id) on delete cascade;
 
+-- What the patient came for and who they asked for, as free text (from the phone
+-- agent's book_appointment args, or picked from /klinik in the manual form).
+alter table public.appointments
+  add column if not exists service text;
+alter table public.appointments
+  add column if not exists doctor text;
+
 -- Faz 3: set by the automation app through /api/automation/reminders/sent, so a reminder
 -- goes out once. Cleared again when the appointment is rescheduled.
 alter table public.appointments

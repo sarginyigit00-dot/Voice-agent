@@ -25,6 +25,8 @@ export interface Appointment {
   agentId: string | null;
   source: "in-call" | "post-call" | "manual";
   status: AppointmentStatus;
+  service: string | null;
+  doctor: string | null;
   cancelledAt: string | null;
   createdAt: string;
 }
@@ -40,6 +42,8 @@ interface AppointmentRowDb {
   agent_id: string | null;
   source: "in-call" | "post-call" | "manual";
   status: AppointmentStatus;
+  service?: string | null;
+  doctor?: string | null;
   cancelled_at: string | null;
   created_at: string;
 }
@@ -56,6 +60,8 @@ function fromRow(r: AppointmentRowDb): Appointment {
     agentId: r.agent_id,
     source: r.source,
     status: r.status ?? "booked",
+    service: r.service ?? null,
+    doctor: r.doctor ?? null,
     cancelledAt: r.cancelled_at,
     createdAt: r.created_at,
   };
@@ -126,6 +132,8 @@ export interface NewAppointmentInput {
   phone: string;
   email?: string;
   notes?: string;
+  service?: string;
+  doctor?: string;
   start: string;
 }
 

@@ -243,7 +243,7 @@ async function checkRequestedSlot(
 /* ─────────────────────── book_appointment ─────────────────────── */
 
 /**
- * Args: { start: ISO-8601, name?, email?, service?, notes?, phone? }
+ * Args: { start: ISO-8601, name?, email?, service?, doctor?, notes?, phone? }
  *
  * `start` must be one of the ISO values check_availability returned. We
  * re-verify it against Cal.com anyway — the model can hallucinate a time, and
@@ -281,6 +281,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
   const name = str(args, "name") ?? (ctx.callerName !== "Unknown" ? ctx.callerName : "Telefonla arayan");
   const email = str(args, "email");
   const service = str(args, "service");
+  const doctor = str(args, "doctor");
   const notes = str(args, "notes");
   // The line's own caller number wins; the one the patient said on the call is
   // for when the line didn't pass one. A number that doesn't parse is dropped
@@ -295,7 +296,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     phone,
     // Without an email from the patient the confirmation goes to the clinic's
     // inbox, so the phone number has to be visible on the booking itself.
-    notes: [service ? `Hizmet: ${service}` : null, notes, phone ? `Telefon: ${phone}` : null]
+    notes: [service ? `Hizmet: ${service}` : null, doctor ? `Doktor: ${doctor}` : null, notes, phone ? `Telefon: ${phone}` : null]
       .filter(Boolean)
       .join(" · "),
     metadata: { callId: ctx.callId, source: "randevox-voice" },
@@ -320,6 +321,8 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     agentId: ctx.agentId,
     clinicId: ctx.clinic?.id ?? null,
     source: "in-call",
+    service,
+    doctor,
   });
 
   return JSON.stringify({

@@ -25,6 +25,9 @@ export interface AppointmentRecord {
   /** Null only in demo mode — the column is NOT NULL, so a real write needs it. */
   clinicId: string | null;
   source: "in-call" | "post-call" | "manual";
+  /** What the patient came for / who they asked for — free text, as said or picked. */
+  service?: string | null;
+  doctor?: string | null;
 }
 
 /** The appointment already booked for this call, if any. */
@@ -73,6 +76,9 @@ export async function record(appointment: AppointmentRecord): Promise<string | n
       agent_id: appointment.agentId,
       clinic_id: appointment.clinicId,
       source: appointment.source,
+      // Only sent when set, so a row without them still saves on a database that predates the columns.
+      ...(appointment.service ? { service: appointment.service } : {}),
+      ...(appointment.doctor ? { doctor: appointment.doctor } : {}),
     },
     { onConflict: "call_id" },
   ).select("id").single();

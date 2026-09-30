@@ -15,6 +15,8 @@ import {
   type AvailableSlot,
 } from "@/lib/appointments/queries";
 import { fetchAgents } from "@/lib/agents/queries";
+import { fetchKnowledge } from "@/lib/clinics/knowledge-queries";
+import type { ClinicKnowledge } from "@/lib/clinics/knowledge-shape";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useSession } from "@/components/auth/session";
 import { cn } from "@/lib/utils";
@@ -54,7 +56,9 @@ export default function AppointmentsPage() {
   const [creating, setCreating] = useState(false);
   const [newSlots, setNewSlots] = useState<AvailableSlot[] | null>(null);
   const [newSlotsError, setNewSlotsError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", notes: "", start: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", notes: "", service: "", doctor: "", start: "" });
+  // The clinic's own /klinik lists feed the service and doctor pickers.
+  const [knowledge, setKnowledge] = useState<ClinicKnowledge | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   // "Now" is genuinely time-dependent, so it is captured once when the list
@@ -113,6 +117,11 @@ export default function AppointmentsPage() {
     fPhone: lang === "tr" ? "Telefon" : "Phone",
     fEmail: lang === "tr" ? "E-posta (isteğe bağlı)" : "Email (optional)",
     fNotes: lang === "tr" ? "Not (isteğe bağlı)" : "Note (optional)",
+    service: lang === "tr" ? "Hizmet" : "Service",
+    doctor: lang === "tr" ? "Doktor" : "Doctor",
+    fService: lang === "tr" ? "Hizmet (isteğe bağlı)" : "Service (optional)",
+    fDoctor: lang === "tr" ? "Doktor (isteğe bağlı)" : "Doctor (optional)",
+    fNone: lang === "tr" ? "Seçilmedi" : "Not set",
     fSlot: lang === "tr" ? "Saat seçin" : "Pick a time",
     fSave: lang === "tr" ? "Randevuyu oluştur" : "Create appointment",
     fSaving: lang === "tr" ? "Oluşturuluyor…" : "Creating…",
@@ -223,9 +232,10 @@ export default function AppointmentsPage() {
       setError(L.demoCancelHint);
       return;
     }
-    setForm({ name: "", phone: "", email: "", notes: "", start: "" });
+    setForm({ name: "", phone: "", email: "", notes: "", service: "", doctor: "", start: "" });
     setCreating(true);
     setNewSlotsError(null);
+    if (!knowledge) fetchKnowledge().then((k) => k && setKnowledge(k));
     const result = await fetchAvailableSlots();
     if (!result.ok) setNewSlotsError(result.error ?? "Uygun saatler alınamadı.");
     setNewSlots(result.slots);
@@ -241,6 +251,8 @@ export default function AppointmentsPage() {
       phone: form.phone,
       email: form.email || undefined,
       notes: form.notes || undefined,
+      service: form.service || undefined,
+      doctor: form.doctor || undefined,
       start: form.start,
     });
     if (!result.ok) {
@@ -394,10 +406,10 @@ export default function AppointmentsPage() {
                     <span className="min-w-0">
                       <span className="block truncate text-[13px] font-semibold leading-tight">{r.attendeeName}</span>
                       <span className="block truncate font-mono text-[10.5px] text-muted-foreground md:hidden">
-                        {r.attendeePhone ?? "—"} · {agentName(r.agentId)}
+                        {[r.attendeePhone ?? "—", r.service, r.doctor, agentName(r.agentId)].filter(Boolean).join(" · ")}
                       </span>
                       <span className="hidden truncate font-mono text-[10.5px] text-muted-foreground md:block">
-                        {r.attendeePhone ?? "—"}
+                        {[r.attendeePhone ?? "—", r.service, r.doctor].filter(Boolean).join(" · ")}
                       </span>
                     </span>
 
@@ -462,6 +474,29 @@ export default function AppointmentsPage() {
                 </label>
               ))}
               <p className="text-[11px] text-muted-foreground">{L.fHint}</p>
+
+              {(
+                [
+                  ["service", L.fService, (knowledge?.services ?? []).map((s) => s.name)],
+                  ["doctor", L.fDoctor, (knowledge?.doctors ?? []).map((d) => [d.title, d.name].filter(Boolean).join(" "))],
+                ] as const
+              ).map(([key, label, options]) =>
+                options.length ? (
+                  <label key={key} className="block">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                    <select
+                      value={form[key]}
+                      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                      className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] outline-none focus:border-violet/50"
+                    >
+                      <option value="">{L.fNone}</option>
+                      {options.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null,
+              )}
 
               <div>
                 <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{L.fSlot}</p>
@@ -535,6 +570,8 @@ export default function AppointmentsPage() {
               {[
                 { k: L.phone, v: open.attendeePhone ?? "—" },
                 { k: L.email, v: open.attendeeEmail ?? "—" },
+                { k: L.service, v: open.service ?? "—" },
+                { k: L.doctor, v: open.doctor ?? "—" },
                 { k: L.agent, v: agentName(open.agentId) },
                 { k: L.bookedVia, v: open.source === "in-call" ? L.inCall : open.source === "manual" ? L.manual : L.postCall },
                 { k: L.calendarRef, v: open.bookingUid },

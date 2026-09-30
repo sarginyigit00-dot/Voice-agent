@@ -26,6 +26,8 @@ export async function POST(req: Request) {
   const rawPhone = typeof body?.phone === "string" ? body.phone.trim() : "";
   const email = typeof body?.email === "string" && body.email.trim() ? body.email.trim() : null;
   const notes = typeof body?.notes === "string" && body.notes.trim() ? body.notes.trim() : undefined;
+  const service = typeof body?.service === "string" && body.service.trim() ? body.service.trim().slice(0, 200) : null;
+  const doctor = typeof body?.doctor === "string" && body.doctor.trim() ? body.doctor.trim().slice(0, 200) : null;
   const rawStart = typeof body?.start === "string" ? body.start : null;
 
   if (!name) return NextResponse.json({ error: "Hasta adı gerekli." }, { status: 400 });
@@ -45,7 +47,7 @@ export async function POST(req: Request) {
     name,
     email,
     phone,
-    notes,
+    notes: [service ? `Hizmet: ${service}` : null, doctor ? `Doktor: ${doctor}` : null, notes].filter(Boolean).join(" · ") || undefined,
     metadata: { source: "randevox-panel", by: user.email ?? "panel" },
   });
   if (!booking.ok) return NextResponse.json({ error: booking.error }, { status: 502 });
@@ -60,6 +62,8 @@ export async function POST(req: Request) {
     agentId: null,
     clinicId: clinic.id,
     source: "manual",
+    service,
+    doctor,
   });
 
   await emitEvent(clinic, "appointment.booked", {

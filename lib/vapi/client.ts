@@ -182,6 +182,7 @@ export const BOOKING_TOOLS = [
           name: { type: "string", description: "Arayanın adı soyadı." },
           email: { type: "string", description: "Arayan verdiyse e-posta adresi." },
           service: { type: "string", description: "Arayanın randevu istediği hizmet, kısaca (ör. dolgu, muayene)." },
+          doctor: { type: "string", description: "Arayan belirli bir doktor istediyse doktorun adı, klinik bilgilerindeki yazımıyla. İstemediyse boş bırak." },
           notes: { type: "string", description: "Kısa ek not, varsa." },
           phone: {
             type: "string",
@@ -433,7 +434,7 @@ export function buildAssistant(
     messagePlan: {
       idleMessages: ["Orada mısınız?", "Sizi duyamıyorum, hâlâ hatta mısınız?"],
       idleTimeoutSeconds: 8,
-      maxIdleMessages: 2,
+      idleMessageMaxSpokenCount: 2,
       silenceTimeoutMessage: "Sizi duyamıyorum, isterseniz daha sonra tekrar arayabilirsiniz. İyi günler.",
     },
     server: { url: webhookUrl(), headers: { "x-vapi-secret": secret } },

@@ -103,6 +103,27 @@ def send_whatsapp_template(template: str, params: list[str], phone: str) -> bool
         return False
 
 
+def send_whatsapp_text(phone: str, text: str) -> bool:
+    """Free-form WhatsApp text — only allowed inside the 24 h window a patient's own message opens."""
+    import httpx
+
+    phone_number_id = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
+    body = {"messaging_product": "whatsapp", "to": phone.lstrip("+"), "type": "text", "text": {"body": text}}
+    try:
+        res = httpx.post(
+            f"https://graph.facebook.com/v21.0/{phone_number_id}/messages",
+            headers={"Authorization": f"Bearer {os.environ['WHATSAPP_TOKEN']}"},
+            json=body,
+            timeout=HTTP_TIMEOUT,
+        )
+        if res.status_code >= 400:
+            print(f"[whatsapp] text failed: HTTP {res.status_code} {res.text}")
+        return res.status_code < 400
+    except Exception as e:
+        print(f"[whatsapp] text failed: {e}")
+        return False
+
+
 def send_patient_message(channel: str, phone: str | None, sms_text: str, wa_template: str, wa_params: list[str]) -> bool:
     """SMS only ever goes to Turkish mobiles (+905…) — mirrors the due-reminders query and the events flow."""
     if not phone or channel not in ("sms", "whatsapp"):
@@ -245,3 +266,66 @@ async def events(request: Request):
             send_patient_message(channel, data.get("phone"), sms_text, template, [name, clinic.get("name"), date, time])
 
     return Response(status_code=200, content='{"ok":true}', media_type="application/json")
+
+
+# ── job: a patient's WhatsApp reply to a reminder ("iptal") ──────────────
+
+@app.function(image=image, secrets=[secret, modal.Secret.from_name("randevox-whatsapp-inbound")])
+@modal.asgi_app()
+def whatsapp_webhook():
+    """
+    Meta's WhatsApp webhook. One URL, two verbs: GET is Meta's one-off "is this
+    really yours" handshake, POST carries the patient's messages. Each text is
+    handed to Randevox (/api/automation/inbound-reply), which decides whether it
+    is a cancel request and answers with the text to send back (or nothing).
+    """
+    import json
+
+    import httpx
+    from fastapi import FastAPI
+
+    web = FastAPI()
+
+    @web.get("/")
+    async def verify(request: Request):
+        q = request.query_params
+        expected = os.environ.get("WHATSAPP_VERIFY_TOKEN", "")
+        if expected and q.get("hub.mode") == "subscribe" and hmac.compare_digest(q.get("hub.verify_token", ""), expected):
+            return Response(content=q.get("hub.challenge", ""), media_type="text/plain")
+        return Response(status_code=403)
+
+    @web.post("/")
+    async def receive(request: Request):
+        raw = await request.body()
+        app_secret = os.environ.get("WHATSAPP_APP_SECRET", "")
+        if not app_secret:
+            return Response(status_code=403)
+        expected = "sha256=" + hmac.new(app_secret.encode(), raw, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, request.headers.get("x-hub-signature-256", "")):
+            return Response(status_code=401)
+
+        payload = json.loads(raw)
+        for entry in payload.get("entry", []):
+            for change in entry.get("changes", []):
+                for msg in (change.get("value") or {}).get("messages", []):
+                    if msg.get("type") != "text":
+                        continue
+                    phone = "+" + str(msg.get("from", "")).lstrip("+")
+                    try:
+                        res = httpx.post(
+                            randevox_url("/api/automation/inbound-reply"),
+                            headers=randevox_headers(),
+                            json={"phone": phone, "text": (msg.get("text") or {}).get("body", "")},
+                            timeout=HTTP_TIMEOUT,
+                        )
+                        reply = res.json().get("reply") if res.status_code == 200 else None
+                    except Exception as e:
+                        print(f"[whatsapp-inbound] randevox call failed: {e}")
+                        reply = None
+                    if reply:
+                        send_whatsapp_text(phone, reply)
+
+        # Always 200: a non-2xx makes Meta retry the same message for days.
+        return Response(status_code=200, content='{"ok":true}', media_type="application/json")
+
+    return web

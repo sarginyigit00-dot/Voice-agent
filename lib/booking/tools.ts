@@ -11,6 +11,7 @@ import { hoursForDate, isWithinHours, type WorkingHours } from "@/lib/agents/hou
 import type { ClinicContext } from "@/lib/clinics/server";
 import { toE164 } from "@/lib/vapi/client";
 import { notifyError } from "@/lib/notify/telegram";
+import { queueBookingEmails } from "@/lib/notify/email";
 import {
   appointmentFor,
   cancelAppointment,
@@ -323,6 +324,16 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     source: "in-call",
     service,
     doctor,
+  });
+
+  queueBookingEmails(ctx.clinic, {
+    startsAt: start.toISOString(),
+    attendeeName: name,
+    attendeeEmail: email,
+    attendeePhone: phone,
+    service,
+    doctor,
+    source: "in-call",
   });
 
   return JSON.stringify({

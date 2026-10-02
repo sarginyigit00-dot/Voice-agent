@@ -4,6 +4,7 @@ import { calcomConfigFor, createBooking, toInstant } from "@/lib/calcom/client";
 import { requireMember } from "@/lib/clinics/server";
 import { record } from "@/lib/booking/store";
 import { emitEvent } from "@/lib/automation/emit";
+import { queueBookingEmails } from "@/lib/notify/email";
 import { localParts } from "@/lib/automation/format";
 import { toE164 } from "@/lib/vapi/client";
 
@@ -64,6 +65,16 @@ export async function POST(req: Request) {
     source: "manual",
     service,
     doctor,
+  });
+
+  queueBookingEmails(clinic, {
+    startsAt: start.toISOString(),
+    attendeeName: name,
+    attendeeEmail: email,
+    attendeePhone: phone,
+    service,
+    doctor,
+    source: "manual",
   });
 
   await emitEvent(clinic, "appointment.booked", {

@@ -1,6 +1,7 @@
 import type { ActionResult, CallActionPayload } from "@/lib/actions/types";
 import { calcomConfigFor, createBooking, speakInstant, toInstant } from "@/lib/calcom/client";
 import { findByCall, record } from "@/lib/booking/store";
+import { queueBookingEmails } from "@/lib/notify/email";
 
 /**
  * Post-call safety net for booking — **not** the main path.
@@ -87,6 +88,14 @@ export async function runBook(payload: CallActionPayload): Promise<ActionResult>
     attendeePhone: payload.number || null,
     agentId: payload.agentId,
     clinicId: payload.clinic?.id ?? null,
+    source: "post-call",
+  });
+
+  queueBookingEmails(payload.clinic, {
+    startsAt: start.toISOString(),
+    attendeeName: payload.caller,
+    attendeeEmail: payload.callerEmail ?? null,
+    attendeePhone: payload.number || null,
     source: "post-call",
   });
 

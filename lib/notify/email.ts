@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import appConfig from "@/app.config";
 import { localParts } from "@/lib/automation/format";
 import { toE164 } from "@/lib/vapi/client";
@@ -112,6 +113,103 @@ export function followUpEmail(clinic: ClinicContext, call: CallFollowUp): { subj
 
   const text = [lead, "", ...rows.map(([k, v]) => `${k}: ${v}`), "", `Özet: ${call.summary || "Özet yok."}`, "", callsUrl].join("\n");
   return { subject, html, text };
+}
+
+/** A freshly booked appointment, as the confirmation emails need it. */
+export interface BookedAppointment {
+  startsAt: string;
+  attendeeName: string;
+  attendeeEmail: string | null;
+  attendeePhone: string | null;
+  service?: string | null;
+  doctor?: string | null;
+  /** "in-call" | "post-call" | "manual" — only shown to the clinic. */
+  source: "in-call" | "post-call" | "manual";
+}
+
+const SOURCE_LABEL: Record<BookedAppointment["source"], string> = {
+  "in-call": "Telefonda ajanla",
+  "post-call": "Telefonda ajanla",
+  manual: "Panelden",
+};
+
+function mailShell(lead: string, rows: [string, string][], footer: string, link?: { href: string; label: string }) {
+  const html = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;color:#1f1d2b;max-width:560px">
+<p style="margin:0 0 14px">${escape(lead)}</p>
+<table style="border-collapse:collapse;width:100%;margin:0 0 16px">${rows
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:6px 12px 6px 0;color:#6b6880;white-space:nowrap;vertical-align:top">${escape(k)}</td><td style="padding:6px 0;font-weight:600">${escape(v)}</td></tr>`,
+    )
+    .join("")}</table>
+${link ? `<p style="margin:0"><a href="${link.href}" style="color:#2f6fed">${escape(link.label)}</a></p>` : ""}
+<p style="margin:18px 0 0;color:#9a98b0;font-size:12px">${escape(footer)}</p>
+</div>`;
+  const text = [lead, "", ...rows.map(([k, v]) => `${k}: ${v}`), ...(link ? ["", link.href] : []), "", footer].join("\n");
+  return { html, text };
+}
+
+/**
+ * Confirmation emails for a new appointment — sent by us, not Cal.com, so the
+ * wording, the Turkish characters and the service/doctor lines are ours.
+ * Cal.com's own mail is not switched off (that needs a Cal.com platform plan),
+ * so a patient who gave an email may get both; the clinic's copy is new either way.
+ *
+ * - the patient, when the appointment has an email,
+ * - the clinic's notification address, unless it is the same address (then the
+ *   patient's confirmation already reached it).
+ */
+export async function sendBookingEmails(clinic: ClinicContext, appt: BookedAppointment): Promise<void> {
+  if (clinic.status === "suspended") return;
+  const when = localParts(appt.startsAt, clinic.timeZone);
+  const phone = appt.attendeePhone ? (toE164(appt.attendeePhone) ?? appt.attendeePhone) : null;
+  const details: [string, string][] = [
+    ["Tarih", when.date],
+    ["Saat", when.time],
+    ...(appt.service ? ([["Hizmet", appt.service]] as [string, string][]) : []),
+    ...(appt.doctor ? ([["Doktor", appt.doctor]] as [string, string][]) : []),
+  ];
+
+  const patientEmail = appt.attendeeEmail?.trim().toLowerCase() || null;
+  if (patientEmail) {
+    const { html, text } = mailShell(
+      `Merhaba ${appt.attendeeName || "Değerli hastamız"}, ${clinic.name} randevunuz oluşturuldu.`,
+      [["Klinik", clinic.name], ...details],
+      "Değişiklik ya da iptal için lütfen kliniği arayın.",
+    );
+    await sendEmail(patientEmail, `${clinic.name} randevunuz: ${when.date}, ${when.time}`, html, text);
+  }
+
+  const clinicEmail = clinic.notifyEmail?.trim();
+  if (clinicEmail && clinicEmail.toLowerCase() !== patientEmail) {
+    const { html, text } = mailShell(
+      "Yeni bir randevu oluşturuldu.",
+      [
+        ["Hasta", appt.attendeeName || "—"],
+        ["Telefon", phone ? readableTr(phone) : "—"],
+        ["E-posta", appt.attendeeEmail || "—"],
+        ...details,
+        ["Nasıl alındı", SOURCE_LABEL[appt.source]],
+      ],
+      `${clinic.name} · Randevox`,
+      { href: `https://www.${appConfig.domain}/randevular`, label: "Randevuları panelde aç →" },
+    );
+    await sendEmail(clinicEmail, `Yeni randevu: ${appt.attendeeName || "Hasta"} · ${when.date} ${when.time}`, html, text);
+  }
+}
+
+/**
+ * Sends after the response when running inside a request (so Vapi and the
+ * panel never wait on the mail server), straight away otherwise.
+ */
+export function queueBookingEmails(clinic: ClinicContext | null, appt: BookedAppointment): void {
+  if (!clinic) return;
+  const run = () => sendBookingEmails(clinic, appt).catch((e) => console.error("[email] booking mail failed:", e));
+  try {
+    after(run);
+  } catch {
+    void run();
+  }
 }
 
 /** Sends the post-call email to the clinic, if one is due and the clinic has an address. */

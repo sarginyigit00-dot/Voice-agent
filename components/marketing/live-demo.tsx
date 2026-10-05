@@ -82,26 +82,6 @@ const DEMO_AGENTS: DemoAgent[] = [
       { label: { tr: "Tarih", en: "Date" }, value: { tr: "Perşembe 11:00", en: "Thu 11:00" }, at: 5 },
     ],
   },
-  {
-    tab: { tr: "Yabancı hasta", en: "International" },
-    voice: "Deniz · sakin, iki dilli",
-    caller: "+44 20 7946 0321",
-    outcome: { tr: "Yabancı hasta · tedavi planına yönlendirildi", en: "International · routed to treatment plan" },
-    detail: { tr: "İngilizce görüşme · gülüş tasarımı · Pzt 10:00", en: "Handled in English · smile design · Mon 10:00" },
-    turns: [
-      { who: "agent", text: { tr: "Estetenova Dental Clinic, this is Deniz. How can I help you today?", en: "Estetenova Dental Clinic, this is Deniz. How can I help you today?" } },
-      { who: "caller", text: { tr: "Hi — I'm flying from London for a smile makeover. Can I book a first visit?", en: "Hi — I'm flying from London for a smile makeover. Can I book a first visit?" } },
-      { who: "agent", text: { tr: "Of course. Our dentist will plan your treatment at the first visit, and we can group it into a few days.", en: "Of course. Our dentist will plan your treatment at the first visit, and we can group it into a few days." } },
-      { who: "caller", text: { tr: "That sounds good. Can we speak on Monday?", en: "That sounds good. Can we speak on Monday?" } },
-      { who: "agent", text: { tr: "Booked for Monday 10:00 — I'm sending the details to your WhatsApp now.", en: "Booked for Monday 10:00 — I'm sending the details to your WhatsApp now." } },
-    ],
-    fields: [
-      { label: { tr: "Numara", en: "Number" }, value: { tr: "+44 20 7946 0321", en: "+44 20 7946 0321" }, at: 1, mono: true },
-      { label: { tr: "Görüşme dili", en: "Language" }, value: { tr: "İngilizce", en: "English" }, at: 2 },
-      { label: { tr: "Talep", en: "Request" }, value: { tr: "Gülüş tasarımı", en: "Smile design" }, at: 2 },
-      { label: { tr: "Tarih", en: "Date" }, value: { tr: "Pazartesi 10:00", en: "Mon 10:00" }, at: 4 },
-    ],
-  },
 ];
 
 const WAVE = [0.4, 0.7, 0.5, 0.9, 0.6, 0.3, 0.8, 0.5, 0.7, 0.4, 0.6, 0.9, 0.5, 0.7, 0.4];

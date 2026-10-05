@@ -43,6 +43,7 @@ export default function V2Landing() {
       <Features />
       <Guardrails />
       <HowItWorks />
+      <Pricing />
       <Faq />
       <FinalCta />
       <Footer />
@@ -58,6 +59,7 @@ function Nav() {
     { label: { tr: "Hesaplayıcı", en: "Calculator" }, href: "#hesap" },
     { label: { tr: "Neler yapar", en: "What it does" }, href: "#features" },
     { label: { tr: "Nasıl kurulur", en: "Setup" }, href: "#how" },
+    { label: { tr: "Fiyatlar", en: "Pricing" }, href: "#fiyatlar" },
   ];
 
   return (
@@ -109,7 +111,7 @@ function Hero() {
   const specs: { value: L; label: L; accent?: boolean }[] = [
     { value: { tr: "0", en: "0" }, label: { tr: "kaçan hasta araması", en: "patients lost to a missed call" }, accent: true },
     { value: { tr: "7/24", en: "24/7" }, label: { tr: "kesintisiz cevap veren hat", en: "line that always answers" } },
-    { value: { tr: "30+", en: "30+" }, label: { tr: "dilde yeni hasta kapısı", en: "languages that open new patients" } },
+    { value: { tr: "Her arama", en: "Every call" }, label: { tr: "kayıt, transkript ve özetle", en: "recorded, transcribed, summarised" } },
     { value: { tr: "İlk çalışta", en: "First ring" }, label: { tr: "telefonu açar", en: "answers, on the first ring" } },
   ];
 
@@ -154,8 +156,8 @@ function Hero() {
 
             <p className="ed-body max-w-xl text-pretty text-muted-foreground">
               {lang === "tr"
-                ? "Randevox kliniğinizin telefonunu ilk çalışta açar: randevu alır, implant ve tedavi sorularını sizin verdiğiniz bilgiyle yanıtlar, yabancı hastayla İngilizce konuşur. Gece, hafta sonu, hekimleriniz koltuktayken bile."
-                : "Randevox answers your clinic's phone on the first ring: books appointments, answers implant and treatment questions from the information you provide, and speaks English with international patients. Nights, weekends, even while your dentists are chairside."}
+                ? "Randevox kliniğinizin telefonunu ilk çalışta açar: randevu alır, implant ve tedavi sorularını sizin verdiğiniz bilgiyle yanıtlar. Gece, hafta sonu, hekimleriniz koltuktayken bile."
+                : "Randevox answers your clinic's phone on the first ring: books appointments and answers implant and treatment questions from the information you provide. Nights, weekends, even while your dentists are chairside."}
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -330,11 +332,11 @@ function Features() {
       },
     },
     {
-      icon: "languages",
-      title: { tr: "Yabancı hastayla İngilizce", en: "International patients, in English" },
+      icon: "corner-up-right",
+      title: { tr: "Gerektiğinde size bağlar", en: "Transfers to you when needed" },
       body: {
-        tr: "Türkçe ve İngilizce konuşur. Tedavi için gelen yabancı hastanın randevu, tedavi süreci ve seyahat sorularını yanıtlar.",
-        en: "Speaks Turkish and English. It handles booking, treatment-process and travel questions from patients coming in from abroad.",
+        tr: "Ajanın çözemediği ya da yetkili isteyen arama canlı olarak size bağlanır. Hasta bekletilmez, bağlam yanında gider.",
+        en: "Calls the agent can't resolve, or that ask for a person, are transferred live to you. The patient isn't left waiting and the context goes with the call.",
       },
     },
     {
@@ -573,6 +575,91 @@ function HowItWorks() {
   );
 }
 
+/* ═══════════════════════════════════ PRICING ════════════════════════════════════
+   Reads app.config.ts → marketing.pricing, the same list that holds the quoted
+   prices, minutes and features (lib/admin/constants.ts PLANS mirrors the
+   prices and minutes). Nothing is retyped here, so site and quote can't drift. */
+
+function Pricing() {
+  const { lang } = useLang();
+  const tiers = appConfig.marketing.pricing;
+
+  return (
+    <section id="fiyatlar" className="scroll-mt-16 border-t border-border bg-muted">
+      <div className="mx-auto max-w-5xl px-5 py-24 lg:py-28">
+        <div className="flex max-w-2xl flex-col gap-3">
+          <span className="ed-eyebrow">{lang === "tr" ? "Fiyatlar" : "Pricing"}</span>
+          <h2 className="font-editorial ed-h2 text-pretty">
+            {lang === "tr" ? "İki paket, " : "Two packages, "}
+            <em className="ed-accent">{lang === "tr" ? "aynı özellikler." : "the same features."}</em>
+          </h2>
+          <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+            {lang === "tr"
+              ? "Paketler arasındaki fark aylık dakika hacmi. Kurulumu biz yaparız: telefon yönlendirme, takvim bağlantısı, klinik bilgileri ve ajan ayarı."
+              : "The packages differ only in monthly minutes. We do the setup: phone forwarding, calendar connection, clinic information and agent configuration."}
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
+          {tiers.map((t) => (
+            <div
+              key={t.name}
+              className={`ed-card relative flex flex-col gap-6 p-7 lg:p-8 ${t.featured ? "border-violet" : ""}`}
+            >
+              {t.badge && (
+                <span
+                  className={`absolute -top-3 left-7 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold ${
+                    t.featured ? "bg-violet text-white" : "border border-border bg-background text-foreground"
+                  }`}
+                >
+                  {t.featured && <Icon name="sparkles" className="h-3.5 w-3.5" />}
+                  {t.badge[lang]}
+                </span>
+              )}
+              <div className="flex flex-col gap-2">
+                <span className="font-editorial ed-h3">{t.name}</span>
+                <span className="text-[14.5px] leading-relaxed text-muted-foreground">{t.tagline[lang]}</span>
+              </div>
+
+              <div className="flex items-end gap-2">
+                <span className="font-mono-nums text-[48px] font-medium leading-none tracking-tight text-violet">
+                  {t.price}
+                </span>
+                <span className="pb-1.5 text-[15px] text-muted-foreground">
+                  {t.period === "/mo" ? (lang === "tr" ? "/ ay" : "/ month") : t.period}
+                </span>
+              </div>
+
+              <ul className="flex flex-col gap-3 border-t border-border pt-6">
+                {t.features.map((f) => (
+                  <li key={f.en} className="flex gap-2.5 text-[14.5px] leading-relaxed">
+                    <Icon name="check" className="mt-1 h-4 w-4 shrink-0 text-violet" />
+                    <span>{f[lang]}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/demo-talep"
+                className={`ed-pill mt-auto w-full ${t.featured ? "ed-pill-primary" : "ed-pill-ghost"}`}
+                style={{ height: 48 }}
+              >
+                {t.cta[lang]}
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-6 text-[13px] text-muted-foreground">
+          {lang === "tr"
+            ? "Fiyatlar aylıktır, ABD doları cinsindendir."
+            : "Prices are monthly, in US dollars."}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 /* ═══════════════════════════════════ FAQ ════════════════════════════════════ */
 
 function Faq() {
@@ -592,13 +679,6 @@ function Faq() {
       a: {
         tr: "Yalnızca sizin girdiğiniz tedavi ve fiyat bilgilerinden konuşur. Kapsam dışı bir soru geldiğinde rakam uydurmaz — muayene gerektiğini söyleyip randevuya çevirir veya sizi arar. Neyi söyleyip neyi söylemeyeceğini siz belirlersiniz.",
         en: "Only from the treatments and prices you enter. For anything outside that it does not improvise a number — it explains an exam is needed and turns it into a booking, or escalates to you. You define what it may and may not say.",
-      },
-    },
-    {
-      q: { tr: "Yurtdışından arayan hastalarla hangi dillerde konuşuyor?", en: "Which languages does it handle for international patients?" },
-      a: {
-        tr: "Türkçe ve İngilizce. Yabancı hasta İngilizce aradığında ajan aynı dilde devam eder; randevu, tedavi süreci ve seyahat sorularını yanıtlar.",
-        en: "Turkish and English. When an international patient calls in English, the agent continues in English — booking, treatment-process and travel questions included.",
       },
     },
     {

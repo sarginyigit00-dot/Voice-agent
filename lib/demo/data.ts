@@ -369,9 +369,7 @@ export interface UseCase {
 
 export const USE_CASES: UseCase[] = [
   { icon: "stethoscope", title: { tr: "Diş klinikleri", en: "Dental clinics" }, body: { tr: "İmplant ve estetik görüşmelerini randevuya çevir, yeniden planla, hatırlat.", en: "Turn implant and aesthetic enquiries into bookings, reschedule and remind." } },
-  { icon: "home", title: { tr: "Emlak", en: "Real estate" }, body: { tr: "Görüntüleme planla, adayları nitelendir.", en: "Schedule viewings and qualify buyers around the clock." } },
-  { icon: "utensils", title: { tr: "Restoranlar", en: "Restaurants" }, body: { tr: "Rezervasyon al, sipariş notu tut.", en: "Take reservations and capture orders, even at peak." } },
-  { icon: "briefcase", title: { tr: "Ajanslar", en: "Agencies" }, body: { tr: "Müşteri aramalarını karşıla, brief topla.", en: "Answer client calls and collect briefs automatically." } },
+  { icon: "star", title: { tr: "Implant ve gülüş tasarımı", en: "Implants and smile design" }, body: { tr: "Yüksek değerli adayları nitelendir, konsültasyona yönlendir.", en: "Qualify high-value leads and route them to a consultation." } },
 ];
 
 export interface CompareRow {
@@ -402,7 +400,6 @@ export const TESTIMONIALS: Testimonial[] = [
   { quote: { tr: "Artık hiçbir sıcak aday sesli mesaja düşmüyor. Satış ekibim sadece nitelikli aramaları alıyor.", en: "No hot lead drops to voicemail anymore. My sales team only gets qualified calls." }, name: "Mert Aydın", role: { tr: "Satış Direktörü, Parable", en: "Head of Sales, Parable" }, initials: "MA" },
   { quote: { tr: "Sesi o kadar doğal ki müşterilerimiz bot olduğunu fark etmiyor. Kurulum 10 dakika sürdü.", en: "The voice is so natural our clients don't realize it's a bot. Setup took 10 minutes." }, name: "Pınar Koç", role: { tr: "Kurucu, Harborline Emlak", en: "Founder, Harborline Realty" }, initials: "PK" },
   { quote: { tr: "Bir resepsiyonist işe almak yerine Randevox'u açtık. Üç kişilik bir ekibin işini yapıyor.", en: "Instead of hiring a receptionist we switched on Randevox. It does the work of a three-person desk." }, name: "Ozan Kılıç", role: { tr: "Operasyon, Brightline", en: "Ops, Brightline" }, initials: "OK" },
-  { quote: { tr: "Çok dilli olması bizim için kritikti. Arayanın diline anında geçiyor.", en: "Multi-language was critical for us. It switches to the caller's language instantly." }, name: "Sena Barış", role: { tr: "CX Lideri, Lumen", en: "CX Lead, Lumen" }, initials: "SB" },
   { quote: { tr: "Her aramanın transkripti ve özeti CRM'imize düşüyor. Manuel not almak tarih oldu.", en: "Every call's transcript and summary lands in our CRM. Manual notes are history." }, name: "Deniz Çelik", role: { tr: "Kurucu, Formwork", en: "Founder, Formwork" }, initials: "DÇ" },
 ];
 
@@ -413,7 +410,6 @@ export const TESTIMONIALS: Testimonial[] = [
  */
 export const METRICS: { value: string; label: L }[] = [
   { value: "7/24", label: { tr: "kesintisiz açık hat", en: "line that always answers" } },
-  { value: "30+", label: { tr: "konuşulan dil", en: "languages spoken" } },
   { value: "İlk çalışta", label: { tr: "telefonu açar", en: "answers on the first ring" } },
   { value: "0", label: { tr: "sesli mesaja düşen arama", en: "calls dropped to voicemail" } },
 ];

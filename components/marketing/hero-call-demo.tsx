@@ -60,20 +60,6 @@ const SCENARIOS: Scenario[] = [
       { who: "agent", text: { tr: "Muayenede hekimimiz net planı ve tutarı çıkarır. Perşembe 11:00'e sizi alayım mı?", en: "At the exam our dentist gives you a clear plan and cost. Shall I book you Thursday 11:00?" } },
     ],
   },
-  {
-    tab: { tr: "Yabancı hasta", en: "International" },
-    agent: "Deniz",
-    caller: "+44 20 7946 0321",
-    outcome: { tr: "Tedavi planına yönlendirildi", en: "Routed to treatment plan" },
-    detail: { tr: "İngilizce karşılandı · tedavi planı · Pzt 10:00", en: "Handled in English · treatment plan · Mon 10:00" },
-    turns: [
-      { who: "agent", text: { tr: "Estetenova Dental Clinic, this is Deniz. How can I help you today?", en: "Estetenova Dental Clinic, this is Deniz. How can I help you today?" } },
-      { who: "caller", text: { tr: "Hi — I'm flying in from London for a smile makeover. Can I book a first visit?", en: "Hi — I'm flying in from London for a smile makeover. Can I book a first visit?" } },
-      { who: "agent", text: { tr: "Of course. Our dentist will plan your treatment at the first visit, and we can group it into a few days.", en: "Of course. Our dentist will plan your treatment at the first visit, and we can group it into a few days." } },
-      { who: "caller", text: { tr: "That sounds good. Could we speak on Monday?", en: "That sounds good. Could we speak on Monday?" } },
-      { who: "agent", text: { tr: "Booked for Monday 10:00 — the details are in your file, our coordinator will go through them with you.", en: "Booked for Monday 10:00 — the details are in your file, our coordinator will go through them with you." } },
-    ],
-  },
 ];
 
 const WAVE = [0.35, 0.7, 0.45, 0.9, 0.55, 0.3, 0.8, 0.5, 0.72, 0.38, 0.62, 0.85, 0.48, 0.7, 0.35];

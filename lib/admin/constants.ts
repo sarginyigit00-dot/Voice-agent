@@ -29,7 +29,6 @@ export const MIN_PASSWORD_LENGTH = 8;
  * An id no longer listed here reads as `klinik` (lib/admin/clinics.ts).
  */
 export const PLANS = {
-  muayenehane: { label: "Muayenehane", priceUsd: 199, minutes: 300 },
   klinik: { label: "Klinik", priceUsd: 499, minutes: 1000 },
   poliklinik: { label: "Poliklinik", priceUsd: 899, minutes: 2500 },
 } as const;

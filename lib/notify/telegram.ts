@@ -36,15 +36,15 @@ function shouldSend(key: string): boolean {
   return true;
 }
 
-async function send(report: ErrorReport): Promise<void> {
+async function send(report: ErrorReport, opts: { header?: string; dedupe?: boolean } = {}): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
   if (!token || !chatId) return;
-  if (!shouldSend(`${report.source}|${report.message.slice(0, 200)}`)) return;
+  if (opts.dedupe !== false && !shouldSend(`${report.source}|${report.message.slice(0, 200)}`)) return;
 
   const env = process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown";
   const lines = [
-    `🚨 Randevox hata (${env})`,
+    opts.header ?? `🚨 Randevox hata (${env})`,
     `Kaynak: ${report.source}`,
     ...Object.entries(report.context ?? {})
       .filter(([, v]) => v !== undefined && v !== null && v !== "")
@@ -85,4 +85,15 @@ export async function notifyError(report: ErrorReport): Promise<void> {
 export function notifyCaught(source: string, err: unknown, context?: ErrorReport["context"]): Promise<void> {
   const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
   return notifyError({ source, message, context });
+}
+
+/** A message from a customer's feedback widget — not an error, and never deduped. */
+export async function notifyFeedback(report: ErrorReport): Promise<void> {
+  if (!isTelegramConfigured()) return;
+  const opts = { header: "💬 Randevox mesaj", dedupe: false };
+  try {
+    after(() => send(report, opts));
+  } catch {
+    await send(report, opts);
+  }
 }

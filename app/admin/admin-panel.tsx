@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AdminAction } from "@/lib/admin/actions";
 import { MIN_PASSWORD_LENGTH } from "@/lib/admin/constants";
-import type { AdminOverview, AdminUser, DemoRequest } from "@/lib/admin/queries";
+import type { AdminOverview, AdminUser, DemoRequest, FeedbackEntry } from "@/lib/admin/queries";
 import type { EnvCheck, SystemHealth } from "@/lib/admin/health";
 import { ClinicsTab } from "./clinics-tab";
 import { ActionButton, EmptyRow } from "./controls";
@@ -28,7 +28,7 @@ import { ActionButton, EmptyRow } from "./controls";
 export function AdminPanel({ data, health }: { data: AdminOverview; health: SystemHealth }) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
-  const [tab, setTab] = useState<"clinics" | "users" | "requests" | "health">("clinics");
+  const [tab, setTab] = useState<"clinics" | "users" | "requests" | "feedback" | "health">("clinics");
   const [flash, setFlash] = useState<{ ok: boolean; message: string } | null>(null);
 
   async function logout() {
@@ -57,7 +57,8 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
     router.refresh();
   }
 
-  const { totals, users, demoRequests, clinics, connected } = data;
+  const { totals, users, demoRequests, feedback, clinics, connected } = data;
+  const newFeedback = feedback.filter((f) => f.status === "new").length;
   // Badge on the Sistem tab: unreachable tables plus missing non-optional keys
   // that aren't already covered by an integration's own "not connected" row.
   const problems =
@@ -128,6 +129,10 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
         <Tab active={tab === "requests"} onClick={() => setTab("requests")}>
           Demo talepleri ({demoRequests.length})
         </Tab>
+        <Tab active={tab === "feedback"} onClick={() => setTab("feedback")}>
+          Geri bildirim ({feedback.length})
+          {newFeedback > 0 && <span className="text-violet"> · {newFeedback} yeni</span>}
+        </Tab>
         <Tab active={tab === "health"} onClick={() => setTab("health")}>
           Sistem {problems > 0 && <span className="text-missed">({problems})</span>}
         </Tab>
@@ -155,6 +160,13 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
           entries={demoRequests}
           connected={connected}
           onDelete={(id) => post("/api/admin/demo-requests", { action: "delete", id })}
+        />
+      )}
+      {tab === "feedback" && (
+        <FeedbackTab
+          entries={feedback}
+          connected={connected}
+          onAct={(body) => post("/api/admin/feedback", body)}
         />
       )}
       {tab === "health" && <HealthTab health={health} />}
@@ -525,6 +537,114 @@ function DemoRequestsTab({
                   onConfirm={() => remove(e.id)}
                 />
               </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/* ── Feedback inbox ──────────────────────────────────────────────────────── */
+
+const FEEDBACK_LABEL: Record<FeedbackEntry["category"], string> = {
+  fikir: "Fikir / Öneri",
+  hata: "Hata / Bug",
+  soru: "Soru",
+  diger: "Diğer",
+};
+
+function FeedbackTab({
+  entries,
+  connected,
+  onAct,
+}: {
+  entries: FeedbackEntry[];
+  connected: boolean;
+  onAct: (body: { action: "set-status" | "delete"; id: string; status?: FeedbackEntry["status"] }) => Promise<void>;
+}) {
+  const [query, setQuery] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  const needle = query.trim().toLocaleLowerCase("tr");
+  const shown = needle
+    ? entries.filter((e) =>
+        [e.message, e.userEmail ?? "", e.clinicName ?? ""].some((v) => v.toLocaleLowerCase("tr").includes(needle)),
+      )
+    : entries;
+
+  async function act(id: string, body: Parameters<typeof onAct>[0]) {
+    setBusy(id);
+    await onAct(body);
+    setBusy(null);
+    setConfirmId(null);
+  }
+
+  return (
+    <section className="mt-3 rounded-lg border border-border bg-card/30">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <h2 className="text-sm font-semibold">Geri bildirim</h2>
+        <SearchInput value={query} onChange={setQuery} placeholder="Mesaj, klinik, e-posta ara…" />
+      </header>
+
+      {shown.length === 0 ? (
+        <EmptyRow
+          text={entries.length === 0 ? (connected ? "Henüz mesaj yok." : "Veri yok.") : "Aramaya uyan kayıt yok."}
+        />
+      ) : (
+        <ul className="divide-y divide-border/60">
+          {shown.map((e) => (
+            <li key={e.id} className="space-y-1.5 px-3 py-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge>{FEEDBACK_LABEL[e.category]}</Badge>
+                {e.status === "new" && <span className="text-[11px] font-medium text-violet">Yeni</span>}
+                {e.status === "done" && <span className="text-[11px] font-medium text-booked">Çözüldü</span>}
+                <span className="text-xs text-muted-foreground">
+                  {e.clinicName ?? "—"} · {e.userEmail ?? "—"}
+                </span>
+                <span className="ml-auto font-mono text-xs tabular-nums text-muted-foreground">
+                  {formatDate(e.createdAt)}
+                </span>
+              </div>
+              <p className="whitespace-pre-wrap break-words">{e.message}</p>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                {e.pagePath && <span className="font-mono">{e.pagePath}</span>}
+                {e.attachmentUrl && (
+                  <a href={e.attachmentUrl} target="_blank" rel="noreferrer" className="text-violet hover:underline">
+                    Ek: {e.attachmentName ?? "dosya"}
+                  </a>
+                )}
+                <span className="ml-auto flex items-center gap-2">
+                  {e.status !== "read" && (
+                    <button
+                      disabled={busy === e.id}
+                      onClick={() => act(e.id, { action: "set-status", id: e.id, status: "read" })}
+                      className="cursor-pointer rounded-md border border-border px-2 py-0.5 hover:text-foreground disabled:opacity-50"
+                    >
+                      Okundu
+                    </button>
+                  )}
+                  {e.status !== "done" && (
+                    <button
+                      disabled={busy === e.id}
+                      onClick={() => act(e.id, { action: "set-status", id: e.id, status: "done" })}
+                      className="cursor-pointer rounded-md border border-border px-2 py-0.5 hover:text-foreground disabled:opacity-50"
+                    >
+                      Çözüldü
+                    </button>
+                  )}
+                  <ConfirmDelete
+                    open={confirmId === e.id}
+                    busy={busy === e.id}
+                    label="Sil"
+                    question="Silinsin mi?"
+                    onOpen={() => setConfirmId(e.id)}
+                    onCancel={() => setConfirmId(null)}
+                    onConfirm={() => act(e.id, { action: "delete", id: e.id })}
+                  />
+                </span>
+              </div>
             </li>
           ))}
         </ul>

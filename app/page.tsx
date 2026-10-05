@@ -591,12 +591,12 @@ function Pricing() {
           <span className="ed-eyebrow">{lang === "tr" ? "Fiyatlar" : "Pricing"}</span>
           <h2 className="font-editorial ed-h2 text-pretty">
             {lang === "tr" ? "İki paket, " : "Two packages, "}
-            <em className="ed-accent">{lang === "tr" ? "aynı özellikler." : "the same features."}</em>
+            <em className="ed-accent">{lang === "tr" ? "size uygun hacim." : "the volume that fits."}</em>
           </h2>
           <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
             {lang === "tr"
-              ? "Paketler arasındaki fark aylık dakika hacmi. Kurulumu biz yaparız: telefon yönlendirme, takvim bağlantısı, klinik bilgileri ve ajan ayarı."
-              : "The packages differ only in monthly minutes. We do the setup: phone forwarding, calendar connection, clinic information and agent configuration."}
+              ? "Poliklinik, Klinik'teki her şeye ek dakika, haftalık rapor ve CRM aktarımı ekler. Kurulumu biz yaparız: telefon yönlendirme, takvim bağlantısı, klinik bilgileri ve ajan ayarı."
+              : "Poliklinik adds more minutes, a weekly report and CRM feed on top of everything in Klinik. We do the setup: phone forwarding, calendar connection, clinic information and agent configuration."}
           </p>
         </div>
 

@@ -39,11 +39,27 @@ export interface DemoRequest {
   createdAt: string;
 }
 
+/** A message from the cockpit's feedback widget. Written by the customer to us, so ours to read. */
+export interface FeedbackEntry {
+  id: string;
+  category: "fikir" | "hata" | "soru" | "diger";
+  message: string;
+  userEmail: string | null;
+  clinicName: string | null;
+  pagePath: string | null;
+  attachmentName: string | null;
+  /** Short-lived signed URL; the bucket is private. */
+  attachmentUrl: string | null;
+  status: "new" | "read" | "done";
+  createdAt: string;
+}
+
 export interface AdminOverview {
   /** False when SUPABASE_SERVICE_ROLE_KEY / URL are missing — panel says so. */
   connected: boolean;
   users: AdminUser[];
   demoRequests: DemoRequest[];
+  feedback: FeedbackEntry[];
   clinics: AdminClinic[];
   totals: {
     users: number;
@@ -58,6 +74,7 @@ const EMPTY: AdminOverview = {
   connected: false,
   users: [],
   demoRequests: [],
+  feedback: [],
   clinics: [],
   totals: { users: 0, newToday: 0, unconfirmed: 0, appointments: null },
 };
@@ -105,6 +122,46 @@ async function listDemoRequests(
   }));
 }
 
+async function listFeedback(
+  supabase: NonNullable<ReturnType<typeof getSupabaseServer>>,
+): Promise<FeedbackEntry[]> {
+  const { data, error } = await supabase
+    .from("feedback")
+    .select(
+      "id, category, message, user_email, page_path, attachment_path, attachment_name, status, created_at, clinics(name)",
+    )
+    .order("created_at", { ascending: false })
+    .limit(300);
+  if (error) {
+    console.error("[admin] failed to list feedback:", error.message);
+    return [];
+  }
+  return Promise.all(
+    (data ?? []).map(async (r) => {
+      const clinic = (Array.isArray(r.clinics) ? r.clinics[0] : r.clinics) as { name?: string } | null;
+      let attachmentUrl: string | null = null;
+      if (r.attachment_path) {
+        const signed = await supabase.storage
+          .from("feedback-attachments")
+          .createSignedUrl(r.attachment_path as string, 3600);
+        attachmentUrl = signed.data?.signedUrl ?? null;
+      }
+      return {
+        id: r.id as string,
+        category: r.category as FeedbackEntry["category"],
+        message: r.message as string,
+        userEmail: (r.user_email as string | null) ?? null,
+        clinicName: clinic?.name ?? null,
+        pagePath: (r.page_path as string | null) ?? null,
+        attachmentName: (r.attachment_name as string | null) ?? null,
+        attachmentUrl,
+        status: r.status as FeedbackEntry["status"],
+        createdAt: r.created_at as string,
+      };
+    }),
+  );
+}
+
 export async function getAdminOverview(): Promise<AdminOverview> {
   const supabase = getSupabaseServer();
   if (!supabase) return EMPTY;
@@ -130,9 +187,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [appointments, demoRequests, clinics] = await Promise.all([
+  const [appointments, demoRequests, feedback, clinics] = await Promise.all([
     countRows(supabase, "appointments"),
     listDemoRequests(supabase),
+    listFeedback(supabase),
     listClinics(supabase, new Map(users.map((u) => [u.id, u.email]))),
   ]);
 
@@ -140,6 +198,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     connected: true,
     users,
     demoRequests,
+    feedback,
     clinics,
     totals: {
       users: users.length,

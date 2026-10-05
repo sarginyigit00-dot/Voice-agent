@@ -21,12 +21,12 @@ const COPY = {
   titleLead: { tr: "Randevox'u", en: "Try Randevox" },
   titleAccent: { tr: "kliniğinizde deneyin.", en: "in your clinic." },
   pitch: {
-    tr: "Formu doldurun, sizi arayalım. Kurulumu biz yapıyoruz: numaranızı, takviminizi ve kliniğinizin bilgilerini bağlıyor, ajanı sizin için hazırlıyoruz.",
-    en: "Fill in the form and we'll call you. We do the setup: we connect your number, your calendar and your clinic's details, and get the agent ready for you.",
+    tr: "Formu doldurun, size ulaşalım. Kurulumu biz yapıyoruz: numaranızı, takviminizi ve kliniğinizin bilgilerini bağlıyor, ajanı sizin için hazırlıyoruz.",
+    en: "Fill in the form and we'll reach out to you. We do the setup: we connect your number, your calendar and your clinic's details, and get the agent ready for you.",
   },
   stepsTitle: { tr: "Sonra ne olacak?", en: "What happens next?" },
   steps: [
-    { tr: "Sizi arıyor, kliniğinizi ve aramalarınızı dinliyoruz.", en: "We call you and learn about your clinic and its calls." },
+    { tr: "Size ulaşıyor, kliniğinizi ve aramalarınızı dinliyoruz.", en: "We reach out and learn about your clinic and its calls." },
     { tr: "Numaranızı ve takviminizi bağlayıp ajanı kuruyoruz.", en: "We connect your number and calendar and set up the agent." },
     { tr: "Yayına almadan önce kendi telefonunuzdan test ediyorsunuz.", en: "You test it from your own phone before it goes live." },
   ] as L[],

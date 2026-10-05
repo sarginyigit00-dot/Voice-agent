@@ -5,12 +5,13 @@ Randevox (Next.js) owns everything that happens while a caller is on the
 line; this app owns what happens after: SMS/WhatsApp to the patient, email
 to the clinic, appointment reminders, and the "Hızlı geri dönüş" poll.
 
-Three jobs, one shared secret (AUTOMATION_SECRET):
+Five jobs, one shared secret (AUTOMATION_SECRET):
   - `events`         — web endpoint. Randevox POSTs a signed event here
                         (lib/automation/emit.ts) on call.completed /
                         appointment.cancelled / appointment.rescheduled.
   - `reminders`       — every 15 min: pulls due 24h/2h reminders and sends them.
   - `lead_callbacks`  — every 5 min: pokes Randevox to phone waiting leads.
+  - `weekly_report` / `monthly_report` — Mondays / the 1st: emails each clinic its numbers.
 
 Deploy: see README.md in this folder.
 """
@@ -191,6 +192,61 @@ def lead_callbacks():
     res = httpx.post(randevox_url("/api/automation/lead-callbacks"), headers=randevox_headers(), timeout=HTTP_TIMEOUT)
     res.raise_for_status()
     print(f"[lead-callbacks] {res.json()}")
+
+
+# ── jobs: performance report by email (monthly: every clinic; weekly: Poliklinik) ──
+
+OUTCOME_LABELS = {"booked": "Randevu alındı", "resolved": "Çözüldü", "transferred": "Aktarıldı", "voicemail": "Sesli mesaj", "missed": "Cevapsız"}
+
+
+def report_html(r: dict) -> tuple[str, str]:
+    from datetime import datetime, timedelta, timezone
+
+    tr = timezone(timedelta(hours=3))
+
+    def day(dt: datetime) -> str:
+        return dt.astimezone(tr).strftime("%d.%m.%Y")
+
+    start = datetime.fromisoformat(r["from"].replace("Z", "+00:00"))
+    end = datetime.fromisoformat(r["to"].replace("Z", "+00:00")) - timedelta(seconds=1)
+    period = f"{day(start)} – {day(end)}"
+    title = "Haftalık" if r["kind"] == "weekly" else "Aylık"
+    rows = "".join(
+        f"<tr><td style='padding:4px 12px 4px 0'>{OUTCOME_LABELS.get(k, k)}</td><td><b>{v}</b></td></tr>"
+        for k, v in sorted(r["outcomes"].items(), key=lambda kv: -kv[1])
+    ) or "<tr><td>Bu dönemde arama yok.</td></tr>"
+    quota = f" / {r['quota']} dk kota" if r["kind"] == "monthly" and r.get("quota") else ""
+    html = (
+        f"<h2>{r['clinicName']} — {title} performans raporu</h2><p>{period}</p>"
+        f"<p><b>{r['calls']}</b> arama · <b>{r['minutes']}</b> dakika{quota}<br>"
+        f"<b>{r['appointmentsBooked']}</b> yeni randevu · <b>{r['appointmentsCancelled']}</b> iptal</p>"
+        f"<p>Arama sonuçları:</p><table>{rows}</table>"
+        f"<p style='color:#888;font-size:12px'>Randevox · Detaylar için panelinize bakın.</p>"
+    )
+    return f"Randevox {title.lower()} rapor — {r['clinicName']} ({period})", html
+
+
+def send_reports(kind: str) -> None:
+    import httpx
+
+    res = httpx.get(randevox_url(f"/api/automation/reports?kind={kind}"), headers=randevox_headers(), timeout=60.0)
+    res.raise_for_status()
+    reports = res.json().get("reports", [])
+    for r in reports:
+        subject, html = report_html(r)
+        send_clinic_email(r["email"], subject, html)
+    print(f"[{kind}-report] sent {len(reports)}")
+
+
+# Modal cron runs in UTC: 06:00 UTC = 09:00 in Türkiye.
+@app.function(image=image, secrets=[secret], schedule=modal.Cron("0 6 * * 1"), timeout=300)
+def weekly_report():
+    send_reports("weekly")
+
+
+@app.function(image=image, secrets=[secret], schedule=modal.Cron("0 6 1 * *"), timeout=300)
+def monthly_report():
+    send_reports("monthly")
 
 
 # ── job: signed events from Randevox (booking confirm / cancel / reschedule) ─

@@ -1,5 +1,6 @@
 import { TopNav } from "@/components/app/top-nav";
 import { StatusBar } from "@/components/app/status-bar";
+import { FeedbackWidget } from "@/components/app/feedback-widget";
 import { AppThemeProvider } from "@/components/app/app-theme";
 import { AuthGate } from "@/components/auth/session";
 
@@ -14,6 +15,7 @@ export default function AppLayout({
         <TopNav />
         <main className="flex-1 overflow-y-auto">{children}</main>
         <StatusBar />
+        <FeedbackWidget />
       </AppThemeProvider>
     </AuthGate>
   );

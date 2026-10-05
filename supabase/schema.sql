@@ -536,3 +536,31 @@ create policy "Members read their clinic's leads"
   on public.leads for select
   to authenticated
   using (clinic_id in (select public.my_clinic_ids()));
+
+-- Geri bildirim / destek: the floating "Geliştiriciye mesaj gönder" widget in
+-- the cockpit. Written and read by service-role routes only (RLS on, no
+-- policies — like demo_requests). Attachments live in a private bucket.
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  clinic_id uuid references public.clinics (id) on delete set null,
+  user_id uuid,
+  user_email text,
+  category text not null default 'diger'
+    check (category in ('fikir', 'hata', 'soru', 'diger')),
+  message text not null,
+  attachment_path text,
+  attachment_name text,
+  page_path text,
+  user_agent text,
+  status text not null default 'new'
+    check (status in ('new', 'read', 'done')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists feedback_created_idx on public.feedback (created_at desc);
+
+alter table public.feedback enable row level security;
+
+insert into storage.buckets (id, name, public)
+values ('feedback-attachments', 'feedback-attachments', false)
+on conflict (id) do nothing;

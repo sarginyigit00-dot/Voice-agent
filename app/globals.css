@@ -287,6 +287,11 @@ select {
   --color-card: #ffffff;
   --color-card-foreground: #262624;
 
+  /* Floating panels (feedback widget, notification bell). Without these they
+     fell through to the dark theme's near-black popover colour. */
+  --color-popover: #ffffff;
+  --color-popover-foreground: #262624;
+
   --color-secondary: #eeece7;    /* Mist        */
   --color-secondary-foreground: #262624;
 

@@ -136,18 +136,23 @@ def send_patient_message(channel: str, phone: str | None, sms_text: str, wa_temp
     return send_whatsapp_template(wa_template, wa_params, phone)
 
 
-def send_clinic_email(to: str, subject: str, html: str) -> None:
+def send_clinic_email(to: str, subject: str, html: str) -> bool:
     import httpx
 
     try:
-        httpx.post(
+        res = httpx.post(
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
             json={"from": os.environ["RESEND_FROM"], "to": [to], "subject": subject, "html": html},
             timeout=HTTP_TIMEOUT,
         )
+        if res.status_code >= 300:
+            print(f"[resend] email failed: HTTP {res.status_code} {res.text}")
+            return False
+        return True
     except Exception as e:
         print(f"[resend] email failed: {e}")
+        return False
 
 
 # ── job: appointment reminders (24h / 2h) ────────────────────────────────
@@ -232,10 +237,12 @@ def send_reports(kind: str) -> None:
     res = httpx.get(randevox_url(f"/api/automation/reports?kind={kind}"), headers=randevox_headers(), timeout=60.0)
     res.raise_for_status()
     reports = res.json().get("reports", [])
+    sent = 0
     for r in reports:
         subject, html = report_html(r)
-        send_clinic_email(r["email"], subject, html)
-    print(f"[{kind}-report] sent {len(reports)}")
+        if send_clinic_email(r["email"], subject, html):
+            sent += 1
+    print(f"[{kind}-report] sent {sent}/{len(reports)}")
 
 
 # Modal cron runs in UTC: 06:00 UTC = 09:00 in Türkiye.

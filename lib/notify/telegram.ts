@@ -87,6 +87,21 @@ export function notifyCaught(source: string, err: unknown, context?: ErrorReport
   return notifyError({ source, message, context });
 }
 
+/**
+ * A new /demo-talep request — a sales lead, not an error, never deduped. The
+ * context carries the prospect's contact details (not patient data) to the
+ * operator's own private chat only.
+ */
+export async function notifyDemoRequest(report: ErrorReport): Promise<void> {
+  if (!isTelegramConfigured()) return;
+  const opts = { header: "📞 Yeni demo talebi", dedupe: false };
+  try {
+    after(() => send(report, opts));
+  } catch {
+    await send(report, opts);
+  }
+}
+
 /** A message from a customer's feedback widget — not an error, and never deduped. */
 export async function notifyFeedback(report: ErrorReport): Promise<void> {
   if (!isTelegramConfigured()) return;

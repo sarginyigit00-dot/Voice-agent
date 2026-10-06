@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { addDemoRequest, type DemoRequestInput } from "@/lib/demo-requests/queries";
+import { notifyDemoRequest } from "@/lib/notify/telegram";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^\+?[0-9 ()-]{7,20}$/;
@@ -36,6 +37,16 @@ export async function POST(req: Request) {
 
   // After the response, so a slow webhook never holds up the visitor.
   after(() => notify(input));
+  await notifyDemoRequest({
+    source: "demo-talep",
+    message: input.note ? `Not: ${input.note}` : "Not yok.",
+    context: {
+      Klinik: input.clinicName,
+      Yetkili: input.contactName,
+      Telefon: input.phone,
+      "E-posta": input.email,
+    },
+  });
   return NextResponse.json({ ok: true });
 }
 

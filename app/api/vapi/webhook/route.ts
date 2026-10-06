@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { runAgentActions } from "@/lib/actions/run";
 import type { CallActionPayload } from "@/lib/actions/types";
@@ -32,6 +33,13 @@ import type { Outcome } from "@/lib/demo/data";
  *
  * Anything else (status updates, speech events) is acked and ignored.
  */
+/** Constant-time compare; hashing first makes the buffers equal length. */
+function safeEqual(a: string, b: string): boolean {
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
+
 export async function POST(req: Request) {
   const expected = webhookSecret();
   // Fail closed, not open: without a configured key there is no secret to
@@ -44,8 +52,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Vapi entegrasyonu yapılandırılmamış (VAPI_WEBHOOK_SECRET yok)." }, { status: 503 });
   }
 
-  const secret = req.headers.get("x-vapi-secret");
-  if (secret !== expected) {
+  if (!safeEqual(req.headers.get("x-vapi-secret") ?? "", expected)) {
     return NextResponse.json({ error: "invalid secret" }, { status: 401 });
   }
 

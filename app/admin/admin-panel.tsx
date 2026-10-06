@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AdminAction } from "@/lib/admin/actions";
@@ -75,12 +74,6 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
           <h1 className="mt-0.5 font-display text-[22px] font-bold tracking-tight">Yönetim paneli</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard"
-            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Kokpite git
-          </Link>
           <button
             onClick={logout}
             disabled={leaving}

@@ -59,7 +59,14 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const supabase = getSupabaseBrowser();
-    if (!supabase) return handleDemo();
+    if (!supabase) {
+      // Never drop a real sign-in into sample data on a misconfigured production deploy.
+      if (process.env.NODE_ENV === "production") {
+        setError("Giriş şu an yapılamıyor. Lütfen daha sonra tekrar deneyin.");
+        return;
+      }
+      return handleDemo();
+    }
 
     const form = new FormData(e.currentTarget);
     const email = String(form.get("email") ?? "").trim();

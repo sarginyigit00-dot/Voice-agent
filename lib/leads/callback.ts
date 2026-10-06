@@ -49,7 +49,10 @@ export interface LeadInput {
 
 export type IntakeResult =
   | { ok: true; leadId: string | null; duplicate: boolean }
-  | { ok: false; status: 400 | 404 | 500 | 503; error: string };
+  | { ok: false; status: 400 | 404 | 429 | 500 | 503; error: string };
+
+/** A leaked form key must not turn a clinic's agent into an autodialer: at most this many new leads per clinic per day. */
+const MAX_LEADS_PER_CLINIC_PER_DAY = 100;
 
 export async function intakeLead(key: string, input: LeadInput): Promise<IntakeResult> {
   const supabase = getSupabaseServer();
@@ -80,6 +83,16 @@ export async function intakeLead(key: string, input: LeadInput): Promise<IntakeR
     .gte("created_at", new Date(Date.now() - DEDUPE_MS).toISOString())
     .limit(1);
   if (recent?.length) return { ok: true, leadId: null, duplicate: true };
+
+  const { count: dayCount } = await supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .eq("clinic_id", clinic.id)
+    .gte("created_at", new Date(Date.now() - DEDUPE_MS).toISOString());
+  if ((dayCount ?? 0) >= MAX_LEADS_PER_CLINIC_PER_DAY) {
+    console.warn("[leads] daily cap reached for clinic", clinic.id);
+    return { ok: false, status: 429, error: "rate_limited" };
+  }
 
   const { data: lead, error } = await supabase
     .from("leads")

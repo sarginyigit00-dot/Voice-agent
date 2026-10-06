@@ -1,4 +1,5 @@
 import { after, NextResponse } from "next/server";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { intakeLead, isLeadSource, processLead } from "@/lib/leads/callback";
 
 /**
@@ -32,6 +33,7 @@ async function readBody(req: Request): Promise<Record<string, unknown>> {
 }
 
 export async function POST(req: Request) {
+  if (!rateLimit(`leads:${clientIp(req)}`, 10, 10 * 60 * 1000)) return json({ ok: false, error: "rate_limited" }, 429);
   const key = new URL(req.url).searchParams.get("key") ?? "";
   const body = await readBody(req);
   const text = (k: string, max: number) => (typeof body[k] === "string" ? (body[k] as string).trim().slice(0, max) : "");

@@ -7,8 +7,8 @@
  * is configured or somebody is signed in for real. Signing in on /login
  * turns it back off — see components/auth/auth-screen.tsx.
  *
- * Nothing in the app links here; it exists to be typed in directly.
- * The marketing call simulator lives at /demo/arama.
+ * The landing page links here ("Paneli örnek veriyle gezin"); the admin panel
+ * and the app itself never do. The marketing call simulator lives at /demo/arama.
  */
 
 import { useEffect } from "react";

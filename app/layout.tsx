@@ -50,6 +50,13 @@ export const metadata: Metadata = {
   title: `${appConfig.name} — ${appConfig.tagline[DEFAULT_LANG]}`,
   description: appConfig.description[DEFAULT_LANG],
   applicationName: appConfig.name,
+  metadataBase: new URL("https://www.randevoxai.com"),
+  alternates: { canonical: "/" },
+  twitter: {
+    card: "summary",
+    title: `${appConfig.name} — ${appConfig.tagline[DEFAULT_LANG]}`,
+    description: appConfig.description[DEFAULT_LANG],
+  },
   keywords: [
     "diş kliniği randevu asistanı",
     "diş kliniği yapay zekâ telefon",

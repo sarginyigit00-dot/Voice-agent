@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { addDemoRequest, type DemoRequestInput } from "@/lib/demo-requests/queries";
 import { notifyDemoRequest } from "@/lib/notify/telegram";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^\+?[0-9 ()-]{7,20}$/;
@@ -10,6 +11,9 @@ const PHONE_RE = /^\+?[0-9 ()-]{7,20}$/;
  * form. Errors come back as a field code the page turns into a message.
  */
 export async function POST(req: Request) {
+  if (!rateLimit(`demo-request:${clientIp(req)}`, 5, 60 * 60 * 1000)) {
+    return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
+  }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const text = (key: string, max: number) =>
     typeof body?.[key] === "string" ? (body[key] as string).trim().slice(0, max) : "";

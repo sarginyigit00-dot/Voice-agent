@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { ADMIN_COOKIE, checkPassword, createAdminToken, isAdminConfigured } from "@/lib/admin/auth";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   if (!isAdminConfigured()) {
     return NextResponse.json({ error: "Admin paneli yapılandırılmamış." }, { status: 503 });
+  }
+
+  if (!rateLimit(`admin-login:${clientIp(request)}`, 8, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: "Çok fazla deneme. Biraz sonra tekrar deneyin." }, { status: 429 });
   }
 
   let input = "";

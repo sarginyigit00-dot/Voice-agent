@@ -43,7 +43,9 @@ export function checkPassword(input: string): boolean {
 }
 
 function sign(exp: number, secret: string): string {
-  return createHmac("sha256", secret).update(String(exp)).digest("hex");
+  // Domain-separated key: the cookie MAC is never keyed with the raw password.
+  const key = createHmac("sha256", secret).update("randevox-admin-cookie-v1").digest();
+  return createHmac("sha256", key).update(String(exp)).digest("hex");
 }
 
 /** `"<unix-expiry>.<hmac>"` — the value that goes in the httpOnly cookie. */

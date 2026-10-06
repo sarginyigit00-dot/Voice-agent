@@ -254,6 +254,17 @@ function parseClinicFields(raw: unknown): { patch: Record<string, unknown> } | {
       }
       // Every finished call's transcript goes here — never over plain http.
       if (url.protocol !== "https:") return { error: "CRM webhook adresi https:// ile başlamalı." };
+      // The server POSTs here, so internal addresses are off limits (SSRF).
+      const host = url.hostname.toLowerCase();
+      if (
+        host === "localhost" ||
+        host.endsWith(".local") ||
+        host.endsWith(".internal") ||
+        /^(127\.|10\.|0\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host) ||
+        host === "[::1]"
+      ) {
+        return { error: "CRM webhook adresi herkese açık bir sunucuya işaret etmeli." };
+      }
     }
     patch.crm_webhook_url = v || null;
   }

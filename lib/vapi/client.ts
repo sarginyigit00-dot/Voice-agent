@@ -65,11 +65,18 @@ const ELEVEN_SAMPLES: Record<string, string> = {
   Q5n6GDIjpN0pLOlycRFT: "/voices/orion.mp3",
   xyqF3vGMQlPk3e7yA4DI: "/voices/lyra.mp3",
 };
-const ELEVEN_MODEL ="eleven_turbo_v2_5";
+const ELEVEN_MODEL = "eleven_turbo_v2_5";
+/**
+ * Voice settings for both ElevenLabs voices. Vapi does not read a voice's
+ * saved ElevenLabs settings; it sends these per call. Balanced for the phone:
+ * a low stability makes the tone drift from sentence to sentence. Lower it if
+ * calls sound flat, raise it if they sound unsteady.
+ */
+const ELEVEN_SETTINGS = { speed: 1.0, stability: 0.5, similarityBoost: 0.75 } as const;
 
 type VoiceConfig =
   | { provider: "vapi"; version: "2"; voiceId: string; language: string }
-  | { provider: "11labs"; voiceId: string; model: string; language: string };
+  | ({ provider: "11labs"; voiceId: string; model: string; language: string } & typeof ELEVEN_SETTINGS);
 
 const DEFAULT_MALE_VOICE = "Nico";
 
@@ -77,7 +84,7 @@ export function voiceFor(label: string): VoiceConfig {
   // "Defne · warm female" → "Defne"
   const persona = label.split("·")[0].trim();
   const eleven = ELEVEN_VOICES[persona];
-  if (eleven) return { provider: "11labs", voiceId: eleven, model: ELEVEN_MODEL, language: "tr" };
+  if (eleven) return { provider: "11labs", voiceId: eleven, model: ELEVEN_MODEL, language: "tr", ...ELEVEN_SETTINGS };
   // Rows saved before the persona list was renamed still carry the old names
   // ("Atlas · confident male", "Nova · warm female") — those fall back on the
   // gender word. \bmale\b doesn't match inside "female".

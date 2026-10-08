@@ -5,13 +5,14 @@ Randevox (Next.js) owns everything that happens while a caller is on the
 line; this app owns what happens after: SMS/WhatsApp to the patient, email
 to the clinic, appointment reminders, and the "Hızlı geri dönüş" poll.
 
-Five jobs, one shared secret (AUTOMATION_SECRET):
+Six jobs, one shared secret (AUTOMATION_SECRET):
   - `events`         — web endpoint. Randevox POSTs a signed event here
                         (lib/automation/emit.ts) on call.completed /
                         appointment.cancelled / appointment.rescheduled.
   - `reminders`       — every 15 min: pulls due 24h/2h reminders and sends them.
   - `lead_callbacks`  — every 5 min: pokes Randevox to phone waiting leads.
   - `weekly_report` / `monthly_report` — Mondays / the 1st: emails each clinic its numbers.
+  - `quota_alerts`    — daily: warns a clinic at 80 % and 100 % of its monthly minutes.
 
 Deploy: see README.md in this folder.
 """
@@ -254,6 +255,36 @@ def weekly_report():
 @app.function(image=image, secrets=[secret], schedule=modal.Cron("0 6 1 * *"), timeout=300)
 def monthly_report():
     send_reports("monthly")
+
+
+# ── job: quota warnings (80 % / 100 % of the monthly minutes) ─────────────
+
+@app.function(image=image, secrets=[secret], schedule=modal.Cron("0 7 * * *"), timeout=300)
+def quota_alerts():
+    import httpx
+
+    res = httpx.get(randevox_url("/api/automation/quota-alerts"), headers=randevox_headers(), timeout=HTTP_TIMEOUT)
+    res.raise_for_status()
+    alerts = res.json().get("alerts", [])
+    sent = 0
+    for a in alerts:
+        used, quota = a["minutes"], a["quota"]
+        if a["level"] == 2:
+            subject = f"Randevox: {a['clinicName']} aylık dakika kotasını doldurdu"
+            lead = f"Bu ay <b>{used}</b> dakika kullandınız; paketinizdeki <b>{quota}</b> dakika doldu. Bundan sonraki her dakika aşım olarak (0,30 $/dk) faturalanır."
+        else:
+            subject = f"Randevox: {a['clinicName']} kotasının %80'ine ulaştı"
+            lead = f"Bu ay <b>{used}</b> dakika kullandınız; paketinizdeki <b>{quota}</b> dakikanın %80'ine ulaştınız. Kota dolunca her dakika aşım olarak (0,30 $/dk) faturalanır."
+        html = f"<h2>{a['clinicName']}</h2><p>{lead}</p><p>Paket yükseltmek için bizimle iletişime geçebilirsiniz.</p><p style='color:#888;font-size:12px'>Randevox</p>"
+        if send_clinic_email(a["email"], subject, html):
+            httpx.post(
+                randevox_url("/api/automation/quota-alerts"),
+                headers=randevox_headers(),
+                json={"clinicId": a["clinicId"], "level": a["level"]},
+                timeout=HTTP_TIMEOUT,
+            )
+            sent += 1
+    print(f"[quota-alerts] sent {sent}/{len(alerts)}")
 
 
 # ── job: signed events from Randevox (booking confirm / cancel / reschedule) ─

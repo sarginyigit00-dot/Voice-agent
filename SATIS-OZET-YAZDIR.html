@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Randevox Satış Özeti</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.35; color: #111; margin: 0; }
+  h1 { font-size: 17pt; margin: 0 0 2mm; }
+  .sub { color: #555; margin-bottom: 4mm; font-size: 9.5pt; }
+  h2 { font-size: 11.5pt; margin: 0 0 1.5mm; padding: 1mm 2mm; background: #111; color: #fff; }
+  .box { border: 1px solid #999; margin-bottom: 3.5mm; break-inside: avoid; }
+  .box > *:not(h2) { margin-left: 2.5mm; margin-right: 2.5mm; }
+  .box > *:last-child { margin-bottom: 2mm; }
+  ul, ol { margin: 0 0 1mm; padding-left: 5mm; }
+  li { margin-bottom: 0.8mm; }
+  .cols { display: flex; gap: 4mm; }
+  .cols > div { flex: 1; }
+  .say { font-style: italic; }
+  .big { font-size: 12pt; font-weight: 600; border-left: 3px solid #111; padding-left: 2mm; margin-bottom: 1.5mm; }
+  table { border-collapse: collapse; width: calc(100% - 5mm); margin-bottom: 2mm; }
+  td, th { border: 1px solid #bbb; padding: 1mm 1.5mm; vertical-align: top; text-align: left; }
+  th { background: #eee; }
+  .cb::before { content: "☐ "; }
+  .pb { page-break-before: always; }
+  .note { font-size: 9pt; color: #555; }
+  .lines { height: 7mm; border-bottom: 1px solid #999; margin-bottom: 1mm; }
+</style>
+</head>
+<body>
+
+<h1>Randevox — Satış Görüşmesi Cep Özeti</h1>
+<div class="sub">Ezberlenecek olan sadece <b>kalın</b> yazılanlar. Gerisi hatırlatma.</div>
+
+<div class="box">
+  <h2>1 · Tek cümle (ezberle)</h2>
+  <div class="big">"Randevox telefonunuzu ilk çalışta açar, implant ve estetik görüşmelerini randevuya çevirir. Hekimleriniz koltukta olsa da hiçbir arama kaçmaz."</div>
+  <div>Slogan: <b>Kaçan arama, kaçan implanttır.</b> · Sekreteri değiştirmez, kaçanı yakalar.</div>
+</div>
+
+<div class="box">
+  <h2>2 · Görüşmenin akışı (30–40 dk)</h2>
+  <table>
+    <tr><th style="width:22%">Bölüm</th><th style="width:12%">Süre</th><th>Ne yapacağım</th></tr>
+    <tr><td><b>Açılış</b></td><td>5 dk</td><td>Teşekkür et, gündemi söyle: <span class="say">"İlk 10 dk sizi dinleyeceğim, sonra 10 dk canlı göstereceğim, sonra sonraki adıma bakarız."</span></td></tr>
+    <tr><td><b>Keşif</b></td><td>10–12 dk</td><td>Aşağıdaki 5 soruyu sor. <b>Sen az konuş, dinle, not al.</b></td></tr>
+    <tr><td><b>Demo</b></td><td>10 dk</td><td>Müşteri <b>kendi telefonundan</b> demo hattını arasın → panelde transkript + özet + takvime düşen randevu.</td></tr>
+    <tr><td><b>Kapanış</b></td><td>5 dk</td><td>Özetle → teyit et → <b>pilot tarihini kilitle</b>.</td></tr>
+  </table>
+</div>
+
+<div class="box">
+  <h2>3 · Sorulacak 5 ana soru (ezberle)</h2>
+  <ol>
+    <li><b>Günde kaç arama alıyorsunuz, kaçını kaçırıyorsunuz?</b> (mesai dışı, öğle arası, hekimler koltukta)</li>
+    <li><b>Bir implant / gülüş tasarımı hastası sizin için kaç TL?</b></li>
+    <li><b>Daha önce ne denediniz? Ne işe yaradı, ne yaramadı?</b></li>
+    <li><b>Kararı verirken başka kimler var?</b></li>
+    <li><b>Bir ay sonunda "işe yaradı" demek için ne görmeniz gerekir?</b></li>
+  </ol>
+  <div class="note">Yedek sorular: Cumartesi/pazar gelen aramalar ne oluyor? · Reklam bütçeniz? · Hangi takvim/yazılımı kullanıyorsunuz? · Bütçe aralığı? · Ne zaman başlamak istersiniz?</div>
+</div>
+
+<div class="box">
+  <h2>4 · Dinlerken yakalanacaklar</h2>
+  <ul>
+    <li class="cb">Acı noktası: kaçan arama, sekreter yükü, gece/hafta sonu</li>
+    <li class="cb">Sayılar: arama, kaçan, tedavi değeri (ROI için)</li>
+    <li class="cb">Kısıt: bütçe, KVKK endişesi, "ekibim tepki gösterir"</li>
+    <li class="cb">Satın alma sinyali: "ne kadar sürede kurulur?", "fiyat nedir?"</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>5 · Paketler (hekim sayısına göre öner)</h2>
+  <table>
+    <tr><th>Klinik</th><th>Paket</th><th>Fiyat</th><th>Dakika</th><th>Kilit fark</th></tr>
+    <tr><td>1–5 hekim, implant/estetik</td><td><b>Klinik</b></td><td>$499/ay</td><td>1.000</td><td>Karşılama, randevu, canlı aktarma, mesai dışı ajan, hatırlatma, hızlı geri dönüş, dahili CRM, aylık rapor</td></tr>
+    <tr><td>6+ hekim</td><td><b>Poliklinik</b></td><td>$899/ay</td><td>2.500</td><td>Klinik'teki her şey + haftalık rapor, CRM'e canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon</td></tr>
+  </table>
+  <div class="note">Aşım: dakikası $0,30. Kabaca 3 dk'lık aramayla 1.000 dk ≈ 330 arama. Fiyatlar sitede de var (Fiyatlar bölümü); görüşmede sen açıkla.</div>
+</div>
+
+<div class="pb"></div>
+
+<div class="box">
+  <h2>6 · ROI hesabı (müşterinin rakamıyla doldur)</h2>
+  <div class="big">Kurtarılan gelir/ay = kaçan arama × yeni hasta % × randevu % × tedavi % × tedavi değeri</div>
+  <div>Örnek (yalnızca gösterim): 40 × %50 × %50 × %40 × 30.000 TL ≈ <b>120.000 TL/ay</b>.<br>
+  <b>Cümle:</b> <span class="say">"Ayda tek bir kaçan hastayı kurtarması paketin maliyetini çıkarır."</span></div>
+  <div class="note">Uydurma vaka anlatma. Vaka yoksa: "14 gün pilot yapalım, kaçan aramaları birlikte sayalım."</div>
+</div>
+
+<div class="box">
+  <h2>7 · İtirazlar → tek cümlelik cevap</h2>
+  <table>
+    <tr><th style="width:30%">İtiraz</th><th>Cevap</th></tr>
+    <tr><td>"Pahalı."</td><td>"Bir implant hastası sizin için kaç TL? Ayda bir hasta paketi çıkarır. Birlikte hesaplayalım."</td></tr>
+    <tr><td>"Sekreter daha ucuz."</td><td>"Sekreteri değiştirmiyoruz; gece, hafta sonu, öğle arası, meşgul hattı kapatıyoruz."</td></tr>
+    <tr><td>"Hasta robotla konuşmaz."</td><td>"Kendi telefonunuzdan arayın, deneyin. Şu an açılmayan arama zaten sesli mesaja düşüyor."</td></tr>
+    <tr><td>"Yanlış bilgi verir."</td><td>"Sadece sizin klinik bilgilerinizle konuşur. Bilmediğini uydurmaz, insana aktarır. Her arama kayıtlı."</td></tr>
+    <tr><td>"Acil / şikâyet?"</td><td>"Kuralı siz koyarsınız; şikâyet, acil, sıcak implant adayı canlı olarak size bağlanır."</td></tr>
+    <tr><td>"KVKK / hasta verisi?"</td><td>"Her klinik yalnızca kendi verisini görür. Kayıt/saklama detayını sözleşmede netleştiririz." <span class="note">(Kesin hukuki söz verme.)</span></td></tr>
+    <tr><td>"Ekibim tepki gösterir."</td><td>"Onları değiştirmiyor, tekrarlayan yükü alıyor. Sabah arama özetiyle işe başlıyorlar."</td></tr>
+    <tr><td>"Kurulum zor mu? Numaram değişir mi?"</td><td>"Kurulumu biz yaparız. Numara aynı kalır, sadece yönlendirirsiniz. Sizden hizmet/fiyat listesi ve saatler yeter."</td></tr>
+    <tr><td>"Düşünmem gerek."</td><td>"Elbette. Sizi neyin tereddüte düşürdüğünü öğrenebilir miyim: fiyat, teknoloji, ekip mi?" → <b>14 gün pilot öner, bir sonraki adımın tarihini al.</b></td></tr>
+  </table>
+</div>
+
+<div class="cols">
+  <div class="box">
+    <h2>8 · Demo: 4 senaryo</h2>
+    <ol>
+      <li>Randevu: "Yarın öğleden sonra randevu istiyorum."</li>
+      <li>Fiyat: "İmplant kaç para, kaç seans?"</li>
+      <li>Şikâyet: "Dolgum ağrıyor." → insana aktarır</li>
+      <li>Sözünü kes → barge-in</li>
+    </ol>
+    <div class="note">Önce kontrol: hat çalışıyor, /klinik dolu, takvim bağlı, aktarma numarası doğru.</div>
+  </div>
+  <div class="box">
+    <h2>9 · Kapanış (ezberle)</h2>
+    <ol>
+      <li><b>Özetle:</b> "Günde ~X arama, ~Y kaçıyor, implant ~Z TL."</li>
+      <li><b>Teyit:</b> "Doğru anladım mı?"</li>
+      <li><b>Sonraki adım:</b> paket + pilot tarihi.</li>
+      <li><b>Söz ver:</b> "Bu akşam teklifi gönderiyorum, [gün] sizi arıyorum."</li>
+    </ol>
+  </div>
+</div>
+
+<div class="box">
+  <h2>10 · Görüşme sonrası (24 saat içinde)</h2>
+  <ul>
+    <li class="cb">Notları kaydet · teşekkür e-postası + söz verilen belge</li>
+    <li class="cb">Takip hatırlatıcısı (2–3 gün sonra)</li>
+    <li class="cb">Ek karar verici (ortak hekim/müdür) varsa ona da demo öner</li>
+    <li class="cb">Pilot onaylandıysa: /admin'de klinik + hesap, /klinik'te bilgiler, telefon kurulumu</li>
+  </ul>
+</div>
+
+<div class="pb"></div>
+
+<div class="box">
+  <h2>Not sayfası (görüşmede doldur)</h2>
+  <div>Klinik: ____________________ Tarih: ____________ Katılımcılar: ______________________________</div>
+  <div style="margin-top:2mm">Hekim/koltuk: ______ Aylık arama: ______ Kaçan: ______ Tedavi değeri: ____________ TL</div>
+  <div style="margin-top:2mm">Mevcut telefon çözümü: ______________________________________________</div>
+  <div style="margin-top:2mm"><b>Acı noktaları</b></div>
+  <div class="lines"></div><div class="lines"></div><div class="lines"></div>
+  <div style="margin-top:2mm"><b>İtirazlar / sorular</b></div>
+  <div class="lines"></div><div class="lines"></div><div class="lines"></div>
+  <div style="margin-top:2mm">Karar verenler: ______________________ Bütçe: __________ Zaman: __________</div>
+  <div style="margin-top:2mm">Önerilen paket: ____________ Sonraki adım: ______________ Takip tarihi: __________</div>
+  <div style="margin-top:2mm">Kapanma olasılığı (1–10): ____ Tahmini kapanış: ____________ Engel: ______________</div>
+  <div style="margin-top:3mm"><b>Öz değerlendirme:</b>
+    <span class="cb">Hedefe ulaştım mı</span> &nbsp;
+    <span class="cb">Gerçek acıyı buldum mu</span> &nbsp;
+    <span class="cb">Net tarih aldım mı</span> &nbsp;
+    <span class="cb">%40'tan az konuştum mu</span></div>
+</div>
+
+</body>
+</html>

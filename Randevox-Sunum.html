@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Randevox Sunum</title>
+<style>
+  :root {
+    --ink: #15222B; --paper: #F3F6F6; --grid: #CBD5D8; --teal: #1E7F8C; --teal-soft: #D3E8EA;
+    --red: #C8384A; --red-soft: #F4D9DD; --tab: #E4D5B5; --muted: #5D6D75; --white: #fff;
+    --head: Georgia, "Times New Roman", serif;
+    --body: "Segoe UI", Calibri, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0d151b; overflow: hidden; font-family: var(--body); color: var(--ink); }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center; }
+  .slide { position: absolute; inset: 0; background: var(--paper); padding: 56px 80px; display: none; overflow: hidden; }
+  .slide.active { display: block; }
+  .slide.dark { background: var(--ink); color: var(--white); }
+  h1 { font-family: var(--head); font-size: 46px; line-height: 1.12; font-weight: 700; max-width: 1000px; }
+  .foot { position: absolute; left: 80px; right: 80px; bottom: 26px; display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .dark .foot { color: #8fa3af; }
+  .note-tag { font-size: 14px; font-style: italic; color: var(--muted); }
+  .abs { position: absolute; }
+  .teal { color: var(--teal); } .red { color: var(--red); } .muted { color: var(--muted); }
+  .serif { font-family: var(--head); font-weight: 700; }
+
+  /* ledger (randevu defteri gün çizelgesi) */
+  .ledger { position: absolute; left: 80px; right: 80px; top: 230px; }
+  .l-hours { position: relative; height: 26px; margin-left: 230px; font-size: 13px; color: var(--muted); }
+  .l-hours span { position: absolute; transform: translateX(-50%); }
+  .l-row { position: relative; height: 104px; border-bottom: 1px solid var(--grid); }
+  .l-row .lab { position: absolute; left: 0; top: 0; bottom: 0; width: 220px; display: flex; align-items: center; font-weight: 700; font-size: 18px; }
+  .l-track { position: absolute; left: 230px; right: 0; top: 0; bottom: 0;
+    background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px); background-size: calc(100% / 12) 100%; border-right: 1px solid var(--grid); }
+  .blk { position: absolute; top: 16px; bottom: 16px; }
+  .blk.tab { background: var(--tab); }
+  .blk.ok { background: var(--teal); }
+  .blk.miss { background: var(--red-soft); border: 2px dashed var(--red); }
+  .blk.fill { background: var(--teal); left: 0; width: 100%; }
+  .blk.fill.go { animation: fillin 1.6s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes fillin { from { width: 0; } to { width: 100%; } }
+  .legend { position: absolute; left: 310px; top: 520px; display: flex; gap: 32px; font-size: 14px; color: var(--muted); align-items: center; }
+  .sw { display: inline-block; width: 26px; height: 16px; margin-right: 8px; vertical-align: middle; }
+
+  /* hairline rows */
+  .rows { position: absolute; left: 80px; right: 80px; }
+  .rows .r { display: flex; align-items: center; border-top: 1px solid var(--grid); }
+  .rows .r:last-child { border-bottom: 1px solid var(--grid); }
+
+  .tl { position: absolute; left: 80px; right: 80px; top: 280px; height: 2px; background: var(--ink); }
+  .step { position: absolute; width: 250px; }
+  .step .dot { width: 20px; height: 20px; border-radius: 50%; background: var(--ink); position: absolute; top: -9px; left: 0; border: 3px solid var(--paper); }
+  .step h3 { font-family: var(--head); font-size: 24px; margin-top: 30px; }
+  .step p { font-size: 17px; color: var(--muted); margin-top: 10px; line-height: 1.4; max-width: 220px; }
+
+  .btn-hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: 4px; font-size: 12px; color: #6f8390; z-index: 9; transition: opacity .6s; }
+  .btn-hint.hide { opacity: 0; }
+  #notes { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(13,21,27,.96); color: #e8eef1; padding: 16px 28px 20px; font-size: 16px; line-height: 1.5; display: none; z-index: 10; max-height: 34vh; overflow: auto; border-top: 2px solid var(--teal); }
+  #notes.show { display: block; }
+  #notes b { color: #7FCBD3; }
+  #nav { position: fixed; top: 0; bottom: 0; width: 12%; z-index: 5; cursor: pointer; background: none; border: 0; }
+  #prev { left: 0; } #next { right: 0; }
+  #nav:focus-visible, .navb:focus-visible { outline: 3px solid var(--teal); }
+  @media (prefers-reduced-motion: reduce) { .blk.fill.go { animation: none; } }
+
+  @media print {
+    @page { size: 1280px 720px; margin: 0; }
+    html, body { overflow: visible; background: none; height: auto; }
+    #stage { position: static; transform: none !important; width: auto; height: auto; }
+    .slide { display: block !important; position: relative; width: 1280px; height: 720px; page-break-after: always; break-after: page; }
+    .blk.fill { width: 100% !important; animation: none !important; }
+    .navb, .btn-hint, #notes { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- 1 Kapak -->
+  <section class="slide active" data-notes="<b>AÇILIŞ (5 dk):</b> Teşekkür et. Gündemi söyle: 'İlk 10 dk sizi dinleyeceğim, sonra 10 dk canlı göstereceğim, sonra sonraki adıma bakarız. Uygun mu?' Sağdaki gün defterini göster: kırmızı kesikli kutular açılmayan aramalar. İlk soru: Günde kaç arama alıyorsunuz, kaçını kaçırıyorsunuz?">
+    <div class="abs serif teal" style="left:80px;top:60px;font-size:24px">Randevox</div>
+    <h1 class="abs" style="left:80px;top:190px;font-size:74px;width:700px;line-height:1.08">Kaçan arama, kaçan implanttır.</h1>
+    <div class="abs muted" style="left:80px;top:500px;font-size:26px">Diş klinikleri için 7/24 AI telefon ajanı</div>
+    <div class="abs muted" style="left:80px;bottom:44px;font-size:16px">Yiğit &nbsp;|&nbsp; www.randevoxai.com</div>
+    <div class="abs" id="cover-book" style="left:900px;top:80px;width:300px"></div>
+    <div class="abs red" style="left:900px;top:668px;font-size:14px">kırmızı: açılmayan arama</div>
+  </section>
+
+  <!-- 2 Sorun -->
+  <section class="slide" data-notes="Bir gün örneği. Tan bloklar: hekimler koltukta. Alttaki satırda kırmızı kesikli bloklar açılmayan aramalar (örnek gün, gerçek veri değil). <b>Sor:</b> Günde/haftada kaç arama alıyorsunuz? Kaçını kaçırıyorsunuz? Akşam ve hafta sonu gelen aramalara ne oluyor? Kaçana geri dönülüyor mu, ne kadar sürede? Google yorumlarında 'telefona ulaşamadım' şikayeti varsa burada an.">
+    <h1>Telefon çalıyor, hekim koltukta</h1>
+    <div class="ledger" data-ledger="miss"></div>
+    <div class="legend"><span><i class="sw" style="background:var(--teal)"></i>Açılan arama</span><span><i class="sw" style="background:var(--red-soft);border:2px dashed var(--red)"></i>Açılmayan arama</span><span style="font-style:italic">Örnek gün</span></div>
+    <div class="abs serif red" style="left:80px;top:590px;font-size:30px">Hasta beklemez. Aramayı açamadığınızda bir sonraki kliniği arar.</div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 3 Bedel -->
+  <section class="slide" data-notes="Müşteri kendi rakamlarını söyler; boşlukları birlikte doldurun. <b>Sor:</b> Ortalama bir implant/gülüş tasarımı hastası sizin için kaç TL? Aylık reklam bütçeniz? Telefondan gelen yeni hasta adaylarının yüzde kaçı randevu alıyor? Örnek rakam yalnızca gösterimdir, gerçek sonuç gibi sunma. <b>Cümle:</b> 'Ayda tek bir kaçan hastayı kurtarması paketin maliyetini çıkarır.'">
+    <h1>Her kırmızı kutunun bir bedeli var</h1>
+    <div class="rows" style="top:190px;width:760px;right:auto">
+      <div class="r" style="height:64px;font-size:24px"><span style="flex:1">Ayda kaçan arama</span><span class="serif teal">______</span></div>
+      <div class="r" style="height:64px;font-size:24px"><span style="flex:1">×&nbsp; Yeni hasta oranı</span><span class="serif teal">% ____</span></div>
+      <div class="r" style="height:64px;font-size:24px"><span style="flex:1">×&nbsp; Randevuya dönüşüm</span><span class="serif teal">% ____</span></div>
+      <div class="r" style="height:64px;font-size:24px"><span style="flex:1">×&nbsp; Tedaviye dönüşüm</span><span class="serif teal">% ____</span></div>
+      <div class="r" style="height:64px;font-size:24px"><span style="flex:1">×&nbsp; Tedavi değeri</span><span class="serif teal">______ TL</span></div>
+    </div>
+    <div class="abs serif" style="left:80px;top:552px;font-size:34px">= kurtarılan gelir / ay</div>
+    <div class="abs" style="left:930px;top:200px;width:270px">
+      <div class="note-tag">Örnek, yalnızca gösterim</div>
+      <div class="muted" style="font-size:17px;margin-top:14px;line-height:1.5">40 × %50 × %50 × %40 × 30.000 TL</div>
+      <div class="serif red" style="font-size:38px;margin-top:20px">≈ 120.000 TL</div>
+      <div class="muted" style="font-size:18px;margin-top:6px">her ay</div>
+    </div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 4 Çözüm -->
+  <section class="slide" data-notes="Aynı örnek günün Randevox'lu hali; kırmızılar teal ile doluyor. Tek cümlelik pitch'i ezberden söyle. Vurgu: <b>sekreteri değiştirmez, kaçanı yakalar.</b> Üç fayda: ilk çalışta açar, randevuya çevirir, ciddi adayı iletir.">
+    <h1>Aynı gün, telefon hiç boş değil</h1>
+    <div class="ledger" data-ledger="fill"></div>
+    <div class="legend"><span style="font-style:italic;margin-left:auto">Örnek gün</span></div>
+    <div class="abs serif" style="left:80px;top:560px;width:1080px;font-size:25px;font-weight:400;font-style:italic;line-height:1.35">“Randevox telefonunuzu ilk çalışta açar, implant ve estetik görüşmelerini randevuya çevirir. Hekimleriniz koltukta olsa da hiçbir arama kaçmaz.”</div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 5 Akış -->
+  <section class="slide" data-notes="Akışı sırayla anlat: arayan konuşur, ajan anlar, ya randevu alır ya da doğru kişiye aktarır, sonunda her şey kayda düşer. Vurgu: arayan sözünü kesebilir, ajan uyum sağlar (IVR menüsü gibi değil).">
+    <h1>Bir arama böyle ilerler</h1>
+    <div class="tl"></div>
+    <div class="step" style="left:80px;top:280px"><div class="dot"></div><h3>Arama gelir</h3><p>İlk çalışta karşılanır.</p></div>
+    <div class="step" style="left:380px;top:280px"><div class="dot"></div><h3>Ajan anlar</h3><p>Doğal konuşma, sözünüz kesilebilir.</p></div>
+    <div class="step" style="left:680px;top:280px"><div class="dot"></div><h3>Karar verir</h3><p>Randevu alır ya da insana aktarır.</p></div>
+    <div class="step" style="left:980px;top:280px"><div class="dot" style="background:var(--teal)"></div><h3>Kayda düşer</h3><p>Özet, transkript, eylem maddeleri.</p></div>
+    <div class="abs muted" style="left:80px;top:600px;font-size:19px;font-style:italic">Araya girme desteği: arayan ajanın sözünü kesebilir, ajan uyum sağlar.</div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 6 Randevu -->
+  <section class="slide" data-notes="Takvime (Google Takvim dahil) canlı bağlanır, hekimin gerçek uygunluğunu okur, slot teklif eder, onaylar ve davet gönderir. <b>Sor:</b> Hangi takvim/klinik yazılımını kullanıyorsunuz? Sol taraf örnek konuşma, sağ taraf örnek defter.">
+    <h1>Randevuyu arama bitmeden yazar</h1>
+    <div class="abs" style="left:80px;top:190px;width:560px">
+      <div class="note-tag" style="margin-bottom:18px">Örnek konuşma</div>
+      <div style="display:grid;grid-template-columns:120px 1fr;row-gap:24px;font-size:22px;line-height:1.35">
+        <b class="muted" style="font-size:16px;padding-top:4px">Arayan</b><span>Yarın öğleden sonra kontrol için randevu istiyorum.</span>
+        <b class="teal" style="font-size:16px;padding-top:4px">Randevox</b><span>Yarın on beş otuz uygun. Size yazayım mı?</span>
+        <b class="muted" style="font-size:16px;padding-top:4px">Arayan</b><span>Evet lütfen.</span>
+        <b class="teal" style="font-size:16px;padding-top:4px">Randevox</b><span>Randevunuz oluşturuldu. Davet e-postanıza geliyor.</span>
+      </div>
+    </div>
+    <div class="abs" style="left:740px;top:190px;width:460px">
+      <div class="serif" style="font-size:22px;margin-bottom:12px">Yarın</div>
+      <div style="position:relative;height:330px;border-top:1px solid var(--grid)" id="day"></div>
+    </div>
+    <div class="abs muted" style="left:80px;top:610px;font-size:18px;font-style:italic">Takvime canlı yazılır, davet otomatik gider.</div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 7 Nitelendirme -->
+  <section class="slide" data-notes="Ajan hangi tedaviyi, kaç diş için, ne zaman istediğini sorar. Ciddi implant ve estetik adaylarını hasta danışmanına iletir. <b>Sor:</b> Hangi aramalar mutlaka insana gitmeli? Sağdaki form örnek amaçlıdır.">
+    <h1>Sadece ciddi hasta adayı size ulaşır</h1>
+    <div class="rows" style="top:200px;width:520px;right:auto">
+      <div class="r" style="height:118px;display:block;padding-top:14px"><div class="serif" style="font-size:30px">Hangi tedavi?</div><div class="muted" style="font-size:18px;margin-top:8px">İmplant, zirkonyum, gülüş tasarımı</div></div>
+      <div class="r" style="height:118px;display:block;padding-top:14px"><div class="serif" style="font-size:30px">Kaç diş için?</div><div class="muted" style="font-size:18px;margin-top:8px">Kapsamı anlar</div></div>
+      <div class="r" style="height:118px;display:block;padding-top:14px"><div class="serif" style="font-size:30px">Ne zaman?</div><div class="muted" style="font-size:18px;margin-top:8px">Aciliyet ve takvim</div></div>
+    </div>
+    <div class="abs" style="left:700px;top:190px;width:500px;height:420px;background:#fff;border:1.5px solid var(--ink);padding:26px 32px">
+      <div class="note-tag">Hasta adayı · örnek form</div>
+      <div style="margin-top:14px;font-size:20px">
+        <div style="display:flex;padding:12px 0;border-bottom:1px solid var(--grid)"><span class="muted" style="width:170px">Tedavi</span><b>İmplant</b></div>
+        <div style="display:flex;padding:12px 0;border-bottom:1px solid var(--grid)"><span class="muted" style="width:170px">Diş sayısı</span><b>2</b></div>
+        <div style="display:flex;padding:12px 0;border-bottom:1px solid var(--grid)"><span class="muted" style="width:170px">Zaman</span><b>Bu ay içinde</b></div>
+        <div style="display:flex;padding:12px 0;border-bottom:1px solid var(--grid)"><span class="muted" style="width:170px">Dil</span><b>Türkçe</b></div>
+      </div>
+      <div style="margin-top:26px;background:var(--teal);color:#fff;padding:22px 24px;font-size:22px;font-weight:700">Sıcak aday: danışmanınıza iletildi</div>
+    </div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 8 Aktarma -->
+  <section class="slide" data-notes="Kuralı klinik koyar. Ajan aramayı canlı olarak doğru kişiye aktarır, bağlamı da yanında taşır. Vurgu: acil ve şikayet aramaları insana gider; robot çözmeye çalışmaz.">
+    <h1>Gerektiğinde aramayı size bağlar</h1>
+    <div class="abs note-tag" style="left:80px;top:180px">Arama böyleyse</div>
+    <div class="abs note-tag" style="left:680px;top:180px">Randevox bağlar</div>
+    <div class="rows" style="top:216px">
+      <div class="r" style="height:92px"><span class="serif" style="width:600px;font-size:32px">Tedavi sonrası şikâyet</span><b class="teal" style="font-size:28px">hekime ya da yetkiliye</b></div>
+      <div class="r" style="height:92px"><span class="serif" style="width:600px;font-size:32px">Acil durum</span><b class="teal" style="font-size:28px">anında yetkili kişiye</b></div>
+      <div class="r" style="height:92px"><span class="serif" style="width:600px;font-size:32px">Sıcak implant adayı</span><b class="teal" style="font-size:28px">hasta danışmanına</b></div>
+      <div class="r" style="height:92px"><span class="serif" style="width:600px;font-size:32px">Sizin belirlediğiniz ifade</span><b class="teal" style="font-size:28px">seçtiğiniz kişiye</b></div>
+    </div>
+    <div class="abs muted" style="left:80px;top:610px;font-size:18px;font-style:italic">Kuralı siz koyarsınız. Arama canlı aktarılır, bağlam da yanında gider.</div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 9 7/24 -->
+  <section class="slide" data-notes="Mesai dışı, tatil ve yoğun saatler fark etmez. <b>Sor:</b> Mesai dışı ve hafta sonu gelen aramalar şu an ne oluyor? Tüm hat ya da yalnızca meşgul / mesai dışı kapsanabilir.">
+    <h1>Gece, hafta sonu, öğle arası</h1>
+    <div class="abs serif teal" style="left:80px;top:170px;font-size:170px;line-height:1">7/24</div>
+    <div class="abs muted" style="left:700px;top:250px;width:480px;font-size:26px">Tüm hat ya da yalnızca meşgul ve mesai dışı saatler.</div>
+    <div class="abs" id="day24" style="left:80px;top:410px;right:80px;height:56px;display:grid;grid-template-columns:repeat(24,1fr);gap:4px"></div>
+    <div class="abs muted" style="left:80px;right:80px;top:472px;font-size:14px;display:flex;justify-content:space-between"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+    <div class="abs" style="left:80px;top:530px"><div class="serif" style="font-size:30px">Mesai dışı için ayrı ajan</div><div class="muted" style="font-size:20px;margin-top:6px">Klinik kapalıyken aramaları o karşılar.</div></div>
+    <div class="abs" style="left:700px;top:530px"><div class="serif" style="font-size:30px">Sesli mesaja düşen arama: 0</div><div class="muted" style="font-size:20px;margin-top:6px">Her arama anında karşılanır.</div></div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 10 Panel -->
+  <section class="slide" data-notes="Her arama özet, transkript ve eylem maddeleriyle hasta kaydına düşer. Klinik yazılımı kullanıyorsa kayıtları oraya da aktarabiliriz (kapsamı demo sonrası netleştir). Liste örnek ekrandır; <b>canlı panelde gerçek arama göster.</b>">
+    <h1>Her arama panelinizde</h1>
+    <div class="abs note-tag" style="left:80px;top:180px">Son aramalar · örnek ekran</div>
+    <div class="rows" style="top:214px;width:780px;right:auto">
+      <div class="r" style="height:96px"><i style="width:12px;height:52px;background:var(--teal);margin-right:22px"></i><b style="font-size:24px;width:290px">Randevu alındı</b><span class="muted" style="font-size:20px">Kontrol, yarın 15:30</span></div>
+      <div class="r" style="height:96px"><i style="width:12px;height:52px;background:var(--ink);margin-right:22px"></i><b style="font-size:24px;width:290px">Danışmana aktarıldı</b><span class="muted" style="font-size:20px">İki implant, sıcak aday</span></div>
+      <div class="r" style="height:96px"><i style="width:12px;height:52px;background:var(--red);margin-right:22px"></i><b style="font-size:24px;width:290px">Randevusuz bitti</b><span class="muted" style="font-size:20px">Kliniğe e-posta gitti</span></div>
+      <div class="r" style="height:96px"><i style="width:12px;height:52px;background:var(--teal);margin-right:22px"></i><b style="font-size:24px;width:290px">Randevu alındı</b><span class="muted" style="font-size:20px">Gülüş tasarımı, Cuma 11:00</span></div>
+    </div>
+    <div class="abs" style="left:930px;top:180px;width:280px">
+      <div class="note-tag">Kayıtta her arama için</div>
+      <ul style="list-style:none;font-size:22px;line-height:1;margin-top:18px"><li style="margin-bottom:26px">Ses kaydı</li><li style="margin-bottom:26px">Transkript ve özet</li><li style="margin-bottom:26px">Eylem maddeleri</li><li style="margin-bottom:26px">Dahili hasta kaydı (CRM)</li><li>Aylık performans raporu</li></ul>
+    </div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 11 Ekip -->
+  <section class="slide" data-notes="İtirazları burada karşıla. <b>Robot hissi:</b> kendi telefonundan arasın. <b>Yanlış bilgi:</b> yalnızca klinik bilgileriyle konuşur, bilmediğini uydurmaz, insana aktarır. <b>Veri/KVKK:</b> her klinik yalnızca kendi verisini görür; kayıt/saklama detayını sözleşmede netleştiririz (kesin hukuki söz verme). <b>Ekip tepki gösterir:</b> sabah arama özetiyle işe başlarlar.">
+    <h1>Ekibinizi değiştirmez, yükünü alır</h1>
+    <div class="abs" style="left:80px;top:200px;width:520px"><div class="serif red" style="font-size:26px">Şimdi</div><p style="font-size:24px;margin-top:14px;line-height:1.4">Sekreter hem telefonda hem resepsiyonda. Gece ve öğle arası kimse yok.</p></div>
+    <div class="abs" style="left:680px;top:200px;width:520px"><div class="serif teal" style="font-size:26px">Randevox ile</div><p style="font-size:24px;margin-top:14px;line-height:1.4">Ekip hastayla ilgilenir. Tekrarlayan ve mesai dışı aramaları ajan alır.</p></div>
+    <div class="abs" style="left:80px;top:410px;width:340px;border-top:1px solid var(--grid);padding-top:16px"><div class="serif" style="font-size:24px">Robot gibi mi?</div><p class="muted" style="font-size:18px;margin-top:10px;line-height:1.4">Kendi telefonunuzdan deneyin.</p></div>
+    <div class="abs" style="left:470px;top:410px;width:340px;border-top:1px solid var(--grid);padding-top:16px"><div class="serif" style="font-size:24px">Yanlış bilgi verir mi?</div><p class="muted" style="font-size:18px;margin-top:10px;line-height:1.4">Yalnızca sizin klinik bilginizle konuşur. Bilmediğini insana aktarır.</p></div>
+    <div class="abs" style="left:860px;top:410px;width:340px;border-top:1px solid var(--grid);padding-top:16px"><div class="serif" style="font-size:24px">Hasta verisi?</div><p class="muted" style="font-size:18px;margin-top:10px;line-height:1.4">Her klinik yalnızca kendi verisini görür.</p></div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 12 Kurulum -->
+  <section class="slide" data-notes="Numara değişmez, yalnızca yönlendirilir. Müşteriden gerekenler: hizmet ve fiyat listesi, hekimler, çalışma saatleri, hangi aramanın insana gideceği. <b>Sor:</b> Bu tür bir çözüm için zaman çizelgeniz nedir? Bir ay sonunda işe yaradı demek için ne görmeniz gerekir? <b>Öneri:</b> 14 günlük pilot, kaçan aramaları birlikte sayalım.">
+    <h1>Kurulumu biz yaparız</h1>
+    <div class="tl" style="top:240px"></div>
+    <div class="step" style="left:80px;top:240px"><div class="dot"></div><h3>Klinik bilgileri</h3><p>Hizmetler, fiyatlar, hekimler, SSS</p></div>
+    <div class="step" style="left:380px;top:240px"><div class="dot"></div><h3>Takvim bağlantısı</h3><p>Mevcut takviminize canlı</p></div>
+    <div class="step" style="left:680px;top:240px"><div class="dot"></div><h3>Yönlendirme</h3><p>Numaranız aynı kalır</p></div>
+    <div class="step" style="left:980px;top:240px"><div class="dot"></div><h3>Test ve yayın</h3><p>Birlikte deneriz, sonra canlıya</p></div>
+    <div class="abs" style="left:80px;top:470px;width:520px"><div class="serif teal" style="font-size:26px">Sizden istediğimiz</div><p style="font-size:21px;margin-top:12px;line-height:1.4">Hizmet ve fiyat listesi, hekimler ve saatler, hangi aramaların insana gideceği.</p></div>
+    <div class="abs" style="left:680px;top:450px;width:520px;background:var(--teal);color:#fff;padding:30px 36px"><div class="serif" style="font-size:32px">14 günlük pilot</div><p style="font-size:21px;margin-top:10px">Kaçan aramaları ve randevuları birlikte sayalım.</p></div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 13 Demo -->
+  <section class="slide" data-notes="<b>CANLI DEMO (10 dk).</b> Müşteri kendi telefonundan demo hattını arasın. Sonra panelde o aramanın transkript + özet + takvime düşen randevusunu göster. Önce kontrol: hat çalışıyor, /klinik dolu, takvim bağlı, aktarma numarası doğru.">
+    <h1>Şimdi deneyelim: siz arayın</h1>
+    <div class="rows" style="top:190px">
+      <div class="r" style="height:76px"><span class="serif" style="width:330px;font-size:28px">Randevu</span><span class="muted" style="font-size:24px">“Yarın öğleden sonra randevu istiyorum.”</span></div>
+      <div class="r" style="height:76px"><span class="serif" style="width:330px;font-size:28px">İmplant sorusu</span><span class="muted" style="font-size:24px">“İmplant kaç para, kaç seans?”</span></div>
+      <div class="r" style="height:76px"><span class="serif" style="width:330px;font-size:28px">Şikâyet</span><span class="muted" style="font-size:24px">“Dolgum ağrıyor.” → insana aktarır</span></div>
+      <div class="r" style="height:76px"><span class="serif" style="width:330px;font-size:28px">Sözünü kesin</span><span class="muted" style="font-size:24px">Ajan konuşurken araya girin.</span></div>
+    </div>
+    <div class="foot"><span>Randevox</span><span class="pg"></span></div>
+  </section>
+
+  <!-- 14 Paketler -->
+  <section class="slide" data-notes="<b>FİYAT SLAYTI:</b> istemezsen sunumdan atla (→ tuşu); fiyat sitede Fiyatlar bölümünde de var; görüşmede sen açıklarsın. Önce ROI slaytına dön: 'Bir implant hastası sizin için kaç TL? Ayda tek hastayı kurtarması paketin maliyetini çıkarır.' Hekim sayısına göre öner: 1-5 hekim Klinik, 6+ Poliklinik. Poliklinik, Klinik'teki her şeye ek dakika, haftalık rapor, kendi CRM'ine canlı aktarım, doktor bazlı takvim, öncelikli destek ve aylık optimizasyon görüşmesi ekler. Aşım dakikası 0,30 dolar; 3 dk'lık aramayla 1.000 dk yaklaşık 330 arama.">
+    <h1>Paketler</h1>
+    <div class="abs" style="left:190px;top:170px;width:400px;height:490px;background:var(--teal-soft);padding:20px 30px">
+      <div class="serif" style="font-size:30px">Klinik</div><div style="margin-top:10px"><span class="serif teal" style="font-size:54px">$499</span><span class="muted" style="font-size:18px"> /ay</span></div>
+      <div class="muted" style="font-size:16px;margin-top:6px">1–5 hekim, implant ve estetik</div>
+      <ul style="list-style:none;border-top:1px solid var(--grid);margin-top:18px;padding-top:16px;font-size:19px;line-height:1.85"><li>1.000 dk / ay</li><li>7/24 karşılama, takvime randevu</li><li>Kayıt, transkript ve özet</li><li>Canlı aktarma, mesai dışı ajan</li><li>Randevu hatırlatma, hızlı geri dönüş</li><li>Dahili CRM ve aylık rapor</li></ul>
+    </div>
+    <div class="abs" style="left:690px;top:170px;width:400px;height:490px;padding:20px 30px">
+      <div class="serif" style="font-size:30px">Poliklinik</div><div style="margin-top:10px"><span class="serif teal" style="font-size:54px">$899</span><span class="muted" style="font-size:18px"> /ay</span></div>
+      <div class="muted" style="font-size:16px;margin-top:6px">6+ hekim, ADSM</div>
+      <ul style="list-style:none;border-top:1px solid var(--grid);margin-top:18px;padding-top:16px;font-size:19px;line-height:1.85"><li>2.500 dk / ay</li><li>Klinik'teki her şey</li><li>Haftalık rapor, CRM'e canlı aktarım</li><li>Doktor bazlı takvim</li><li>Öncelikli destek, aylık optimizasyon</li></ul>
+    </div>
+    <div class="abs muted" style="left:80px;top:650px;font-size:14px">Aşım: dakikası $0,30</div>
+    <div class="foot" style="bottom:12px"><span></span><span class="pg"></span></div>
+  </section>
+
+  <!-- 15 Kapanış -->
+  <section class="slide dark" data-notes="<b>KAPANIŞ (5 dk):</b> 1) Özetle: 'Günde ~X arama, ~Y kaçıyor, implant ~Z TL.' 2) Teyit: 'Doğru anladım mı?' 3) Pilot başlangıç tarihini KİLİTLE. 4) Söz ver: 'Bu akşam teklifi gönderiyorum, [gün] sizi arıyorum.' Süresiz 'haber veririm' bırakma. İletişim bilgilerini aşağıya yazmayı unutma.">
+    <h1 style="font-size:54px;margin-top:20px">Sıradaki adım: pilot</h1>
+    <div class="rows" style="top:250px">
+      <div class="r" style="height:96px;border-color:#3C5361"><span class="serif" style="width:250px;font-size:30px;color:#7FCBD3">Bugün</span><span style="font-size:26px">Teklifi ve özeti e-postayla gönderirim.</span></div>
+      <div class="r" style="height:96px;border-color:#3C5361"><span class="serif" style="width:250px;font-size:30px;color:#7FCBD3">Bu hafta</span><span style="font-size:26px">Klinik bilgilerini ve takvimi birlikte hazırlarız.</span></div>
+      <div class="r" style="height:96px;border-color:#3C5361"><span class="serif" style="width:250px;font-size:30px;color:#7FCBD3">14 gün</span><span style="font-size:26px">Kaçan aramaları birlikte sayarız.</span></div>
+    </div>
+    <div class="abs" style="left:80px;top:610px;font-size:20px;color:#9FB3C0">Yiğit &nbsp;|&nbsp; [telefon] &nbsp;|&nbsp; [e-posta] &nbsp;|&nbsp; www.randevoxai.com</div>
+  </section>
+</div>
+
+<button id="prev" class="navb" id="nav" aria-label="Önceki slayt" style="position:fixed;top:0;bottom:0;left:0;width:10%;background:none;border:0;cursor:w-resize;z-index:5"></button>
+<button id="next" class="navb" aria-label="Sonraki slayt" style="position:fixed;top:0;bottom:0;right:0;width:10%;background:none;border:0;cursor:e-resize;z-index:5"></button>
+<div class="btn-hint">← → gezin &nbsp;·&nbsp; N notlar &nbsp;·&nbsp; F tam ekran &nbsp;·&nbsp; Ctrl+P PDF</div>
+<div id="notes"></div>
+
+<script>
+(function () {
+  // ---- gün çizelgesi verisi
+  var busy = [[9, 12.5], [13.5, 18]];
+  var missed = [[10, 10.7], [11.25, 11.85], [12.5, 13.5], [14.35, 15], [16.5, 17.25], [18, 20]];
+  var okc = [[9, 9.9], [10.8, 11.2], [12, 12.4], [15.1, 16.4], [17.3, 17.9]];
+  function pos(a, z) { return 'left:' + ((a - 8) / 12 * 100) + '%;width:' + ((z - a) / 12 * 100) + '%'; }
+  function ledger(el, mode) {
+    var h = '<div class="l-hours">';
+    for (var i = 8; i <= 20; i++) h += '<span style="left:' + ((i - 8) / 12 * 100) + '%">' + String(i).padStart(2, '0') + '</span>';
+    h += '</div><div class="l-row"><div class="lab">Hekimler koltukta</div><div class="l-track">';
+    busy.forEach(function (b) { h += '<div class="blk tab" style="' + pos(b[0], b[1]) + '"></div>'; });
+    h += '</div></div><div class="l-row"><div class="lab">Telefon</div><div class="l-track">';
+    if (mode === 'miss') {
+      missed.forEach(function (b) { h += '<div class="blk miss" style="' + pos(b[0], b[1]) + '"></div>'; });
+      okc.forEach(function (b) { h += '<div class="blk ok" style="' + pos(b[0], b[1]) + '"></div>'; });
+    } else {
+      h += '<div class="blk fill" style="left:0"></div>';
+    }
+    el.innerHTML = h + '</div></div>';
+  }
+  document.querySelectorAll('[data-ledger]').forEach(function (el) { ledger(el, el.getAttribute('data-ledger')); });
+
+  // kapak mini defter
+  var cb = document.getElementById('cover-book'), ch = '';
+  var slots = { 1: 'miss', 3: 'ok', 4: 'miss', 6: 'ok', 8: 'miss' };
+  for (var i = 0; i < 9; i++) {
+    ch += '<div style="position:relative;height:64px;border-bottom:1px solid var(--grid);display:flex;align-items:center"><span class="muted" style="font-size:14px;width:60px">' + String(9 + i).padStart(2, '0') + ':00</span>';
+    if (slots[i] === 'miss') ch += '<div style="flex:1;height:46px;background:var(--red-soft);border:2px dashed var(--red)"></div>';
+    else if (slots[i] === 'ok') ch += '<div style="flex:1;height:46px;background:var(--teal)"></div>';
+    else ch += '<div style="flex:1"></div>';
+    ch += '</div>';
+  }
+  cb.innerHTML = ch;
+
+  // slayt 6 gün
+  var day = document.getElementById('day'), dh = '', hrs = ['13:00', '14:00', '15:00', '16:00', '17:00'];
+  hrs.forEach(function (t, i) { dh += '<div style="position:absolute;left:0;right:0;top:' + (i * 66) + 'px;height:66px;border-bottom:1px solid var(--grid);font-size:14px;color:var(--muted);padding-top:22px">' + t + '</div>'; });
+  dh += '<div style="position:absolute;left:80px;right:0;top:8px;height:50px;background:var(--tab);padding:14px 16px;font-size:17px">13:00 &nbsp;Dolgu, hekim randevusu</div>';
+  dh += '<div style="position:absolute;left:80px;right:0;top:172px;height:56px;background:var(--teal);color:#fff;padding:16px;font-size:18px;font-weight:700">15:30 &nbsp;Kontrol, yeni randevu</div>';
+  day.innerHTML = dh;
+
+  // slayt 9 24 saat
+  var d24 = document.getElementById('day24'), sh = '';
+  for (var k = 0; k < 24; k++) sh += '<i style="background:var(--teal);display:block"></i>';
+  d24.innerHTML = sh;
+
+  // ---- sunum motoru
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var notes = document.getElementById('notes');
+  var total = slides.length, cur = 0;
+  slides.forEach(function (s, i) { var pg = s.querySelector('.pg'); if (pg) pg.textContent = (i + 1) + ' / ' + total; });
+
+  function show(n) {
+    cur = Math.max(0, Math.min(total - 1, n));
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === cur); });
+    var f = slides[cur].querySelector('.blk.fill');
+    if (f) { f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+    notes.innerHTML = '<b>Slayt ' + (cur + 1) + ' notu:</b> ' + (slides[cur].getAttribute('data-notes') || '');
+    try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) {}
+  }
+  function fit() {
+    var st = document.getElementById('stage');
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    st.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit); fit();
+  window.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); show(cur + 1); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); show(cur - 1); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(total - 1);
+    else if (k === 'n' || k === 'N') notes.classList.toggle('show');
+    else if (k === 'f' || k === 'F') { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+  });
+  document.getElementById('next').addEventListener('click', function () { show(cur + 1); });
+  document.getElementById('prev').addEventListener('click', function () { show(cur - 1); });
+  var hint = document.querySelector('.btn-hint'), ht;
+  function hintShow() { hint.classList.remove('hide'); clearTimeout(ht); ht = setTimeout(function () { hint.classList.add('hide'); }, 5000); }
+  window.addEventListener('mousemove', hintShow); hintShow();
+  var h = parseInt(location.hash.slice(1), 10);
+  show(isNaN(h) ? 0 : h - 1);
+})();
+</script>
+</body>
+</html>

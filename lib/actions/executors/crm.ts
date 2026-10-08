@@ -50,6 +50,8 @@ export async function runCrm(payload: CallActionPayload): Promise<ActionResult> 
 async function forwardToWebhook(payload: CallActionPayload) {
   // The deploy-wide CRM_WEBHOOK_URL is only for the no-Supabase demo setup —
   // with real clinics it would ship every clinic's calls to the same place.
+  // The live feed into the clinic's own CRM is a Poliklinik perk (app.config.ts pricing).
+  if (payload.clinic && payload.clinic.plan !== "poliklinik") return;
   const url = payload.clinic ? payload.clinic.crmWebhookUrl : process.env.CRM_WEBHOOK_URL;
   if (!url) return;
   const { clinic, ...call } = payload;

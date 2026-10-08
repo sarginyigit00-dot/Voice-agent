@@ -503,6 +503,14 @@ alter table public.clinics
 alter table public.clinics
   add column if not exists after_hours_agent_id text;
 
+-- Quota warning emails (app/api/automation/quota-alerts): the highest level
+-- already mailed (1 = 80 %, 2 = 100 %) and the month it belongs to ('YYYY-MM',
+-- Türkiye time), so each level is sent once per month.
+alter table public.clinics
+  add column if not exists quota_alert_level integer not null default 0;
+alter table public.clinics
+  add column if not exists quota_alert_month text;
+
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics (id) on delete cascade,

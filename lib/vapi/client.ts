@@ -52,18 +52,32 @@ const VAPI_VOICES: Record<string, string> = {
 };
 const DEFAULT_VOICE = "Savannah";
 
-interface VoiceConfig {
-  provider: "vapi";
-  version: "2";
-  voiceId: string;
-  language: string;
-}
+/**
+ * ElevenLabs personas. Needs the ElevenLabs key saved once in Vapi (Provider
+ * Keys) — it is billed on that account, not on Vapi's per-minute price.
+ */
+const ELEVEN_VOICES: Record<string, string> = {
+  Orion: "Q5n6GDIjpN0pLOlycRFT",
+  Lyra: "xyqF3vGMQlPk3e7yA4DI",
+};
+/** Turkish sample clip per voice id (public/voices), played by the /agents preview button. */
+const ELEVEN_SAMPLES: Record<string, string> = {
+  Q5n6GDIjpN0pLOlycRFT: "/voices/orion.mp3",
+  xyqF3vGMQlPk3e7yA4DI: "/voices/lyra.mp3",
+};
+const ELEVEN_MODEL ="eleven_turbo_v2_5";
+
+type VoiceConfig =
+  | { provider: "vapi"; version: "2"; voiceId: string; language: string }
+  | { provider: "11labs"; voiceId: string; model: string; language: string };
 
 const DEFAULT_MALE_VOICE = "Nico";
 
 export function voiceFor(label: string): VoiceConfig {
   // "Defne · warm female" → "Defne"
   const persona = label.split("·")[0].trim();
+  const eleven = ELEVEN_VOICES[persona];
+  if (eleven) return { provider: "11labs", voiceId: eleven, model: ELEVEN_MODEL, language: "tr" };
   // Rows saved before the persona list was renamed still carry the old names
   // ("Atlas · confident male", "Nova · warm female") — those fall back on the
   // gender word. \bmale\b doesn't match inside "female".
@@ -160,6 +174,10 @@ export const BOOKING_TOOLS = [
           date: {
             type: "string",
             description: "Arayanın sorduğu gün, YYYY-MM-DD biçiminde. Belirli bir gün sorulmadıysa boş bırak.",
+          },
+          doctor: {
+            type: "string",
+            description: "Arayan belirli bir doktor istediyse doktorun adı, klinik bilgilerindeki yazımıyla. Yanıttaki saatler o doktorun takvimindendir; book_appointment'ı aynı doktorla çağır. İstemediyse boş bırak.",
           },
         },
       },
@@ -661,6 +679,9 @@ export async function recordingLinkFor(callId: string): Promise<VapiResult<strin
  * the link is presigned for an hour, so it is fetched per click, never stored.
  */
 export async function voicePreviewUrl(voiceId: string): Promise<VapiResult<string | null>> {
+  // ElevenLabs voices aren't in Vapi's library — their Turkish samples ship in /public/voices.
+  const sample = ELEVEN_SAMPLES[voiceId];
+  if (sample) return { ok: true, data: sample };
   const list = await vapi<{ name?: string; slug?: string; providerId?: string; previewUrl?: string }[]>(
     "GET",
     "/voice-library/vapi",

@@ -57,6 +57,17 @@ export default function AgentsPage() {
       return;
     }
     setPreviewError(false);
+    // ElevenLabs personas ship a Turkish sample in /public/voices — no API round trip.
+    const persona = voice.split("·")[0].trim().toLowerCase();
+    if (persona === "orion" || persona === "lyra") {
+      const audio = new Audio(`/voices/${persona}.mp3`);
+      audio.onplay = () => setPreviewPlaying(true);
+      audio.onpause = () => setPreviewPlaying(false);
+      audio.onended = () => setPreviewPlaying(false);
+      previewAudio.current = audio;
+      void audio.play().catch(() => setPreviewError(true));
+      return;
+    }
     const res = await authedFetch(`/api/voices/preview?label=${encodeURIComponent(voice)}`).catch(() => null);
     const body = (await res?.json().catch(() => null)) as { url?: string; voiceId?: string } | null;
     if (!res?.ok || !body?.url) {

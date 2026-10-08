@@ -306,7 +306,7 @@ export const AGENTS: Agent[] = [
 ];
 
 /* The available voices for the agent-builder preview. */
-export const VOICES = ["Defne · warm female", "Kerem · confident male", "Deniz · calm neutral", "Ada · soft female", "Poyraz · deep male"];
+export const VOICES = ["Orion · warm male", "Lyra · clear female"];
 
 /* The action toggles in the agent-builder preview — built from the shared registry. */
 export const BUILDER_ACTIONS: { id: ActionId; label: L; on: boolean }[] = ACTION_IDS.map((id) => ({

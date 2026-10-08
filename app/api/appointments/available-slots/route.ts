@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { calcomConfigFor, getSlots, speakInstant } from "@/lib/calcom/client";
 import { requireMember } from "@/lib/clinics/server";
+import { resolveDoctor } from "@/lib/booking/doctors";
 
 /**
  * Real open slots for the /randevular reschedule picker — the panel
@@ -12,10 +13,14 @@ export async function GET(req: Request) {
   const member = await requireMember(req);
   if (!member.ok) return NextResponse.json({ error: member.error }, { status: member.status });
 
-  const cfg = await calcomConfigFor(member.clinic);
-  if (!cfg) return NextResponse.json({ error: "Cal.com yapılandırılmamış." }, { status: 503 });
+  const baseCfg = await calcomConfigFor(member.clinic);
+  if (!baseCfg) return NextResponse.json({ error: "Cal.com yapılandırılmamış." }, { status: 503 });
 
-  const days = Math.min(Number(new URL(req.url).searchParams.get("days")) || 7, 30);
+  const params = new URL(req.url).searchParams;
+  // ?doctor= reads that doctor's own calendar when they have one.
+  const { cfg } = await resolveDoctor(member.clinic, params.get("doctor")?.trim() || null, baseCfg);
+
+  const days = Math.min(Number(params.get("days")) || 7, 30);
   const slots = await getSlots(cfg, { start: new Date(), end: new Date(Date.now() + days * 24 * 60 * 60 * 1000) });
 
   if (!slots.ok) return NextResponse.json({ error: slots.error }, { status: 502 });

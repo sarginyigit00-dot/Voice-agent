@@ -21,7 +21,7 @@ import {
  */
 
 type ServiceRow = { k: number; name: string; specialty: string; price: string; durationMin: string; description: string };
-type DoctorRow = { k: number; title: string; name: string; specialty: string; notes: string };
+type DoctorRow = { k: number; title: string; name: string; specialty: string; notes: string; eventTypeId: string };
 
 let nextKey = 1;
 const key = () => nextKey++;
@@ -36,7 +36,7 @@ function toRows(k: ClinicKnowledge) {
       durationMin: s.durationMin === null ? "" : String(s.durationMin),
       description: s.description,
     })),
-    doctors: k.doctors.map<DoctorRow>((d) => ({ k: key(), title: d.title, name: d.name, specialty: d.specialty, notes: d.notes })),
+    doctors: k.doctors.map<DoctorRow>((d) => ({ k: key(), title: d.title, name: d.name, specialty: d.specialty, notes: d.notes, eventTypeId: d.calcomEventTypeId ? String(d.calcomEventTypeId) : "" })),
     address: k.address,
     faq: k.faq,
   };
@@ -51,7 +51,13 @@ function fromRows(services: ServiceRow[], doctors: DoctorRow[], address: string,
       durationMin: s.durationMin.trim() === "" ? null : s.durationMin,
       description: s.description,
     })),
-    doctors: doctors.map(({ title, name, specialty, notes }) => ({ title, name, specialty, notes })),
+    doctors: doctors.map(({ title, name, specialty, notes, eventTypeId }) => ({
+      title,
+      name,
+      specialty,
+      notes,
+      calcomEventTypeId: eventTypeId.trim() === "" ? null : eventTypeId,
+    })),
     address,
     faq,
   } as unknown as ClinicKnowledge;
@@ -128,6 +134,10 @@ export default function ClinicInfoPage() {
     title2: tr ? "Unvan" : "Title",
     name: tr ? "Ad soyad" : "Full name",
     notes: tr ? "Not (ör. hangi günler klinikte)" : "Note (e.g. which days in)",
+    calendarId: tr ? "Cal.com etkinlik ID (isteğe bağlı)" : "Cal.com event type ID (optional)",
+    calendarHint: tr
+      ? "Poliklinik paketinde: doktorun kendi takvimi varsa ID'sini yazın: asistan o doktor istenince boş saatleri onun takviminden verir ve randevuyu oraya yazar. Boşsa klinik takvimi kullanılır."
+      : "Poliklinik package: if this doctor keeps their own calendar, enter its ID: when they are asked for, the agent offers and books from that calendar. Empty = the clinic calendar.",
     addDoctor: tr ? "Doktor ekle" : "Add doctor",
     address: tr ? "Adres ve ulaşım" : "Address and directions",
     faq: tr ? "Sık sorulanlar" : "FAQ",
@@ -277,6 +287,8 @@ export default function ClinicInfoPage() {
               </h2>
             </header>
 
+            <p className="mb-2 text-[11.5px] leading-relaxed text-muted-foreground">{L.calendarHint}</p>
+
             {doctors.length === 0 && <p className="py-2 text-[12px] text-muted-foreground">{L.empty}</p>}
 
             <ul className="space-y-2">
@@ -293,6 +305,7 @@ export default function ClinicInfoPage() {
                   <input className={inputCls} placeholder={L.name} value={d.name} maxLength={KNOWLEDGE_LIMITS.field} onChange={(e) => setDoctor(d.k, { name: e.target.value })} />
                   <input className={`${inputCls} col-span-2 md:col-span-1`} placeholder={L.specialty} value={d.specialty} maxLength={KNOWLEDGE_LIMITS.field} onChange={(e) => setDoctor(d.k, { specialty: e.target.value })} />
                   <input className={`${inputCls} col-span-2 md:col-span-1`} placeholder={L.notes} value={d.notes} maxLength={KNOWLEDGE_LIMITS.description} onChange={(e) => setDoctor(d.k, { notes: e.target.value })} />
+                  <input className={`${inputCls} col-span-2 md:col-span-5`} inputMode="numeric" placeholder={L.calendarId} title={L.calendarHint} value={d.eventTypeId} maxLength={12} onChange={(e) => setDoctor(d.k, { eventTypeId: e.target.value.replace(/D/g, "") })} />
                   <button
                     onClick={() => {
                       setDoctors((list) => list.filter((x) => x.k !== d.k));
@@ -310,7 +323,7 @@ export default function ClinicInfoPage() {
 
             <button
               onClick={() => {
-                setDoctors((list) => [...list, { k: key(), title: "Dt.", name: "", specialty: "", notes: "" }]);
+                setDoctors((list) => [...list, { k: key(), title: "Dt.", name: "", specialty: "", notes: "", eventTypeId: "" }]);
                 touch();
               }}
               disabled={doctors.length >= KNOWLEDGE_LIMITS.doctors}

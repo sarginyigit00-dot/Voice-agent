@@ -241,6 +241,16 @@ export default function AppointmentsPage() {
     setNewSlots(result.slots);
   };
 
+  // Each doctor may keep their own diary, so the open hours follow the pick.
+  const changeDoctor = async (doctor: string) => {
+    setForm((f) => ({ ...f, doctor, start: "" }));
+    setNewSlotsError(null);
+    setNewSlots(null);
+    const result = await fetchAvailableSlots(7, doctor || null);
+    if (!result.ok) setNewSlotsError(result.error ?? "Uygun saatler alınamadı.");
+    setNewSlots(result.slots);
+  };
+
   const handleCreate = async () => {
     setFormError(null);
     if (!form.name.trim() || !form.phone.trim()) return setFormError(L.fNeedName);
@@ -277,7 +287,8 @@ export default function AppointmentsPage() {
     setRescheduling(true);
     setSlotsError(null);
     if (slots === null) {
-      const result = await fetchAvailableSlots();
+      // The appointment's own doctor decides which diary the new time comes from.
+      const result = await fetchAvailableSlots(7, open?.doctor ?? null);
       if (!result.ok) setSlotsError(result.error ?? "Uygun saatler alınamadı.");
       setSlots(result.slots);
     }
@@ -486,7 +497,9 @@ export default function AppointmentsPage() {
                     <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
                     <select
                       value={form[key]}
-                      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                      onChange={(e) =>
+                        key === "doctor" ? changeDoctor(e.target.value) : setForm((f) => ({ ...f, [key]: e.target.value }))
+                      }
                       className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] outline-none focus:border-violet/50"
                     >
                       <option value="">{L.fNone}</option>

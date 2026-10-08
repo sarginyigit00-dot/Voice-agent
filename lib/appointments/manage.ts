@@ -22,13 +22,14 @@ export interface ManagedAppointment {
   starts_at: string;
   attendee_name: string;
   attendee_phone: string | null;
+  doctor: string | null;
 }
 
 export type ManageResult =
   | { ok: true; alreadyCancelled?: boolean; warning?: string; startsAt?: string; bookingUid?: string }
   | { ok: false; status: number; error: string };
 
-const COLUMNS = "id, booking_uid, status, starts_at, attendee_name, attendee_phone";
+const COLUMNS = "id, booking_uid, status, starts_at, attendee_name, attendee_phone, doctor";
 
 /** One of THIS clinic's appointments. The service-role client bypasses RLS, so the clinic filter is the boundary. */
 export async function appointmentFor(clinic: ClinicContext, id: string): Promise<ManagedAppointment | null> {

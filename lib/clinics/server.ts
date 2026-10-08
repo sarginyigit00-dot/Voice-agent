@@ -22,6 +22,8 @@ export const isMessageChannel = (v: unknown): v is MessageChannel => v === "off"
 export interface ClinicContext {
   id: string;
   name: string;
+  /** Package: "klinik" | "poliklinik" — decides which paid features run (per-doctor calendars). */
+  plan: string;
   status: "active" | "suspended";
   timeZone: string;
   /** Where the agent hands a caller who asks for a person. */
@@ -48,11 +50,12 @@ export interface ClinicContext {
 }
 
 const CLINIC_COLUMNS =
-  "id, name, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, message_channel, callback_agent_id, vapi_outbound_phone_number_id, day_agent_id, after_hours_agent_id";
+  "id, name, plan, status, time_zone, transfer_number, notify_email, crm_webhook_url, vapi_phone_number_id, message_channel, callback_agent_id, vapi_outbound_phone_number_id, day_agent_id, after_hours_agent_id";
 
 interface ClinicRow {
   id: string;
   name: string;
+  plan: string | null;
   status: string;
   time_zone: string;
   transfer_number: string | null;
@@ -70,6 +73,7 @@ function clinicFromRow(r: ClinicRow): ClinicContext {
   return {
     id: r.id,
     name: r.name,
+    plan: r.plan ?? "klinik",
     status: r.status === "suspended" ? "suspended" : "active",
     timeZone: r.time_zone || "Europe/Istanbul",
     transferNumber: r.transfer_number,

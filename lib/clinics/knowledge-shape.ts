@@ -23,6 +23,11 @@ export interface KnowledgeDoctor {
   name: string;
   specialty: string;
   notes: string;
+  /**
+   * This doctor's own Cal.com event type. Set = the agent reads this doctor's
+   * free hours and books into their diary; null = the clinic's shared calendar.
+   */
+  calcomEventTypeId: number | null;
 }
 
 export interface ClinicKnowledge {
@@ -50,6 +55,11 @@ function amount(v: unknown, max: number): number | null {
   return typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= max ? Math.round(n * 100) / 100 : null;
 }
 
+function eventTypeId(v: unknown): number | null {
+  const n = typeof v === "string" ? Number(v.trim()) : v;
+  return typeof n === "number" && Number.isInteger(n) && n > 0 && n < 1e12 ? n : null;
+}
+
 /** Whatever came from the browser or the database, as a safe, bounded shape. Rows without a name are dropped. */
 export function normalizeKnowledge(raw: unknown): ClinicKnowledge {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
@@ -72,6 +82,7 @@ export function normalizeKnowledge(raw: unknown): ClinicKnowledge {
       name: text(d?.name, L.field),
       specialty: text(d?.specialty, L.field),
       notes: text(d?.notes, L.description),
+      calcomEventTypeId: eventTypeId(d?.calcomEventTypeId),
     }))
     .filter((d) => d.name)
     .slice(0, L.doctors);
@@ -109,11 +120,20 @@ export function knowledgeSection(k: ClinicKnowledge | null | undefined, lang: "t
   }
 
   if (k.doctors.length) {
+    const anyOwnCalendar = k.doctors.some((d) => d.calcomEventTypeId);
     out.push(
       (tr ? "## Doktorlar\n" : "## Doctors\n") +
         k.doctors
-          .map((d) => `- ${[d.title, d.name].filter(Boolean).join(" ")}${d.specialty ? `: ${d.specialty}` : ""}${d.notes ? `. ${d.notes}` : ""}`)
-          .join("\n"),
+          .map((d) => {
+            const tag = d.calcomEventTypeId ? (tr ? " [kendi takvimi var]" : " [has their own calendar]") : "";
+            return `- ${[d.title, d.name].filter(Boolean).join(" ")}${tag}${d.specialty ? `: ${d.specialty}` : ""}${d.notes ? `. ${d.notes}` : ""}`;
+          })
+          .join("\n") +
+        (anyOwnCalendar
+          ? tr
+            ? "\nArayan belirli bir doktordan randevu isterse doktorun adını önce check_availability'ye, sonra aynı adla book_appointment'a doctor olarak gönder: boş saatler o doktorun kendi takviminden gelir. \"Fark etmez\" derse doctor göndermeden ilerle."
+            : "\nIf the caller wants a specific doctor, pass the doctor's name to check_availability first and then to book_appointment as doctor: the free hours come from that doctor's own calendar. If they say it doesn't matter, continue without doctor."
+          : ""),
     );
   }
 
@@ -132,8 +152,8 @@ export const DEMO_KNOWLEDGE: ClinicKnowledge = {
     { name: "İmplant", specialty: "Ağız, diş ve çene cerrahisi", price: null, durationMin: 90, description: "Fiyat muayene ve röntgen sonrası belirlenir." },
   ],
   doctors: [
-    { title: "Dt.", name: "Ayşe Kaya", specialty: "Ortodonti", notes: "Salı ve Perşembe günleri klinikte." },
-    { title: "Dt.", name: "Mehmet Demir", specialty: "Endodonti", notes: "" },
+    { title: "Dt.", name: "Ayşe Kaya", specialty: "Ortodonti", notes: "Salı ve Perşembe günleri klinikte.", calcomEventTypeId: null },
+    { title: "Dt.", name: "Mehmet Demir", specialty: "Endodonti", notes: "", calcomEventTypeId: null },
   ],
   address: "Örnek Mah. Sağlık Cad. No: 12, Kadıköy / İstanbul. Metrobüs durağına 5 dakika yürüme mesafesinde.",
   faq: "Otopark var mı? Binanın önünde ücretsiz otopark var.\nKredi kartı geçiyor mu? Evet, taksit de yapılabiliyor.\nİlk muayene ücretli mi? İlk muayene ücretsizdir.",

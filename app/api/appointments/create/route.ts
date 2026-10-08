@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { calcomConfigFor, createBooking, toInstant } from "@/lib/calcom/client";
 import { requireMember } from "@/lib/clinics/server";
+import { resolveDoctor } from "@/lib/booking/doctors";
 import { record } from "@/lib/booking/store";
 import { emitEvent } from "@/lib/automation/emit";
 import { queueBookingEmails } from "@/lib/notify/email";
@@ -19,8 +20,8 @@ export async function POST(req: Request) {
   if (!member.ok) return NextResponse.json({ error: member.error }, { status: member.status });
   const { user, clinic } = member;
 
-  const cfg = await calcomConfigFor(clinic);
-  if (!cfg) return NextResponse.json({ error: "Cal.com yapılandırılmamış." }, { status: 503 });
+  const baseCfg = await calcomConfigFor(clinic);
+  if (!baseCfg) return NextResponse.json({ error: "Cal.com yapılandırılmamış." }, { status: 503 });
 
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
@@ -28,7 +29,10 @@ export async function POST(req: Request) {
   const email = typeof body?.email === "string" && body.email.trim() ? body.email.trim() : null;
   const notes = typeof body?.notes === "string" && body.notes.trim() ? body.notes.trim() : undefined;
   const service = typeof body?.service === "string" && body.service.trim() ? body.service.trim().slice(0, 200) : null;
-  const doctor = typeof body?.doctor === "string" && body.doctor.trim() ? body.doctor.trim().slice(0, 200) : null;
+  const rawDoctor = typeof body?.doctor === "string" && body.doctor.trim() ? body.doctor.trim().slice(0, 200) : null;
+  // A doctor with their own calendar is booked into it; the slot the panel offered came from there.
+  const { cfg, label } = await resolveDoctor(clinic, rawDoctor, baseCfg);
+  const doctor = label;
   const rawStart = typeof body?.start === "string" ? body.start : null;
 
   if (!name) return NextResponse.json({ error: "Hasta adı gerekli." }, { status: 400 });

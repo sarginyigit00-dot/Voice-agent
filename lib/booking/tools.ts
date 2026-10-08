@@ -7,6 +7,7 @@ import {
 } from "@/lib/calcom/client";
 import { speakHours, speakInstantTr } from "@/lib/speech/tr";
 import { findByCall, record } from "@/lib/booking/store";
+import { nameMatches, resolveDoctor } from "@/lib/booking/doctors";
 import { hoursForDate, isWithinHours, type WorkingHours } from "@/lib/agents/hours";
 import type { ClinicContext } from "@/lib/clinics/server";
 import { toE164 } from "@/lib/vapi/client";
@@ -95,13 +96,15 @@ function withCurrentYear(date: string | null, now: Date): string | null {
  * omitted for "the next opening you have".
  */
 export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promise<string> {
-  const cfg = await calcomConfigFor(ctx.clinic);
-  if (!cfg) {
+  const baseCfg = await calcomConfigFor(ctx.clinic);
+  if (!baseCfg) {
     return JSON.stringify({
       ok: false,
       spoken: "Takvim sistemine şu anda bağlanamıyorum. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
     });
   }
+  // A named doctor with their own calendar is read from that calendar.
+  const { cfg, label: doctor, own } = await resolveDoctor(ctx.clinic, str(args, "doctor"), baseCfg);
 
   const now = new Date();
   const date = withCurrentYear(str(args, "date"), now);
@@ -157,11 +160,12 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
     (s) => Date.parse(s) > now.getTime() && isWithinHours(new Date(s), ctx.workingHours),
   );
   if (!upcoming.length) {
+    const who = own && doctor ? `${doctor} için ` : "";
     return JSON.stringify({
       ok: false,
       spoken: date
-        ? "O gün için boş yerimiz kalmamış. Başka bir güne bakmamı ister misiniz?"
-        : "Önümüzdeki hafta için boş yerimiz görünmüyor. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
+        ? `O gün ${who}boş yerimiz kalmamış. Başka bir güne bakmamı ister misiniz?`
+        : `Önümüzdeki hafta ${who}boş yerimiz görünmüyor. Notunuzu alayım, klinik sizi en kısa sürede arasın.`,
     });
   }
 
@@ -175,6 +179,8 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
     // spoken forms are only for reading out loud.
     slots: offered,
     spoken: offered.map((s) => speakInstantTr(new Date(s), cfg.timeZone)),
+    // Echoed so book_appointment is called with the same doctor these slots belong to.
+    ...(own && doctor ? { doctor } : {}),
     askPhone,
     note: askPhone
       ? "Hastaya bu saatleri oku. Saati seçince, randevuyu oluşturmadan önce cep telefonu numarasını sor, rakamları gruplayarak tekrar edip teyit al. Seçilen saati slots dizisindeki ISO değeriyle, numarayı phone olarak book_appointment'a gönder."
@@ -251,13 +257,16 @@ async function checkRequestedSlot(
  * a slot can be taken by someone else between the two calls.
  */
 export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise<string> {
-  const cfg = await calcomConfigFor(ctx.clinic);
-  if (!cfg) {
+  const baseCfg = await calcomConfigFor(ctx.clinic);
+  if (!baseCfg) {
     return JSON.stringify({
       ok: false,
       spoken: "Randevu sistemine şu anda bağlanamıyorum. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
     });
   }
+  // Booked into the named doctor's own calendar when they have one; their
+  // name is stored as the clinic writes it, not as it was heard.
+  const { cfg, label } = await resolveDoctor(ctx.clinic, str(args, "doctor"), baseCfg);
 
   // Already booked on this call — the model asked twice, or Vapi retried.
   const existing = await findByCall(ctx.callId);
@@ -282,7 +291,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
   const name = str(args, "name") ?? (ctx.callerName !== "Unknown" ? ctx.callerName : "Telefonla arayan");
   const email = str(args, "email");
   const service = str(args, "service");
-  const doctor = str(args, "doctor");
+  const doctor = label;
   const notes = str(args, "notes");
   // The line's own caller number wins; the one the patient said on the call is
   // for when the line didn't pass one. A number that doesn't parse is dropped
@@ -356,33 +365,6 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
  * does arrive, it narrows the match further; it never widens it.
  */
 
-/** "Şükrü Öztürk" → ["sukru", "ozturk"] — how names survive speech-to-text. */
-function nameTokens(raw: string): string[] {
-  return raw
-    .toLocaleLowerCase("tr-TR")
-    .replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ş/g, "s").replace(/ü/g, "u")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .split(/[^a-z]+/)
-    .filter((t) => t.length >= 2);
-}
-
-/**
- * The shorter of the two names must be fully contained in the longer one —
- * word by word, by prefix either way, since transcription clips and pads names
- * ("Sarı" / "Sarıy"). Patients book with a first name and call back with their
- * full name (or the other way round), so either side may be the shorter one;
- * the first real call failed exactly there ("Yiğit" booked, "Yiğit Sargın" said).
- * At least one matched word has to be a real name, not an initial.
- */
-function nameMatches(spoken: string, booked: string): boolean {
-  const said = nameTokens(spoken);
-  const have = nameTokens(booked);
-  if (!said.length || !have.length) return false;
-  const [shorter, longer] = said.length <= have.length ? [said, have] : [have, said];
-  if (!shorter.some((t) => t.length >= 3)) return false;
-  return shorter.every((t) => longer.some((l) => l.startsWith(t) || t.startsWith(l)));
-}
-
 const CALLER_SIDE = "hasta, telefonla";
 
 /**
@@ -443,6 +425,8 @@ async function findAppointment(args: ToolArgs, ctx: ToolContext): Promise<string
   return JSON.stringify({
     ok: true,
     appointmentId: found.id,
+    // Erteleme için yeni saat aranırken check_availability'ye aynı doktorla gidilmeli.
+    ...(found.doctor ? { doctor: found.doctor } : {}),
     spoken: `${speakInstantTr(new Date(found.starts_at), cfg.timeZone)} randevunuzu buldum.`,
     note: "Randevuyu bu cümleyle oku ve iptal mi erteleme mi istediğini açıkça teyit ettir. Teyit almadan cancel_appointment ya da reschedule_appointment çağırma.",
   });
@@ -483,7 +467,9 @@ async function rescheduleByPhone(args: ToolArgs, ctx: ToolContext): Promise<stri
   if (!rawStart) {
     return JSON.stringify({ ok: false, spoken: "Hangi saate almak istediğinizi söyler misiniz?" });
   }
-  const checked = await checkRequestedSlot(rawStart, cfg, ctx);
+  // The moved slot must be free in the same doctor's diary the appointment is in.
+  const { cfg: slotCfg } = await resolveDoctor(ctx.clinic, appointment.doctor, cfg);
+  const checked = await checkRequestedSlot(rawStart, slotCfg, ctx);
   if ("fail" in checked) return checked.fail;
 
   const result = await rescheduleAppointment(ctx.clinic, appointment, checked.start, CALLER_SIDE);

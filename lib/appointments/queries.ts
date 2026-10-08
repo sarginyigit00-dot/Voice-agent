@@ -159,9 +159,9 @@ export interface AvailableSlot {
 }
 
 /** Real open Cal.com slots for the reschedule picker. */
-export async function fetchAvailableSlots(days = 7): Promise<{ ok: boolean; slots: AvailableSlot[]; error?: string }> {
+export async function fetchAvailableSlots(days = 7, doctor?: string | null): Promise<{ ok: boolean; slots: AvailableSlot[]; error?: string }> {
   try {
-    const res = await authedFetch(`/api/appointments/available-slots?days=${days}`);
+    const res = await authedFetch(`/api/appointments/available-slots?days=${days}${doctor ? `&doctor=${encodeURIComponent(doctor)}` : ""}`);
     const body = await res.json().catch(() => null);
     if (!res.ok) return { ok: false, slots: [], error: body?.error ?? `İstek başarısız (${res.status}).` };
     return { ok: true, slots: body?.slots ?? [] };

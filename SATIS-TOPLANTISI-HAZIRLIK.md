@@ -22,7 +22,7 @@ Rakamlı örnekler **varsayımdır** — toplantıda müşterinin kendi rakamıy
 ## 1. Toplantı öncesi (1–3 gün önce)
 
 ### Klinik araştırması
-- [ ] Kaç hekim, kaç koltuk? (paket seçimini belirler: 1–5 → Klinik, 6+ → Poliklinik)
+- [ ] Kaç hekim, kaç koltuk? (paket seçimini belirler: 1–3 → Klinik, 4+ → Poliklinik)
 - [ ] Google Maps: yorum sayısı, puan, **"telefona ulaşamadım" / "açmıyorlar" yorumları** (en güçlü kanıt)
 - [ ] Çalışma saatleri, cumartesi/pazar açık mı? Mesai dışı telefon nereye düşüyor?
 - [ ] Instagram/web: implant, zirkonyum, gülüş tasarımı reklamı veriyorlar mı? (Reklam veriyorsa her kaçan arama para kaybı)
@@ -133,8 +133,8 @@ Kurtarılan aylık gelir = A × B × C × D × E
 ### Paket seçim rehberi
 | Klinik | Paket | Fiyat | Dakika | Kilit fark |
 |---|---|---|---|---|
-| 1–5 hekim, implant/estetik | **Klinik** | $499/ay | 1.000 | Karşılama, randevu, canlı aktarma, mesai dışı ajan, randevu hatırlatma, hızlı geri dönüş, dahili CRM, aylık rapor |
-| 6+ hekim, poliklinik/ADSM | Poliklinik | $899/ay | 2.500 | Klinik'teki her şey + haftalık rapor, kendi CRM'ine canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi |
+| 1–3 hekim, implant/estetik | **Klinik** | $499/ay | 1.000 | Karşılama, randevu, canlı aktarma, mesai dışı ajan, randevu hatırlatma, hızlı geri dönüş, dahili CRM, aylık rapor |
+| 4+ hekim, poliklinik/ADSM | Poliklinik | $899/ay | 2.500 | Klinik'teki her şey + haftalık rapor, kendi CRM'ine canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi |
 
 Aşım: dakikası 0,30 $. (Kabaca: ortalama 3 dk'lık aramayla 1.000 dk ≈ 330 arama, 2.500 dk ≈ 830 arama. Müşterinin arama hacmine göre paketi doğrulayın.)
 

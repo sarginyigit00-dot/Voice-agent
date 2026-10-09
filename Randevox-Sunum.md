@@ -127,7 +127,7 @@ Kaçan aramaları ve randevuları birlikte sayalım.
 | | **Klinik** | **Poliklinik** |
 |---|---|---|
 | Fiyat | **$499 / ay** | **$899 / ay** |
-| Uygun | 1–5 hekim, implant ve estetik | 6+ hekim, ADSM |
+| Uygun | 1–3 hekim, implant ve estetik | 4+ hekim, ADSM |
 | Süre | 1.000 dk / ay | 2.500 dk / ay |
 | İçerik | 7/24 karşılama, takvime randevu, kayıt ve özet, randevusuz aramada e-posta, canlı aktarma, mesai dışı ajan, randevu hatırlatma, hızlı geri dönüş, dahili CRM ve aylık rapor | Klinik'teki her şey + haftalık rapor, kendi CRM'inize canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi |
 
@@ -173,7 +173,7 @@ Yiğit | [telefon] | [e-posta] | www.randevoxai.com
   - *Ekip tepki gösterir mi?* Sabah arama özetiyle işe başlarlar.
 - **Bölüm 7:** Liste örnek ekrandır, canlı panelde gerçek arama göster. Klinik yazılımına aktarım kapsamını demo sonrası netleştir.
 - **Bölüm 8:** Numara değişmez, yalnızca yönlendirilir. Öneri: 14 günlük pilot.
-- **Bölüm 9 (fiyat):** İstemezsen atla. Önce ROI'ye dön: "Ayda tek hastayı kurtarması paketin maliyetini çıkarır." Hekim sayısına göre öner: 1-5 → Klinik, 6+ → Poliklinik. 1.000 dk ≈ 330 arama (3 dk'lık arama).
+- **Bölüm 9 (fiyat):** İstemezsen atla. Önce ROI'ye dön: "Ayda tek hastayı kurtarması paketin maliyetini çıkarır." Hekim sayısına göre öner: 1-3 → Klinik, 4+ → Poliklinik. 1.000 dk ≈ 330 arama (3 dk'lık arama).
 
 **Canlı demo (müşteri kendi telefonundan arar)**
 

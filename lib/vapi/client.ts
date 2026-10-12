@@ -76,7 +76,7 @@ const ELEVEN_SETTINGS = { speed: 1.0, stability: 0.5, similarityBoost: 0.75 } as
 
 type VoiceConfig =
   | { provider: "vapi"; version: "2"; voiceId: string; language: string }
-  | ({ provider: "11labs"; voiceId: string; model: string; language: string } & typeof ELEVEN_SETTINGS);
+  | ({ provider: "11labs"; voiceId: string; model: string; language: string; enableSsmlParsing: boolean } & typeof ELEVEN_SETTINGS);
 
 const DEFAULT_MALE_VOICE = "Nico";
 
@@ -84,7 +84,7 @@ export function voiceFor(label: string): VoiceConfig {
   // "Defne · warm female" → "Defne"
   const persona = label.split("·")[0].trim();
   const eleven = ELEVEN_VOICES[persona];
-  if (eleven) return { provider: "11labs", voiceId: eleven, model: ELEVEN_MODEL, language: "tr", ...ELEVEN_SETTINGS };
+  if (eleven) return { provider: "11labs", voiceId: eleven, model: ELEVEN_MODEL, language: "tr", enableSsmlParsing: true, ...ELEVEN_SETTINGS };
   // Rows saved before the persona list was renamed still carry the old names
   // ("Atlas · confident male", "Nova · warm female") — those fall back on the
   // gender word. \bmale\b doesn't match inside "female".
@@ -410,10 +410,16 @@ export function buildAssistant(
     ...agent,
     greeting: { tr: withRecordingNotice(fill(agent.greeting.tr), "tr"), en: withRecordingNotice(fill(agent.greeting.en), "en") },
   };
+  const voice = voiceFor(agent.voice);
+  const firstMessage = spoken.greeting.tr || spoken.greeting.en;
   return {
     // Vapi caps the name at 40 characters.
     name: `${clinic.name} · ${agent.name}`.slice(0, 40),
-    firstMessage: spoken.greeting.tr || spoken.greeting.en,
+    // Read at full speed the recording notice ran straight into the sentence
+    // before it. Only ElevenLabs (both Lyra and Orion) understands the break tag;
+    // the prompt keeps the plain text above, so the tag is never "already said".
+    firstMessage:
+      voice.provider === "11labs" ? firstMessage.replace(RECORDING_NOTICE.tr, `<break time="0.6s" /> ${RECORDING_NOTICE.tr}`) : firstMessage,
     model: {
       ...MODEL,
       messages: [
@@ -430,7 +436,7 @@ export function buildAssistant(
       tools: [],
       toolIds,
     },
-    voice: voiceFor(agent.voice),
+    voice,
     transcriber: TRANSCRIBER,
     // Vapi's defaults are tuned for English, where a 0.4 s gap means "your
     // turn". Turkish callers pause mid-sentence far longer than that — with

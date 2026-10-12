@@ -72,7 +72,7 @@ const ELEVEN_MODEL = "eleven_turbo_v2_5";
  * a low stability makes the tone drift from sentence to sentence. Lower it if
  * calls sound flat, raise it if they sound unsteady.
  */
-const ELEVEN_SETTINGS = { speed: 1.0, stability: 0.5, similarityBoost: 0.75 } as const;
+const ELEVEN_SETTINGS = { speed: 1.0, stability: 0.4, similarityBoost: 0.75 } as const;
 
 type VoiceConfig =
   | { provider: "vapi"; version: "2"; voiceId: string; language: string }
@@ -190,7 +190,10 @@ export const BOOKING_TOOLS = [
       },
     },
     // Said while the calendar loads, so the line never goes silent.
-    messages: [{ type: "request-start", content: "Hemen bakıyorum." }],
+    messages: [
+      { type: "request-start", content: "Hemen bakıyorum." },
+      { type: "request-delayed", content: "Takvime bakıyorum, bir saniye.", timingMilliseconds: 2500 },
+    ],
   },
   {
     type: "function",
@@ -217,7 +220,11 @@ export const BOOKING_TOOLS = [
         required: ["start"],
       },
     },
-    messages: [{ type: "request-start", content: "Hemen oluşturuyorum." }],
+    // Cal.com can take several seconds to confirm; a second line keeps the call from going dead.
+    messages: [
+      { type: "request-start", content: "Hemen oluşturuyorum." },
+      { type: "request-delayed", content: "Bir saniye, kaydediyorum.", timingMilliseconds: 2500 },
+    ],
   },
   {
     type: "function",
@@ -444,7 +451,7 @@ export function buildAssistant(
     // again, because it only ever heard half the answer.
     startSpeakingPlan: {
       // Floor before the agent may answer at all.
-      waitSeconds: 0.8,
+      waitSeconds: 0.5,
       transcriptionEndpointingPlan: {
         // A finished sentence ends in punctuation — react quickly.
         onPunctuationSeconds: 0.3,

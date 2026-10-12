@@ -266,10 +266,13 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
   }
   // Booked into the named doctor's own calendar when they have one; their
   // name is stored as the clinic writes it, not as it was heard.
-  const { cfg, label } = await resolveDoctor(ctx.clinic, str(args, "doctor"), baseCfg);
-
-  // Already booked on this call — the model asked twice, or Vapi retried.
-  const existing = await findByCall(ctx.callId);
+  const t0 = Date.now();
+  // Independent reads, so they run together rather than one after the other.
+  const [{ cfg, label }, existing] = await Promise.all([
+    resolveDoctor(ctx.clinic, str(args, "doctor"), baseCfg),
+    // Already booked on this call — the model asked twice, or Vapi retried.
+    findByCall(ctx.callId),
+  ]);
   if (existing) {
     return JSON.stringify({
       ok: true,
@@ -287,6 +290,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
   const checked = await checkRequestedSlot(rawStart, cfg, ctx);
   if ("fail" in checked) return checked.fail;
   const { start } = checked;
+  const tChecked = Date.now();
 
   const name = str(args, "name") ?? (ctx.callerName !== "Unknown" ? ctx.callerName : "Telefonla arayan");
   const email = str(args, "email");
@@ -312,6 +316,8 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     metadata: { callId: ctx.callId, source: "randevox-voice" },
   });
 
+  const tBooked = Date.now();
+
   if (!booking.ok) {
     console.error("[booking] book_appointment failed:", booking.error);
     await notifyError({ source: "booking/book_appointment", message: String(booking.error) });
@@ -334,6 +340,10 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     service,
     doctor,
   });
+  // Where the dead air on the line goes: Cal.com's slot check, its booking, or our own write.
+  console.log(
+    `[booking] book_appointment timing: prep+slot-check ${tChecked - t0}ms, cal.com booking ${tBooked - tChecked}ms, db record ${Date.now() - tBooked}ms`,
+  );
 
   queueBookingEmails(ctx.clinic, {
     startsAt: start.toISOString(),

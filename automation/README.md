@@ -29,7 +29,7 @@ anahtarları gir (aynı değerler `.env.local` / Vercel'de zaten var):
 | `RANDEVOX_URL` | `https://www.randevoxai.com` |
 | `AUTOMATION_SECRET` | Randevox'taki (`.env.local` ve Vercel) değerin aynısı |
 | `RESEND_API_KEY` | Resend → API Keys |
-| `RESEND_FROM` | `Randevox <bildirim@randevoxai.com>` |
+| `RESEND_FROM` | `Randevox <bildirim@randevoxai.online>` |
 | `WHATSAPP_TOKEN` | Meta → kalıcı (System User) erişim anahtarı |
 | `WHATSAPP_PHONE_NUMBER_ID` | Meta → WhatsApp → API Setup → Phone number ID |
 | `NETGSM_USERCODE` | Netgsm abone numarası (ör. `8508403483`) |
@@ -42,7 +42,7 @@ Ya da CLI ile:
 modal secret create randevox-automation \
   RANDEVOX_URL=https://www.randevoxai.com \
   AUTOMATION_SECRET=... \
-  RESEND_API_KEY=... RESEND_FROM="Randevox <bildirim@randevoxai.com>" \
+  RESEND_API_KEY=... RESEND_FROM="Randevox <bildirim@randevoxai.online>" \
   WHATSAPP_TOKEN=... WHATSAPP_PHONE_NUMBER_ID=... \
   NETGSM_USERCODE=... NETGSM_PASSWORD=... NETGSM_HEADER=...
 ```

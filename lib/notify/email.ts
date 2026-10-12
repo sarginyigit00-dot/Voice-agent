@@ -20,7 +20,7 @@ import type { ClinicContext } from "@/lib/clinics/server";
  */
 
 const RESEND_URL = "https://api.resend.com/emails";
-const DEFAULT_FROM = "Randevox <bildirim@randevoxai.com>";
+const DEFAULT_FROM = "Randevox <bildirim@randevoxai.online>";
 
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());

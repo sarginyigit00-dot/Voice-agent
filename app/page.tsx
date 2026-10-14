@@ -32,7 +32,7 @@ function trNumber(n: number): string {
 }
 
 /** Temporarily hidden while the site is shared for feedback — flip to true to bring the pricing section + nav link back. */
-const SHOW_PRICING = false;
+const SHOW_PRICING = true;
 
 /* ═══════════════════════════════════ PAGE ═══════════════════════════════════ */
 

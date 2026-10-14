@@ -93,6 +93,12 @@ function Nav() {
           >
             {lang === "tr" ? "Giriş yap" : "Sign in"}
           </Link>
+          <Link
+            href="/demo"
+            className="ed-pill ed-pill-ghost hidden h-11 px-5 text-[14.5px] sm:inline-flex"
+          >
+            {lang === "tr" ? "Demo ekranı" : "Demo screen"}
+          </Link>
           <Link href="/demo-talep" className="ed-pill ed-pill-primary h-11 px-5 text-[14.5px]">
             {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
           </Link>
@@ -167,6 +173,9 @@ function Hero() {
               <Link href="/demo-talep" className="ed-pill ed-pill-primary px-8 text-[15px]" style={{ height: 52 }}>
                 <Icon name="phone" className="h-4 w-4" />
                 {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
+              </Link>
+              <Link href="/demo" className="ed-pill ed-pill-ghost px-8 text-[15px]" style={{ height: 52 }}>
+                {lang === "tr" ? "Demo ekranı" : "Demo screen"}
               </Link>
             </div>
           </div>

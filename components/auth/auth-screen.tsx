@@ -14,6 +14,9 @@ import { getSupabaseBrowser, getSessionPersistence, setSessionPersistence } from
 import { useSession } from "@/components/auth/session";
 import { GoogleButton } from "@/components/auth/google-button";
 
+/** Temporarily hidden — flip to true to bring the "Continue with Google" button back. */
+const SHOW_GOOGLE_LOGIN = false;
+
 /**
  * Login / signup against Supabase Auth when it's configured, with a DEMO
  * BYPASS that still drops you straight into the cockpit. Signing up writes an
@@ -306,7 +309,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
 
               {/* Signup has no remember box of its own — a brand-new account
                   is always remembered, same as the password path's default. */}
-              <GoogleButton remember={isLogin ? remember : true} disabled={loading} />
+              {SHOW_GOOGLE_LOGIN && <GoogleButton remember={isLogin ? remember : true} disabled={loading} />}
 
               <p className="text-center text-sm text-muted-foreground">
                 {isLogin ? ui.noAccount : ui.haveAccount}{" "}

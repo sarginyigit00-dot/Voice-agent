@@ -31,6 +31,9 @@ function trNumber(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+/** Temporarily hidden while the site is shared for feedback — flip to true to bring the pricing section + nav link back. */
+const SHOW_PRICING = false;
+
 /* ═══════════════════════════════════ PAGE ═══════════════════════════════════ */
 
 export default function V2Landing() {
@@ -43,7 +46,7 @@ export default function V2Landing() {
       <Features />
       <Guardrails />
       <HowItWorks />
-      <Pricing />
+      {SHOW_PRICING && <Pricing />}
       <Faq />
       <FinalCta />
       <Footer />
@@ -59,7 +62,7 @@ function Nav() {
     { label: { tr: "Hesaplayıcı", en: "Calculator" }, href: "#hesap" },
     { label: { tr: "Neler yapar", en: "What it does" }, href: "#features" },
     { label: { tr: "Nasıl kurulur", en: "Setup" }, href: "#how" },
-    { label: { tr: "Fiyatlar", en: "Pricing" }, href: "#fiyatlar" },
+    ...(SHOW_PRICING ? [{ label: { tr: "Fiyatlar", en: "Pricing" }, href: "#fiyatlar" }] : []),
   ];
 
   return (

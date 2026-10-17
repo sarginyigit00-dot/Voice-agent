@@ -192,7 +192,7 @@ export const BOOKING_TOOLS = [
     // Said while the calendar loads, so the line never goes silent.
     messages: [
       { type: "request-start", content: "Hemen bakıyorum." },
-      { type: "request-delayed", content: "Takvime bakıyorum, bir saniye.", timingMilliseconds: 2500 },
+      { type: "request-response-delayed", content: "Takvime bakıyorum, bir saniye.", timingMilliseconds: 2500 },
     ],
   },
   {
@@ -223,7 +223,7 @@ export const BOOKING_TOOLS = [
     // Cal.com can take several seconds to confirm; a second line keeps the call from going dead.
     messages: [
       { type: "request-start", content: "Hemen oluşturuyorum." },
-      { type: "request-delayed", content: "Bir saniye, kaydediyorum.", timingMilliseconds: 2500 },
+      { type: "request-response-delayed", content: "Bir saniye, kaydediyorum.", timingMilliseconds: 2500 },
     ],
   },
   {

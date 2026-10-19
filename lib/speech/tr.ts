@@ -131,3 +131,73 @@ export function speakHours(hours: WorkingHours): string {
     })
     .join(", ");
 }
+
+const BIG_TENS = ["", "on", "yirmi", "otuz", "kırk", "elli", "altmış", "yetmiş", "seksen", "doksan"];
+
+/** 0–9999 in words: 24 → "yirmi dört", 100 → "yüz", 1250 → "bin iki yüz elli". Larger numbers stay digits. */
+export function integerWords(n: number): string {
+  if (!Number.isInteger(n) || n < 0 || n > 9999) return String(n);
+  if (n === 0) return "sıfır";
+  const th = Math.floor(n / 1000);
+  const h = Math.floor((n % 1000) / 100);
+  const rest = n % 100;
+  return [
+    th === 0 ? "" : th === 1 ? "bin" : `${ONES[th]} bin`,
+    h === 0 ? "" : h === 1 ? "yüz" : `${ONES[h]} yüz`,
+    BIG_TENS[Math.floor(rest / 10)],
+    ONES[rest % 10],
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** The ordinal form of a number word: "iki" → "ikinci", "dört" → "dördüncü", "on" → "onuncu". */
+const ORDINAL_LAST: Record<string, string> = {
+  bir: "birinci", iki: "ikinci", üç: "üçüncü", dört: "dördüncü", beş: "beşinci",
+  altı: "altıncı", yedi: "yedinci", sekiz: "sekizinci", dokuz: "dokuzuncu",
+  on: "onuncu", yirmi: "yirminci", otuz: "otuzuncu", kırk: "kırkıncı", elli: "ellinci",
+  altmış: "altmışıncı", yetmiş: "yetmişinci", seksen: "sekseninci", doksan: "doksanıncı",
+  yüz: "yüzüncü", bin: "bininci",
+};
+
+export function ordinalWords(n: number): string {
+  if (n === 0) return "zemin";
+  const words = integerWords(n).split(" ");
+  const last = ORDINAL_LAST[words[words.length - 1]];
+  if (!last) return `${n}.`;
+  words[words.length - 1] = last;
+  return words.join(" ");
+}
+
+// Not a letter on either side — \b only knows ASCII, and these sit next to "ğ", "ı"…
+const ADDRESS_WORDS: [RegExp, string][] = [
+  [/(?<!\p{L})(?:mah|mh)\.?(?!\p{L})/giu, "Mahallesi"],
+  [/(?<!\p{L})(?:cad|cd)\.?(?!\p{L})/giu, "Caddesi"],
+  [/(?<!\p{L})(?:sok|sk)\.?(?!\p{L})/giu, "Sokak"],
+  [/(?<!\p{L})(?:bul|blv)\.?(?!\p{L})/giu, "Bulvarı"],
+  [/(?<!\p{L})apt\.?(?!\p{L})/giu, "Apartmanı"],
+];
+
+/**
+ * "Caferağa Mah. Moda Cad. No: 24 Kat: 2, Kadıköy / İstanbul" →
+ * "Caferağa Mahallesi Moda Caddesi numara yirmi dört, ikinci kat, Kadıköy, İstanbul".
+ * The voice otherwise reads "No" as English "no" and "Kat: 2" as two words.
+ */
+export function speakAddressTr(address: string): string {
+  let s = address;
+  for (const [re, word] of ADDRESS_WORDS) s = s.replace(re, word);
+  s = s
+    .replace(/(?<!\p{L})kat\s*[:.]?\s*(\d+)/giu, (_, d: string) => `, ${ordinalWords(Number(d))} kat`)
+    .replace(/(?<!\p{L})(?:no|numara)\s*[:.]?\s*(\d+)/giu, (_, d: string) => `numara ${d}`)
+    .replace(/(?<!\p{L})(?:d|daire)\s*[:.]\s*(\d+)/giu, (_, d: string) => `, daire ${d}`)
+    .replace(/(\d)\s*\/\s*(\d)/g, "$1 bölü $2")
+    .replace(/\s*\/\s*/g, ", ")
+    .replace(/\d+/g, (d) => integerWords(Number(d)))
+    .replace(/\s*:\s*/g, " ")
+    .replace(/\s+([,.])/g, "$1")
+    .replace(/,(\s*,)+/g, ",")
+    .replace(/\s{2,}/g, " ")
+    .replace(/^[,\s]+/, "")
+    .trim();
+  return s;
+}

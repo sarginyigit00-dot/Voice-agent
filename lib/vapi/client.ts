@@ -72,7 +72,7 @@ const ELEVEN_MODEL = "eleven_turbo_v2_5";
  * a low stability makes the tone drift from sentence to sentence. Lower it if
  * calls sound flat, raise it if they sound unsteady.
  */
-const ELEVEN_SETTINGS = { speed: 1.0, stability: 0.4, similarityBoost: 0.75 } as const;
+const ELEVEN_SETTINGS = { speed: 1.05, stability: 0.3, similarityBoost: 0.75, style: 0.3, useSpeakerBoost: true } as const;
 
 type VoiceConfig =
   | { provider: "vapi"; version: "2"; voiceId: string; language: string }

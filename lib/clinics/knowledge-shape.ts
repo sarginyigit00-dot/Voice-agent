@@ -8,6 +8,8 @@
  * prompt builder all share one shape and one validator.
  */
 
+import { speakAddressTr } from "@/lib/speech/tr";
+
 export interface KnowledgeService {
   name: string;
   specialty: string;
@@ -137,7 +139,14 @@ export function knowledgeSection(k: ClinicKnowledge | null | undefined, lang: "t
     );
   }
 
-  if (k.address) out.push((tr ? "## Adres\n" : "## Address\n") + k.address);
+  // The written form stays for spelling; the agent reads the spoken one aloud.
+  if (k.address) {
+    out.push(
+      tr
+        ? `## Adres\n${k.address}\nSesli söyleyiş (adresi sorana bunu aynen söyle): ${speakAddressTr(k.address)}`
+        : `## Address\n${k.address}`,
+    );
+  }
   if (k.faq) out.push((tr ? "## Sık sorulanlar\n" : "## FAQ\n") + k.faq);
 
   return out.join("\n\n");

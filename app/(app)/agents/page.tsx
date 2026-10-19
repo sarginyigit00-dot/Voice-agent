@@ -188,12 +188,12 @@ export default function AgentsPage() {
     systemPrompt: lang === "tr" ? "İşletme talimatları" : "Business instructions",
     systemPromptHint:
       lang === "tr"
-        ? "Hizmetler, fiyat politikası, adres, neyi cevaplamayacağı. Ajan bunları bilerek konuşur."
-        : "Services, pricing policy, address, what not to answer. This is what the agent knows.",
+        ? "Bu ajana özel davranış kuralları. Hizmet, fiyat, doktor ve adres bilgileri Klinik sayfasından gelir; burada tekrar yazmayın."
+        : "Behaviour rules for this agent only. Services, prices, doctors and the address come from the Clinic page; don't repeat them here.",
     systemPromptPlaceholder:
       lang === "tr"
-        ? "Örn: Hizmetler: implant konsültasyonu (ücretsiz, 30 dk), diş implantı, gülüş tasarımı…\nFiyat sorulursa telefonda rakam verme.\nTıbbi soruları hekime aktar."
-        : "e.g. Services: implant consultation (free, 30 min), dental implants, smile design…\nDon't quote prices on the phone.\nHand medical questions to a dentist.",
+        ? "Örn: Fiyatta ısrar edilirse rakam verme, muayenede netleşeceğini söyle.\nİmplant sorana önce ücretsiz ilk muayeneyi öner.\nArayana \"siz\" diye hitap et, kısa ve sıcak konuş."
+        : "e.g. If the caller insists on a price, don't quote one; say it's settled at the examination.\nOffer implant enquiries a free first examination first.\nKeep it short, warm and polite.",
     hours: lang === "tr" ? "Çalışma saatleri" : "Working hours",
     hoursHint:
       lang === "tr"

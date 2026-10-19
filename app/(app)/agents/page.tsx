@@ -192,8 +192,8 @@ export default function AgentsPage() {
         : "Behaviour rules for this agent only. Services, prices, doctors and the address come from the Clinic page; don't repeat them here.",
     systemPromptPlaceholder:
       lang === "tr"
-        ? "Örn: Fiyatta ısrar edilirse rakam verme, muayenede netleşeceğini söyle.\nİmplant sorana önce ücretsiz ilk muayeneyi öner.\nArayana \"siz\" diye hitap et, kısa ve sıcak konuş."
-        : "e.g. If the caller insists on a price, don't quote one; say it's settled at the examination.\nOffer implant enquiries a free first examination first.\nKeep it short, warm and polite.",
+        ? "Örn: Fiyatta ısrar edilirse rakam verme, muayenede netleşeceğini söyle.\nİlk kez arayan hastaya önce muayene randevusu öner.\nArayana \"siz\" diye hitap et, kısa ve sıcak konuş."
+        : "e.g. If the caller insists on a price, don't quote one; say it's settled at the examination.\nOffer first-time callers an examination appointment first.\nKeep it short, warm and polite.",
     hours: lang === "tr" ? "Çalışma saatleri" : "Working hours",
     hoursHint:
       lang === "tr"

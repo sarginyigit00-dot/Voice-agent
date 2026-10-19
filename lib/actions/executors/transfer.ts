@@ -13,7 +13,7 @@ export async function runTransfer(payload: CallActionPayload): Promise<ActionRes
     return {
       actionId: "transfer",
       status: "demo",
-      note: `${payload.callId}: transfer, Vapi'nin çağrı akışında gerçekleşir — bu adımda yapılacak ayrı bir çağrı yok.`,
+      note: `${payload.callId}: transfer, telefon hattının çağrı akışında gerçekleşir — bu adımda yapılacak ayrı bir çağrı yok.`,
     };
   }
 

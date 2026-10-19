@@ -30,10 +30,16 @@ export const ACTION_HINT: Partial<Record<ActionId, L>> = {
   },
 };
 
+/**
+ * Actions kept in the pipeline but not offered in the builder. "sms" (patient
+ * confirmation) stays hidden until a message channel is part of the package.
+ */
+export const HIDDEN_ACTIONS: readonly ActionId[] = ["sms"];
+
 export const DEFAULT_ACTIONS_ON: Record<ActionId, boolean> = {
   book: true,
   transfer: true,
-  sms: true,
+  sms: false,
   crm: false,
   qualify: false,
 };

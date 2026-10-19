@@ -127,7 +127,7 @@ export default function AppointmentsPage() {
     fSaving: lang === "tr" ? "Oluşturuluyor…" : "Creating…",
     fNeedSlot: lang === "tr" ? "Lütfen bir saat seçin." : "Please pick a time.",
     fNeedName: lang === "tr" ? "Ad ve telefon gerekli." : "Name and phone are required.",
-    fHint: lang === "tr" ? "Telefon numarasına onay mesajı ve hatırlatmalar gider." : "The patient gets a confirmation and reminders on this number.",
+    fHint: lang === "tr" ? "Hastaya bu numaradan ulaşılır." : "This is the number the patient is reached on.",
     calendarRef: lang === "tr" ? "Takvim kaydı" : "Calendar ref",
     callRef: lang === "tr" ? "Arama kaydı" : "Call ref",
     cancel: lang === "tr" ? "Randevuyu iptal et" : "Cancel appointment",

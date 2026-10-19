@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const label = new URL(req.url).searchParams.get("label") ?? "";
   const { voiceId } = voiceFor(label);
   const preview = await voicePreviewUrl(voiceId);
-  if (!preview.ok) return NextResponse.json({ error: `Vapi: ${preview.error}` }, { status: 502 });
+  if (!preview.ok) return NextResponse.json({ error: `Ses örneği alınamadı: ${preview.error}` }, { status: 502 });
   if (!preview.data) return NextResponse.json({ error: "Bu ses için örnek yok.", voiceId }, { status: 404 });
 
   return NextResponse.json({ voiceId, url: preview.data }, { headers: { "Cache-Control": "no-store" } });

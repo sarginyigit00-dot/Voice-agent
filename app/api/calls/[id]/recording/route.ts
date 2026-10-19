@@ -32,7 +32,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   if (!row) return NextResponse.json({ error: "Arama bulunamadı." }, { status: 404 });
 
   const link = await recordingLinkFor(id);
-  if (!link.ok) return NextResponse.json({ error: `Vapi: ${link.error}` }, { status: 502 });
+  if (!link.ok) return NextResponse.json({ error: `Ses kaydı alınamadı: ${link.error}` }, { status: 502 });
   if (!link.data) return NextResponse.json({ error: "Bu aramanın ses kaydı yok." }, { status: 404 });
 
   return NextResponse.json({ url: link.data }, { headers: { "Cache-Control": "no-store" } });

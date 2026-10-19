@@ -1,7 +1,7 @@
 ﻿"use client";
 
 /**
- * / — the editorial landing page, aimed at multi-dentist private DENTAL CLINICS (implant & aesthetic focus).
+ * / — the editorial landing page, aimed at multi-dentist private DENTAL CLINICS.
  *
  * Runs on the scoped `.ed-light` palette (warm paper canvas, soft ink, Signal
  * Blue as the single "on" switch, Ember for accents) — see globals.css. The
@@ -159,8 +159,8 @@ function Hero() {
 
             <p className="ed-body max-w-xl text-pretty text-muted-foreground">
               {lang === "tr"
-                ? "Randevox kliniğinizin telefonunu ilk çalışta açar: randevu alır, implant ve tedavi sorularını sizin verdiğiniz bilgiyle yanıtlar. Gece, hafta sonu, hekimleriniz koltuktayken bile."
-                : "Randevox answers your clinic's phone on the first ring: books appointments and answers implant and treatment questions from the information you provide. Nights, weekends, even while your dentists are chairside."}
+                ? "Randevox kliniğinizin telefonunu ilk çalışta açar: randevu alır, tedavi ve fiyat sorularını sizin verdiğiniz bilgiyle yanıtlar. Gece, hafta sonu, hekimleriniz koltuktayken bile."
+                : "Randevox answers your clinic's phone on the first ring: books appointments and answers treatment and pricing questions from the information you provide. Nights, weekends, even while your dentists are chairside."}
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -331,7 +331,7 @@ function Features() {
     },
     {
       icon: "list-checks",
-      title: { tr: "İmplant ve tedavi sorularını yanıtlar", en: "Answers implant & treatment questions" },
+      title: { tr: "Tedavi sorularını yanıtlar", en: "Answers treatment questions" },
       body: {
         tr: "Yalnızca sizin verdiğiniz bilgiyle konuşur. Bilmediği bir şeyi uydurmaz — muayene gerektiren soruyu randevuya çevirir.",
         en: "Speaks only from the information you give it. It never invents an answer — it turns those questions into a booking.",
@@ -416,8 +416,8 @@ function Guardrails() {
       title: { tr: "Söyleyebilir", en: "It may say" },
       caption: { tr: "Sizin yazdığınız bilgiler", en: "The facts you write" },
       items: [
-        { tr: "İmplant konsültasyonu ve muayene ücretsiz.", en: "The implant consultation and exam are free." },
-        { tr: "Tek implant için iki seans gerekiyor.", en: "A single implant takes two visits." },
+        { tr: "İlk muayene ücretsiz.", en: "The first examination is free." },
+        { tr: "Kanal tedavisi genellikle iki seans sürüyor.", en: "A root canal usually takes two visits." },
         { tr: "Gülüş tasarımı için önce panoramik film çekiyoruz.", en: "For smile design we start with a panoramic X-ray." },
         { tr: "Randevu Salı ve Perşembe günleri müsait.", en: "Appointments are open on Tuesdays and Thursdays." },
       ],

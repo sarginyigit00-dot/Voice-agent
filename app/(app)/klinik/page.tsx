@@ -200,8 +200,8 @@ export default function ClinicInfoPage() {
             ? `Kaydedildi. ${result.synced} ajan yeni bilgilerle güncellendi.`
             : `Saved. ${result.synced} agent(s) updated with the new facts.`
           : tr
-            ? "Kaydedildi. Vapi'ye kurulu ajan olmadığı için telefon hattı henüz değişmedi."
-            : "Saved. No agent is live in Vapi yet, so the phone line is unchanged.",
+            ? "Kaydedildi. Hatta kurulu ajan olmadığı için telefon hattı henüz değişmedi."
+            : "Saved. No agent is live on the line yet, so the phone line is unchanged.",
       });
     }
   };

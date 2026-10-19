@@ -30,7 +30,7 @@ export const STARTER_AGENTS: Agent[] = [
       tr: "{klinik}, iyi günler. Size nasıl yardımcı olabilirim?",
       en: "{klinik}, good day. How can I help you?",
     },
-    actionIds: ["book", "transfer", "sms"],
+    actionIds: ["book", "transfer"],
     systemPrompt: "",
     workingHours: defaultWorkingHours(),
   },
@@ -66,7 +66,7 @@ export const STARTER_AGENTS: Agent[] = [
       tr: "{klinik}, merhaba. Nasıl yardımcı olabilirim?",
       en: "{klinik}, hello. How can I help?",
     },
-    actionIds: ["book", "sms"],
+    actionIds: ["book"],
     systemPrompt: "",
     workingHours: defaultWorkingHours(),
   },
@@ -86,7 +86,7 @@ export const STARTER_AGENTS: Agent[] = [
       en: "{klinik}, hello. We're closed right now, but I can still book you in. How can I help?",
     },
     // Books into the clinic's opening hours; nobody is there to take a transfer.
-    actionIds: ["book", "sms"],
+    actionIds: ["book"],
     systemPrompt: "",
     // The mirror image of the daytime line: open exactly when the clinic isn't.
     workingHours: {

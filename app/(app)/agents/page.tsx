@@ -201,9 +201,9 @@ export default function AgentsPage() {
         : "The agent never books outside these hours — even if the calendar looks free.",
     closed: lang === "tr" ? "Kapalı" : "Closed",
     timezone: lang === "tr" ? "Saat dilimi" : "Timezone",
-    vapiPending: lang === "tr" ? "Vapi'ye gönderiliyor…" : "Sending to Vapi…",
-    vapiOk: lang === "tr" ? "Vapi'ye eşitlendi" : "Synced to Vapi",
-    vapiLinked: lang === "tr" ? "Vapi'de kurulu" : "Live on Vapi",
+    vapiPending: lang === "tr" ? "Telefon hattına gönderiliyor…" : "Sending to the phone line…",
+    vapiOk: lang === "tr" ? "Telefon hattına eşitlendi" : "Synced to the phone line",
+    vapiLinked: lang === "tr" ? "Hatta kurulu" : "Live on the line",
   };
 
   // Runs after the row is saved: mirrors it onto the agent's Vapi assistant.

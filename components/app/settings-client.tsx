@@ -100,7 +100,7 @@ function ToggleRow({
  */
 const SERVICE_LABEL: Record<string, { tr: string; en: string }> = {
   vapi: { tr: "Telefon hattı", en: "Phone line" },
-  twilio: { tr: "Numara ve SMS", en: "Numbers and SMS" },
+  twilio: { tr: "Numara ve transfer", en: "Numbers and transfer" },
   openai: { tr: "Konuşma zekâsı", en: "Conversation intelligence" },
   calendar: { tr: "Takvim", en: "Calendar" },
   crm: { tr: "Müşteri kaydı (CRM)", en: "Customer records (CRM)" },
@@ -109,7 +109,7 @@ const SERVICE_LABEL: Record<string, { tr: string; en: string }> = {
 
 const SERVICE_PURPOSE: Record<string, { tr: string; en: string }> = {
   vapi: { tr: "Gelen aramaları ajanınız karşılar ve konuşur.", en: "Your agent answers and speaks on inbound calls." },
-  twilio: { tr: "Telefon numarası, SMS ve arama transferi.", en: "Phone number, SMS and call transfer." },
+  twilio: { tr: "Telefon numarası ve arama transferi.", en: "Phone number and call transfer." },
   openai: { tr: "Arayanı anlar, talimatlarınıza göre karar verir.", en: "Understands the caller and follows your instructions." },
   calendar: { tr: "Ajan takviminize gerçek randevu yazar.", en: "The agent writes real appointments to your calendar." },
   crm: { tr: "Her arama kişi kartına ve geçmişine işlenir.", en: "Every call is filed to a contact and its history." },

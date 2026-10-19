@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   keywords: [
     "diş kliniği randevu asistanı",
     "diş kliniği yapay zekâ telefon",
-    "implant kliniği randevu",
+    "diş kliniği randevu",
     "diş kliniği çağrı karşılama",
     "AI voice agent dental clinic",
     "dental clinic phone answering",

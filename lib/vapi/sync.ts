@@ -34,7 +34,7 @@ export async function syncAgentToVapi(
 ): Promise<VapiSyncResult> {
   const supabase = getSupabaseServer();
   if (!supabase) return { ok: false, message: "Supabase bağlı değil." };
-  if (!isVapiConfigured()) return { ok: false, message: "Vapi bağlı değil (VAPI_API_KEY yok)." };
+  if (!isVapiConfigured()) return { ok: false, message: "Telefon hattı bağlı değil." };
 
   const found = await agentInClinic(agentId, clinic.id);
   if (!found) return { ok: false, message: "Ajan bulunamadı." };
@@ -43,7 +43,10 @@ export async function syncAgentToVapi(
   // The after-hours agent books into the clinic's opening hours, not its own.
   const openingHours = isAfterHoursAgent(clinic, agent.id) ? await clinicOpeningHours(clinic) : null;
   const res = await upsertAssistant(agent, clinic, vapiAssistantId, await getKnowledge(clinic.id), openingHours);
-  if (!res.ok) return { ok: false, message: `Vapi: ${res.error}` };
+  if (!res.ok) {
+    console.error("[vapi] assistant upsert failed:", res.error);
+    return { ok: false, message: `Telefon hattına gönderilemedi: ${res.error}` };
+  }
   const id = res.data.id;
 
   if (id !== vapiAssistantId) {
@@ -62,7 +65,7 @@ export async function syncAgentToVapi(
     if (error) {
       // The assistant exists in Vapi but calls to it won't be recognised —
       // the webhook matches on this column. Say so rather than report success.
-      return { ok: false, message: `Vapi'de oluşturuldu ama kaydedilemedi: ${error.message}` };
+      return { ok: false, message: `Hatta kuruldu ama kaydedilemedi: ${error.message}` };
     }
     if (!claimed?.length) {
       // Another sync got there first: drop ours and update theirs instead.
@@ -94,7 +97,7 @@ export async function syncAgentToVapi(
 
   return {
     ok: true,
-    message: res.data.created ? "Vapi'de oluşturuldu." : "Vapi'ye eşitlendi.",
+    message: res.data.created ? "Hatta kuruldu." : "Telefon hattına eşitlendi.",
     vapiAssistantId: id,
     warning: warnings.join(" ") || undefined,
   };
@@ -113,7 +116,7 @@ export async function removeAgent(agentId: string, clinic: ClinicContext): Promi
 
   if (found.vapiAssistantId && isVapiConfigured()) {
     const res = await deleteAssistant(found.vapiAssistantId);
-    if (!res.ok) return { ok: false, message: `Vapi'deki ajan silinemedi: ${res.error}` };
+    if (!res.ok) return { ok: false, message: `Ajan telefon hattından kaldırılamadı: ${res.error}` };
   }
 
   const { error } = await supabase.from("agents").delete().eq("id", agentId).eq("clinic_id", clinic.id);

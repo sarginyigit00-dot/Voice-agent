@@ -85,16 +85,19 @@ function Nav() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
           <LanguageToggle />
+          {/* Visible at every width — on a portrait phone this is the only way
+              into the app. The CTA shortens below `sm` to make room for it. */}
           <Link
             href="/login"
-            className="hidden h-11 items-center rounded-full px-4 text-[14.5px] text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+            className="inline-flex h-11 items-center whitespace-nowrap rounded-full px-2.5 text-[14.5px] text-muted-foreground transition-colors hover:text-foreground sm:px-4"
           >
             {lang === "tr" ? "Giriş yap" : "Sign in"}
           </Link>
-          <Link href="/demo-talep" className="ed-pill ed-pill-primary h-11 px-5 text-[14.5px]">
-            {lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}
+          <Link href="/demo-talep" className="ed-pill ed-pill-primary h-11 whitespace-nowrap px-4 text-[14.5px] sm:px-5">
+            <span className="sm:hidden">{lang === "tr" ? "Deneyin" : "Try it"}</span>
+            <span className="hidden sm:inline">{lang === "tr" ? "Kliniğinizde deneyin" : "Try it in your clinic"}</span>
           </Link>
         </div>
       </div>

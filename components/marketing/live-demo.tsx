@@ -44,12 +44,12 @@ interface DemoAgent {
 const DEMO_AGENTS: DemoAgent[] = [
   {
     tab: { tr: "Randevu", en: "Appointment" },
-    voice: "Defne · sıcak kadın sesi",
+    voice: "Lyra · sıcak kadın sesi",
     caller: "+90 532 555 0182",
     outcome: { tr: "Randevu oluşturuldu", en: "Appointment booked" },
     detail: { tr: "Salı 14:00 · ilk muayene · takvime işlendi", en: "Tue 14:00 · first examination · added to your calendar" },
     turns: [
-      { who: "agent", text: { tr: "Estetenova Ağız ve Diş Sağlığı Merkezi, ben Defne. Size nasıl yardımcı olabilirim?", en: "Estetenova Dental Clinic, this is Defne. How can I help you?" } },
+      { who: "agent", text: { tr: "Estetenova Ağız ve Diş Sağlığı Merkezi, ben Lyra. Size nasıl yardımcı olabilirim?", en: "Estetenova Dental Clinic, this is Lyra. How can I help you?" } },
       { who: "caller", text: { tr: "Bir süredir dişim ağrıyor, muayene olabilir miyim?", en: "A tooth has been hurting for a while — can I book an exam?" } },
       { who: "agent", text: { tr: "Geçmiş olsun. Ücretsiz ilk muayene için Salı 14:00 uygun olur mu?", en: "Sorry to hear that. Would Tuesday at 14:00 work for a free first examination?" } },
       { who: "caller", text: { tr: "Evet, salı olur.", en: "Yes, Tuesday works." } },
@@ -64,12 +64,12 @@ const DEMO_AGENTS: DemoAgent[] = [
   },
   {
     tab: { tr: "Fiyat sorusu", en: "Pricing" },
-    voice: "Kerem · güven veren erkek sesi",
+    voice: "Orion · güven veren erkek sesi",
     caller: "+90 216 555 0143",
     outcome: { tr: "Bilgi verildi · randevuya döndü", en: "Informed · converted to booking" },
     detail: { tr: "Net fiyat verilmedi, muayeneye yönlendirildi · Perşembe 11:00", en: "No firm price given, steered to an exam · Thu 11:00" },
     turns: [
-      { who: "agent", text: { tr: "Estetenova Diş, ben Kerem. Buyurun.", en: "Estetenova Dental, this is Kerem. How can I help?" } },
+      { who: "agent", text: { tr: "Estetenova Diş, ben Orion. Buyurun.", en: "Estetenova Dental, this is Orion. How can I help?" } },
       { who: "caller", text: { tr: "Diş teli tedavisi ne kadar tutuyor?", en: "How much does orthodontic treatment cost?" } },
       { who: "agent", text: { tr: "Fiyat ağız yapınıza ve gereken işleme göre değişiyor. Hekim görmeden net rakam vermek doğru olmaz — konsültasyon ücretsiz.", en: "It depends on your teeth and what's needed. Quoting a firm number without the dentist seeing you wouldn't be right — the consultation is free." } },
       { who: "caller", text: { tr: "Anladım, aşağı yukarı bir aralık var mı?", en: "I see — is there a rough range?" } },

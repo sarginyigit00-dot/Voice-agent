@@ -29,12 +29,12 @@ export const MIN_PASSWORD_LENGTH = 8;
  * An id no longer listed here reads as `klinik` (lib/admin/clinics.ts).
  */
 export const PLANS = {
-  klinik: { label: "Klinik", priceUsd: 499, minutes: 1000 },
-  poliklinik: { label: "Poliklinik", priceUsd: 899, minutes: 2500 },
+  klinik: { label: "Klinik", priceUsd: 499, minutes: 300 },
+  poliklinik: { label: "Poliklinik", priceUsd: 899, minutes: 1000 },
 } as const;
 
 /** Billed per minute past a clinic's monthly quota. */
-export const OVERAGE_USD_PER_MIN = 0.3;
+export const OVERAGE_USD_PER_MIN = 0.6;
 
 export type PlanId = keyof typeof PLANS;
 

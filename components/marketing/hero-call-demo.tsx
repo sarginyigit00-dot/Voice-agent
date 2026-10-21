@@ -34,12 +34,12 @@ interface Scenario {
 const SCENARIOS: Scenario[] = [
   {
     tab: { tr: "Randevu", en: "Appointment" },
-    agent: "Defne",
+    agent: "Lyra",
     caller: "+90 532 555 0182",
     outcome: { tr: "Randevu oluşturuldu", en: "Appointment booked" },
     detail: { tr: "Salı 14:00 · ilk muayene · takvime işlendi", en: "Tue 14:00 · first examination · added to your calendar" },
     turns: [
-      { who: "agent", text: { tr: "Estetenova Diş Kliniği, ben Defne. Size nasıl yardımcı olabilirim?", en: "Estetenova Dental Clinic, this is Defne. How can I help you?" } },
+      { who: "agent", text: { tr: "Estetenova Diş Kliniği, ben Lyra. Size nasıl yardımcı olabilirim?", en: "Estetenova Dental Clinic, this is Lyra. How can I help you?" } },
       { who: "caller", text: { tr: "Merhaba, diş kontrolü için randevu almak istiyorum.", en: "Hi — I'd like to book a dental check-up." } },
       { who: "agent", text: { tr: "Memnuniyetle. Ücretsiz ilk muayene için Salı 14:00 uygun mu?", en: "Happy to help. Would Tuesday at 14:00 work for a free first examination?" } },
       { who: "caller", text: { tr: "Evet, salı benim için uygun.", en: "Yes, Tuesday works for me." } },
@@ -48,12 +48,12 @@ const SCENARIOS: Scenario[] = [
   },
   {
     tab: { tr: "Fiyat sorusu", en: "Pricing" },
-    agent: "Kerem",
+    agent: "Orion",
     caller: "+90 216 555 0143",
     outcome: { tr: "Bilgi verildi · randevuya döndü", en: "Informed · converted to a booking" },
     detail: { tr: "Net fiyat verilmedi, muayeneye yönlendirildi · Perşembe 11:00", en: "No firm price given, steered to an exam · Thu 11:00" },
     turns: [
-      { who: "agent", text: { tr: "Estetenova Diş Kliniği, ben Kerem. Buyurun.", en: "Estetenova Dental Clinic, this is Kerem. How can I help?" } },
+      { who: "agent", text: { tr: "Estetenova Diş Kliniği, ben Orion. Buyurun.", en: "Estetenova Dental Clinic, this is Orion. How can I help?" } },
       { who: "caller", text: { tr: "Diş teli tedavisi ne kadar tutuyor?", en: "How much does orthodontic treatment cost?" } },
       { who: "agent", text: { tr: "Fiyat, ağız yapınıza ve gereken işleme göre değişiyor; hekim görmeden net rakam vermek doğru olmaz. Konsültasyon ücretsiz.", en: "It depends on your teeth and what's needed — quoting a firm number without the dentist seeing you wouldn't be right. The consultation is free." } },
       { who: "caller", text: { tr: "Peki aşağı yukarı bir aralık verebilir misiniz?", en: "Could you give me a rough range at least?" } },

@@ -51,8 +51,8 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr", ctx:
 
   sections.push(
     tr
-      ? `# Kimlik\nBir kliniğin telefonuna bakan resepsiyon görevlisisin. Görevin: ${t(agent.purpose)}\nKendine bir isim uydurma; bir ürün, şirket ya da yazılım adı söyleme.`
-      : `# Identity\nYou answer a clinic's phone as its receptionist. Your job: ${t(agent.purpose)}\nDon't invent a name for yourself, and never mention a product, company or software name.`,
+      ? `# Kimlik\nBir kliniğin telefonuna bakan resepsiyon görevlisisin. Görevin: ${t(agent.purpose)}\nKendine bir isim uydurma; bir ürün, şirket ya da yazılım adı söyleme.\nYapay zekâ olup olmadığın sorulursa inkâr etme: kliniğin yapay zekâ asistanı olduğunu söyle.`
+      : `# Identity\nYou answer a clinic's phone as its receptionist. Your job: ${t(agent.purpose)}\nDon't invent a name for yourself, and never mention a product, company or software name.\nIf asked whether you're an AI, never deny it: say you're the clinic's AI assistant.`,
   );
 
   // Vapi speaks `firstMessage` itself before the model says a word — telling

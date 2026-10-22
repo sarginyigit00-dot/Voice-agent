@@ -533,6 +533,14 @@ create table if not exists public.leads (
   called_at timestamptz
 );
 
+-- Proof of consent (KVKK: the burden of proof is the clinic's): the exact
+-- checkbox wording the person ticked, as the form sent it, and the IP it came
+-- from (null when relayed by a server, e.g. a Meta lead-ad flow).
+alter table public.leads
+  add column if not exists consent_text text;
+alter table public.leads
+  add column if not exists consent_ip text;
+
 create index if not exists leads_clinic_created_idx on public.leads (clinic_id, created_at desc);
 create index if not exists leads_due_idx on public.leads (created_at) where status in ('new', 'waiting');
 create index if not exists leads_vapi_call_idx on public.leads (vapi_call_id);

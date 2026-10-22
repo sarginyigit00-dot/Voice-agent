@@ -381,10 +381,14 @@ async function toolIdsFor(
 /**
  * Every call is recorded (audio + transcript) and it carries health data, so
  * the caller is told so in the opening line — the clinic's name, said first,
- * names who is recording. Added here rather than typed into each greeting so
- * no clinic can edit it away or forget it on a new agent.
+ * names who is recording; that an AI is speaking, and what the recording is
+ * for, are said too (KVKK aydınlatma). Added here rather than typed into each
+ * greeting so no clinic can edit it away or forget it on a new agent.
  */
-const RECORDING_NOTICE = { tr: "Görüşmeniz hizmet kalitesi için kaydedilmektedir.", en: "This call is recorded for quality purposes." };
+const RECORDING_NOTICE = {
+  tr: "Yapay zekâ asistanıyla görüşüyorsunuz; görüşmeniz randevu işlemleriniz ve hizmet kalitesi için kaydedilmektedir.",
+  en: "You're speaking with an AI assistant; this call is recorded for your appointment and for quality purposes.",
+};
 
 /** Puts the notice before the closing question, so the line still ends by inviting the caller to speak. */
 export function withRecordingNotice(opening: string, lang: "tr" | "en" = "tr"): string {
@@ -610,7 +614,7 @@ export async function startCallbackCall(opts: {
   const name = opts.name.trim().slice(0, 40);
   // One string for both: what Vapi says first and what the prompt says was said.
   const opening = withRecordingNotice(
-    `Merhaba${name ? ` ${name}` : ""}, ${opts.clinic.name} olarak arıyorum. Az önce bize bir form doldurmuştunuz. Şimdi konuşmak için uygun musunuz?`,
+    `Merhaba${name ? ` ${name}` : ""}, ${opts.clinic.name} adına arıyorum. Az önce bize bir form doldurmuştunuz. Şimdi konuşmak için uygun musunuz?`,
   );
   const brief = callbackBrief(name, opts.note, opts.source, opening);
   const model = assistant.data.model ?? {};

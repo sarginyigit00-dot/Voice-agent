@@ -6,7 +6,7 @@ import { intakeLead, isLeadSource, processLead } from "@/lib/leads/callback";
  * POST /api/leads?key=<clinic's form key> — a clinic's lead form, from its
  * own website (cross-origin, JSON or a plain HTML form) or relayed by
  * whatever the clinic uses from a Meta lead ad. Fields: name, phone, consent,
- * note?, source?. The call starts right after the response (lib/leads/callback.ts).
+ * consent_text?, note?, source?. The call starts right after the response (lib/leads/callback.ts).
  * Setup and a ready form: HIZLI-GERI-DONUS.md.
  */
 
@@ -44,12 +44,17 @@ export async function POST(req: Request) {
   const consent = body.consent === true || ["true", "on", "1", "yes", "evet"].includes(text("consent", 10).toLowerCase());
   const source = text("source", 20);
 
+  const leadSource = isLeadSource(source) ? source : "web";
+
   const res = await intakeLead(key, {
     name: text("name", 80),
     phone: text("phone", 30),
     note: text("note", 1000) || null,
-    source: isLeadSource(source) ? source : "web",
+    source: leadSource,
     consent,
+    consentText: text("consent_text", 1000) || null,
+    // A relayed lead's IP is the relay's, not the person's — proves nothing.
+    consentIp: leadSource === "web" ? clientIp(req) : null,
   });
   if (!res.ok) return json({ ok: false, error: res.error }, res.status);
 

@@ -45,6 +45,10 @@ export interface LeadInput {
   note: string | null;
   source: LeadSource;
   consent: boolean;
+  /** The checkbox wording the person ticked, as the form sent it. */
+  consentText: string | null;
+  /** Where the form was sent from; null when a server relays it (Meta). */
+  consentIp: string | null;
 }
 
 export type IntakeResult =
@@ -103,6 +107,8 @@ export async function intakeLead(key: string, input: LeadInput): Promise<IntakeR
       source: input.source,
       note: input.note,
       consent_at: new Date().toISOString(),
+      consent_text: input.consentText,
+      consent_ip: input.consentIp,
     })
     .select("id")
     .single();

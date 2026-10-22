@@ -5,7 +5,6 @@ vi.mock("@/lib/vapi/client", () => ({ webhookSecret: vi.fn(), toE164: vi.fn() })
 vi.mock("@/lib/actions/run", () => ({}));
 vi.mock("@/lib/calls/log", () => ({}));
 vi.mock("@/lib/booking/tools", () => ({}));
-vi.mock("@/lib/calls/sentiment", () => ({}));
 vi.mock("@/lib/calls/transcript", () => ({}));
 vi.mock("@/lib/clinics/server", () => ({}));
 vi.mock("@/lib/vapi/routing", () => ({}));

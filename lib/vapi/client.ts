@@ -526,6 +526,13 @@ export function buildAssistant(
               type: "string",
               description: "Klinik neden geri arayacak: arayanın sorusu ya da isteği, tek kısa cümle. Geri arama sözü yoksa boş.",
             },
+            // Read by the webhook for /calls' sentiment column. Asked here so the
+            // transcript goes to no provider beyond the call's own.
+            sentiment: {
+              type: "string",
+              enum: ["positive", "neutral", "negative"],
+              description: "Arayanın görüşme boyunca genel duygu durumu.",
+            },
           },
         },
       },

@@ -51,7 +51,7 @@ function fromRow(r: CallRowDb): CallRow {
     duration: formatDuration(r.duration_sec),
     durationSec: r.duration_sec,
     outcome: r.outcome as Outcome,
-    // Computed post-call from the transcript — see lib/calls/sentiment.ts.
+    // From Vapi's post-call analysis — see structuredDataPlan in lib/vapi/client.ts.
     // A value outside the known three (a row written before this existed, or
     // a DB edited by hand) falls back to neutral rather than rendering blank.
     sentiment: (["positive", "neutral", "negative"] as const).includes(r.sentiment as Sentiment)

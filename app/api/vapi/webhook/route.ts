@@ -4,7 +4,6 @@ import { runAgentActions } from "@/lib/actions/run";
 import type { CallActionPayload } from "@/lib/actions/types";
 import { logCall } from "@/lib/calls/log";
 import { isBookingTool, runBookingTool, type ToolContext } from "@/lib/booking/tools";
-import { computeSentiment } from "@/lib/calls/sentiment";
 import { cleanTranscript } from "@/lib/calls/transcript";
 import { clinicOpeningHours, isAfterHoursAgent, resolveCallOwner } from "@/lib/clinics/server";
 import { routeInboundCall } from "@/lib/vapi/routing";
@@ -15,7 +14,7 @@ import { notifyCaught, notifyError } from "@/lib/notify/telegram";
 import { localParts } from "@/lib/automation/format";
 import { markLeadCallEnded } from "@/lib/leads/callback";
 import { sendFollowUpEmail } from "@/lib/notify/email";
-import type { Outcome } from "@/lib/demo/data";
+import type { Outcome, Sentiment } from "@/lib/demo/data";
 
 /**
  * Vapi's server URL. Every assistant provisioned by lib/vapi/client.ts points
@@ -248,12 +247,16 @@ async function handleToolCalls(message: VapiToolCallsMessage) {
  * without it the post-call booking net simply reports that the time was never
  * established, which is the honest outcome.
  */
+const SENTIMENTS: Sentiment[] = ["positive", "neutral", "negative"];
+
 function extracted(message: VapiEndOfCallMessage): {
   requestedStart?: string;
   callerEmail?: string;
   callback: { requested: boolean; name?: string; phone?: string; reason?: string };
+  sentiment: Sentiment;
 } {
   const data = message.analysis?.structuredData ?? {};
+  const sentiment = SENTIMENTS.find((s) => s === data.sentiment) ?? "neutral";
   const start = data.requestedStart ?? data.requested_start ?? data.appointmentTime;
   const email = data.callerEmail ?? data.caller_email ?? data.email;
   const text = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 300) : undefined);
@@ -266,6 +269,7 @@ function extracted(message: VapiEndOfCallMessage): {
       phone: text(data.callbackPhone),
       reason: text(data.callbackReason),
     },
+    sentiment,
   };
 }
 
@@ -320,22 +324,15 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
     durationSec: Math.round(message.durationSeconds ?? 0),
     outcome: outcomeFrom(message.endedReason),
     summary: message.summary ?? "",
-    sentiment: "neutral", // overwritten below once computeSentiment resolves
     recordingUrl: recordingUrlFrom(message),
     ...extracted(message),
     transcript,
   };
 
-  // Runs alongside the action pipeline, not before it — an LLM call must
-  // never add latency to whatever Vapi is waiting on for this response.
   // A suspended clinic's calls are still logged — usage is what the invoice
   // is cut from — but none of its actions (booking, CRM, messages) run.
   const actionIds = clinic?.status === "suspended" ? [] : agent.actionIds;
-  const [results, sentiment] = await Promise.all([
-    runAgentActions(actionIds, payload),
-    computeSentiment(transcript),
-  ]);
-  payload.sentiment = sentiment;
+  const results = await runAgentActions(actionIds, payload);
   // A booking outranks whatever the line did next — made in-call or by the post-call net.
   const appointment = await findByCall(payload.callId);
   if (appointment) payload.outcome = "booked";

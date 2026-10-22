@@ -34,7 +34,7 @@ export interface CallActionPayload {
    * (the clinic's own inbox) and carries the phone number in its notes.
    */
   callerEmail?: string;
-  /** Computed once, in parallel with the action pipeline — see lib/calls/sentiment.ts. */
+  /** From Vapi's post-call analysis (structuredDataPlan in lib/vapi/client.ts); neutral when absent. */
   sentiment: "positive" | "neutral" | "negative";
   /** Vapi's recording URL, when the assistant had recording enabled. */
   recordingUrl?: string;

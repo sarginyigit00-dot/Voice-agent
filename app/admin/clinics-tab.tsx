@@ -4,7 +4,14 @@ import { useState } from "react";
 import appConfig from "@/app.config";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { MIN_PASSWORD_LENGTH, OVERAGE_USD_PER_MIN, PLANS, type PlanId } from "@/lib/admin/constants";
+import {
+  BILLING_STATUSES,
+  MIN_PASSWORD_LENGTH,
+  OVERAGE_USD_PER_MIN,
+  PLANS,
+  type BillingStatus,
+  type PlanId,
+} from "@/lib/admin/constants";
 import type { AdminClinic } from "@/lib/admin/clinics";
 import type { AdminUser } from "@/lib/admin/queries";
 import { ActionButton, EmptyRow, inputClass } from "./controls";
@@ -72,6 +79,7 @@ export function ClinicsTab({
                         askıda
                       </Badge>
                     )}
+                    <BillingBadge clinic={c} />
                   </span>
                   <span className="text-muted-foreground">{PLANS[c.plan].label}</span>
                   <Usage plan={c.plan} used={c.minutesThisMonth} quota={c.minutesQuota} calls={c.callsThisMonth} />
@@ -209,6 +217,7 @@ function ClinicEditor({
   return (
     <div className="space-y-3 border-t border-border/60 bg-muted/40 px-3 py-3">
       <SettingsForm clinic={clinic} busy={busy} act={act} />
+      <BillingForm clinic={clinic} busy={busy} act={act} />
       <PhoneForm clinic={clinic} busy={busy} act={act} />
       <CallbackForm clinic={clinic} busy={busy} act={act} />
       <CalendarForm clinic={clinic} busy={busy} act={act} />
@@ -299,6 +308,105 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
         <ActionButton type="submit" disabled={busy}>
           Ayarları kaydet
         </ActionButton>
+      </form>
+    </Block>
+  );
+}
+
+/** An "active" subscription whose paid-through day has gone by reads as late. */
+function effectiveBilling(c: AdminClinic): BillingStatus {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+  if (c.billingStatus === "active" && c.paidThrough && c.paidThrough < today) return "past_due";
+  return c.billingStatus;
+}
+
+function BillingBadge({ clinic }: { clinic: AdminClinic }) {
+  const s = effectiveBilling(clinic);
+  if (s === "active") return null;
+  return (
+    <Badge tone={s === "pending" ? "warning" : "destructive"} className="shrink-0 text-[10px]">
+      {BILLING_STATUSES[s].toLocaleLowerCase("tr-TR")}
+    </Badge>
+  );
+}
+
+/**
+ * Ruul subscription, recorded by hand: the checkout link goes to the clinic
+ * over WhatsApp/e-mail, and the operator marks it paid here. Changing it never
+ * suspends the clinic — that stays a separate, deliberate choice in Ayarlar.
+ */
+function BillingForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
+  const [f, setF] = useState({
+    billingStatus: clinic.billingStatus,
+    checkoutUrl: clinic.checkoutUrl ?? "",
+    paidThrough: clinic.paidThrough ?? "",
+  });
+  const [copied, setCopied] = useState(false);
+  const late = effectiveBilling(clinic) === "past_due" && clinic.billingStatus === "active";
+
+  return (
+    <Block
+      title={`Abonelik (Ruul) — ${BILLING_STATUSES[effectiveBilling(clinic)].toLocaleLowerCase("tr-TR")}`}
+      hint="Ödeme linkini müşteriye kendin gönderirsin; ödeme gelince durumu ve son günü buradan işaretle."
+    >
+      <form
+        className="space-y-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void act({ action: "update", clinicId: clinic.id, fields: f });
+        }}
+      >
+        <div className="grid gap-2 sm:grid-cols-4">
+          <Field label="Durum">
+            <select
+              value={f.billingStatus}
+              onChange={(e) => setF((p) => ({ ...p, billingStatus: e.target.value as BillingStatus }))}
+              className={inputClass}
+            >
+              {(Object.keys(BILLING_STATUSES) as BillingStatus[]).map((s) => (
+                <option key={s} value={s}>
+                  {BILLING_STATUSES[s]}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Ruul ödeme linki">
+              <input
+                value={f.checkoutUrl}
+                onChange={(e) => setF((p) => ({ ...p, checkoutUrl: e.target.value }))}
+                placeholder="https://…"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <Field label="Geçerli olduğu son gün">
+            <input
+              type="date"
+              value={f.paidThrough}
+              onChange={(e) => setF((p) => ({ ...p, paidThrough: e.target.value }))}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        {late && <p className="text-[11px] text-missed">Son gün geçti; yeni ödeme geldiyse tarihi ilerlet.</p>}
+        <div className="flex flex-wrap gap-2">
+          <ActionButton type="submit" disabled={busy}>
+            Aboneliği kaydet
+          </ActionButton>
+          {clinic.checkoutUrl && (
+            <ActionButton
+              onClick={() => {
+                void navigator.clipboard.writeText(clinic.checkoutUrl!).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                });
+              }}
+            >
+              {copied ? "Kopyalandı" : "Linki kopyala"}
+            </ActionButton>
+          )}
+        </div>
       </form>
     </Block>
   );

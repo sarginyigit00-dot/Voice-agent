@@ -511,6 +511,18 @@ alter table public.clinics
 alter table public.clinics
   add column if not exists quota_alert_month text;
 
+-- Subscription, tracked by hand: the clinic pays through a Ruul checkout link
+-- sent out-of-band (Ruul has no webhook to confirm it). Operator-only — never
+-- shown in the clinic's panel, and it doesn't touch `status` on its own.
+alter table public.clinics
+  add column if not exists billing_status text not null default 'pending'
+    check (billing_status in ('pending', 'active', 'past_due', 'cancelled'));
+alter table public.clinics
+  add column if not exists checkout_url text;
+-- last day the current payment covers; past it the panel reads "gecikmiş"
+alter table public.clinics
+  add column if not exists paid_through date;
+
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
   clinic_id uuid not null references public.clinics (id) on delete cascade,

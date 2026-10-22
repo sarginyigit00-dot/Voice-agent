@@ -1,5 +1,12 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { MIN_PASSWORD_LENGTH, PLANS, isPlan, type PlanId } from "@/lib/admin/constants";
+import {
+  MIN_PASSWORD_LENGTH,
+  PLANS,
+  isBillingStatus,
+  isPlan,
+  type BillingStatus,
+  type PlanId,
+} from "@/lib/admin/constants";
 import { clinicById, isMessageChannel, type MessageChannel } from "@/lib/clinics/server";
 import { monthStartIstanbul } from "@/lib/clinics/usage";
 import { LEAD_STATUSES, newLeadFormKey, type LeadStatus } from "@/lib/leads/callback";
@@ -60,6 +67,11 @@ export interface AdminClinic {
   phone: { number: string | null; inboundAgentId: string | null; routed?: boolean; error?: string } | null;
   /** The after-hours line (lib/vapi/routing.ts). Null = the day agent answers around the clock. */
   afterHoursAgentId: string | null;
+  /** Ruul subscription, kept by hand — nothing confirms a payment automatically. */
+  billingStatus: BillingStatus;
+  checkoutUrl: string | null;
+  /** YYYY-MM-DD, the last day the current payment covers. */
+  paidThrough: string | null;
   createdAt: string;
   calendarConnected: boolean;
   members: AdminClinicMember[];
@@ -180,6 +192,9 @@ export async function listClinics(
       agents: clinicAgents,
       phone: phoneFor(c.vapi_phone_number_id, numbers, clinicAgents, c.day_agent_id ?? null),
       afterHoursAgentId: c.after_hours_agent_id ?? null,
+      billingStatus: isBillingStatus(c.billing_status) ? c.billing_status : "pending",
+      checkoutUrl: c.checkout_url ?? null,
+      paidThrough: c.paid_through ?? null,
       createdAt: c.created_at,
       calendarConnected: connected.has(c.id),
       members: (members.data ?? [])
@@ -292,6 +307,31 @@ function parseClinicFields(raw: unknown): { patch: Record<string, unknown> } | {
     patch.message_channel = f.messageChannel;
     // Legacy column, kept in step until it is dropped.
     patch.whatsapp_enabled = f.messageChannel === "whatsapp";
+  }
+
+  if ("billingStatus" in f) {
+    if (!isBillingStatus(f.billingStatus)) return { error: "Geçersiz abonelik durumu." };
+    patch.billing_status = f.billingStatus;
+  }
+  if ("checkoutUrl" in f) {
+    const v = text(f.checkoutUrl);
+    if (v) {
+      let url: URL;
+      try {
+        url = new URL(v);
+      } catch {
+        return { error: "Ödeme linki geçersiz." };
+      }
+      if (url.protocol !== "https:") return { error: "Ödeme linki https:// ile başlamalı." };
+    }
+    patch.checkout_url = v || null;
+  }
+  if ("paidThrough" in f) {
+    const v = text(f.paidThrough);
+    if (v && (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v)))) {
+      return { error: "Geçerli olduğu son gün YYYY-AA-GG olmalı." };
+    }
+    patch.paid_through = v || null;
   }
 
   if (Object.keys(patch).length === 0) return { error: "Değiştirilecek alan yok." };

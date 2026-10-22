@@ -41,3 +41,20 @@ export type PlanId = keyof typeof PLANS;
 export function isPlan(v: unknown): v is PlanId {
   return typeof v === "string" && Object.hasOwn(PLANS, v);
 }
+
+/**
+ * A clinic's Ruul subscription as the operator last recorded it. Set by hand:
+ * the checkout link goes to the clinic out-of-band and Ruul sends no webhook.
+ */
+export const BILLING_STATUSES = {
+  pending: "Ödeme bekliyor",
+  active: "Aktif",
+  past_due: "Gecikmiş",
+  cancelled: "İptal",
+} as const;
+
+export type BillingStatus = keyof typeof BILLING_STATUSES;
+
+export function isBillingStatus(v: unknown): v is BillingStatus {
+  return typeof v === "string" && Object.hasOwn(BILLING_STATUSES, v);
+}

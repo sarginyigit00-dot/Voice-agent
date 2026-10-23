@@ -348,6 +348,8 @@ function transferToolId(clinic: ClinicContext, number: string): Promise<VapiResu
         number,
         message: "Sizi hemen bir yetkiliye aktarıyorum, lütfen hatta kalın.",
         description: `${clinic.name} resepsiyonu`,
+        // Netgsm rejects SIP REFER (Vapi's default on SIP lines), so dial the number out over the trunk instead.
+        transferPlan: { mode: "blind-transfer", sipVerb: "dial" },
       },
     ],
   });

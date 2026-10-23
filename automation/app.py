@@ -271,10 +271,10 @@ def quota_alerts():
         used, quota = a["minutes"], a["quota"]
         if a["level"] == 2:
             subject = f"Randevox: {a['clinicName']} aylık dakika kotasını doldurdu"
-            lead = f"Bu ay <b>{used}</b> dakika kullandınız; paketinizdeki <b>{quota}</b> dakika doldu. Bundan sonraki her dakika aşım olarak (0,30 $/dk) faturalanır."
+            lead = f"Bu ay <b>{used}</b> dakika kullandınız; paketinizdeki <b>{quota}</b> dakika doldu. Bundan sonraki her dakika aşım olarak (0,60 $/dk) faturalanır."
         else:
             subject = f"Randevox: {a['clinicName']} kotasının %80'ine ulaştı"
-            lead = f"Bu ay <b>{used}</b> dakika kullandınız; paketinizdeki <b>{quota}</b> dakikanın %80'ine ulaştınız. Kota dolunca her dakika aşım olarak (0,30 $/dk) faturalanır."
+            lead = f"Bu ay <b>{used}</b> dakika kullandınız; paketinizdeki <b>{quota}</b> dakikanın %80'ine ulaştınız. Kota dolunca her dakika aşım olarak (0,60 $/dk) faturalanır."
         html = f"<h2>{a['clinicName']}</h2><p>{lead}</p><p>Paket yükseltmek için bizimle iletişime geçebilirsiniz.</p><p style='color:#888;font-size:12px'>Randevox</p>"
         if send_clinic_email(a["email"], subject, html):
             httpx.post(
@@ -322,15 +322,7 @@ async def events(request: Request):
                 )
                 wa_params = [name or "Değerli hastamız", clinic.get("name"), appointment.get("date"), appointment.get("time")]
                 send_patient_message(channel, data.get("phone"), sms_text, "randevu_onay", wa_params)
-        elif clinic.get("notifyEmail"):
-            send_clinic_email(
-                clinic["notifyEmail"],
-                f"Randevu alınamayan arama: {data.get('number') or 'numara yok'}",
-                f"<p><b>{clinic.get('name')}</b> hattına gelen bir arama randevuyla sonuçlanmadı. Geri aramak isteyebilirsiniz.</p>"
-                f"<p>Arayan: {data.get('caller') or '-'}<br>Numara: {data.get('number') or '-'}<br>"
-                f"Ajan: {data.get('agentName')}<br>Sonuç: {data.get('outcome')} · Duygu: {data.get('sentiment')}</p>"
-                f"<p>{data.get('summary') or ''}</p>",
-            )
+        # The clinic's "no booking" email is sent by Randevox itself (lib/notify/email.ts) — not here, or it arrives twice.
 
     elif event_type == "appointment.booked":
         # Booked by hand from the panel — same confirmation the phone line sends after a call.

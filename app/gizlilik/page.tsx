@@ -1,6 +1,5 @@
 "use client";
 
-import appConfig from "@/app.config";
 import { useLang } from "@/components/i18n/language-provider";
 import { LegalShell } from "../legal-shell";
 
@@ -73,8 +72,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
         en: "Under KVKK art. 11 you may: learn whether your data is processed and request information about it; learn the purpose of processing and whether data is used accordingly; know the third parties it is transferred to in Türkiye or abroad; request correction of incomplete or inaccurate data, and erasure or destruction under art. 7, and have these notified to recipients; object to an outcome against you arising solely from automated analysis; and claim compensation for damage caused by unlawful processing.",
       },
       {
-        tr: `Taleplerinizi ${appConfig.domain} üzerinden bize iletebilirsiniz; en geç 30 gün içinde ücretsiz yanıtlarız. Bir kliniğin arayanıysanız, talebinizi veri sorumlusu olan o kliniğe iletmeniz gerekir; bize ulaşırsa kliniğe yönlendiririz.`,
-        en: `Send requests to us via ${appConfig.domain}; we answer free of charge within 30 days. If you called a clinic, direct your request to that clinic as the data controller; if it reaches us, we forward it to the clinic.`,
+        tr: `Taleplerinizi info@randevoxai.com adresine e-postayla iletebilirsiniz; en geç 30 gün içinde ücretsiz yanıtlarız. Bir kliniğin arayanıysanız, talebinizi veri sorumlusu olan o kliniğe iletmeniz gerekir; bize ulaşırsa kliniğe yönlendiririz.`,
+        en: `Email requests to info@randevoxai.com; we answer free of charge within 30 days. If you called a clinic, direct your request to that clinic as the data controller; if it reaches us, we forward it to the clinic.`,
       },
     ],
   },

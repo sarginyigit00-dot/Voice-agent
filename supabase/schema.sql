@@ -592,3 +592,15 @@ alter table public.feedback enable row level security;
 insert into storage.buckets (id, name, public)
 values ('feedback-attachments', 'feedback-attachments', false)
 on conflict (id) do nothing;
+
+-- Destek girişi: every time the operator opens a clinic's panel from /admin
+-- ("Panelini aç", lib/admin/support.ts). Service-role only (RLS on, no policies).
+create table if not exists public.support_access_log (
+  id uuid primary key default gen_random_uuid(),
+  clinic_id uuid not null references public.clinics (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists support_access_log_clinic_idx on public.support_access_log (clinic_id, created_at desc);
+
+alter table public.support_access_log enable row level security;

@@ -19,6 +19,7 @@ import {
   type VapiResult,
 } from "@/lib/vapi/client";
 import { syncAgentToVapi, type VapiSyncResult } from "@/lib/vapi/sync";
+import { openSupportSession } from "@/lib/admin/support";
 
 type Supabase = NonNullable<ReturnType<typeof getSupabaseServer>>;
 
@@ -78,11 +79,15 @@ export interface AdminClinic {
   /** This calendar month, Türkiye time. */
   minutesThisMonth: number;
   callsThisMonth: number;
+  /** When the operator last opened this clinic's panel ("Panelini aç"). */
+  lastSupportAccess: string | null;
 }
 
 export interface ClinicActionResult {
   ok: boolean;
   message: string;
+  /** "openPanel" only: the one-time sign-in address for the clinic's panel. */
+  url?: string;
 }
 
 /** The clinic's number as Vapi sees it right now, and which of its agents answers. */
@@ -119,8 +124,10 @@ function phoneFor(
 export async function listClinics(
   supabase: Supabase,
   emails: Map<string, string | null>,
+  /** The support account — it sits in whichever clinic was opened last, but isn't staff. */
+  hiddenUserIds: Set<string> = new Set(),
 ): Promise<AdminClinic[]> {
-  const [clinics, members, secrets, usage, agents, numbers, leads] = await Promise.all([
+  const [clinics, members, secrets, usage, agents, numbers, leads, support] = await Promise.all([
     supabase.from("clinics").select("*").order("created_at", { ascending: true }),
     supabase.from("clinic_members").select("clinic_id, user_id, role").order("created_at"),
     supabase.from("clinic_secrets").select("clinic_id, calcom_api_key, calcom_event_type_id"),
@@ -135,6 +142,7 @@ export async function listClinics(
       .select("clinic_id, status")
       .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
       .limit(1000),
+    supabase.from("support_access_log").select("clinic_id, created_at").order("created_at", { ascending: false }).limit(500),
   ]);
 
   if (clinics.error) {
@@ -147,6 +155,13 @@ export async function listClinics(
   if (agents.error) console.error("[admin] failed to list agents:", agents.error.message);
   if (numbers && !numbers.ok) console.error("[admin] failed to list Vapi numbers:", numbers.error);
   if (leads.error) console.error("[admin] failed to count leads:", leads.error.message);
+  if (support.error) console.error("[admin] failed to read support access log:", support.error.message);
+
+  // Newest first, so the first row seen per clinic is its latest opening.
+  const lastSupport = new Map<string, string>();
+  for (const s of support.data ?? []) {
+    if (!lastSupport.has(s.clinic_id)) lastSupport.set(s.clinic_id, s.created_at);
+  }
 
   const leadCountsFor = (clinicId: string) => {
     const counts = Object.fromEntries(LEAD_STATUSES.map((s) => [s, 0])) as Record<LeadStatus, number>;
@@ -198,10 +213,11 @@ export async function listClinics(
       createdAt: c.created_at,
       calendarConnected: connected.has(c.id),
       members: (members.data ?? [])
-        .filter((m) => m.clinic_id === c.id)
+        .filter((m) => m.clinic_id === c.id && !hiddenUserIds.has(m.user_id))
         .map((m) => ({ userId: m.user_id, email: emails.get(m.user_id) ?? null, role: m.role })),
       minutesThisMonth: Math.ceil(Number(used?.seconds ?? 0) / 60),
       callsThisMonth: Number(used?.calls ?? 0),
+      lastSupportAccess: lastSupport.get(c.id) ?? null,
     };
   });
 }
@@ -571,6 +587,17 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
           ? "Hızlı geri dönüş açıldı. Form adresini kliniğin sitesine ve (varsa) Meta reklam otomasyonuna ver."
           : "Hızlı geri dönüş açıldı, ama klinikte Vapi numarası yok — Ayarlar'dan ekle, yoksa kimse aranamaz.",
       );
+    }
+
+    case "openPanel": {
+      if (!clinicId) return fail("Klinik seçilmedi.");
+      const res = await openSupportSession(supabase, clinicId);
+      if (!res.ok) return fail(res.error);
+      return {
+        ok: true,
+        message: "Kliniğin paneli yeni sekmede açıldı (destek modu). Bu giriş kayda geçti.",
+        url: `/auth/destek?token_hash=${encodeURIComponent(res.tokenHash)}`,
+      };
     }
 
     case "rotateLeadKey": {

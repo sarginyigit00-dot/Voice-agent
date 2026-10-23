@@ -16,7 +16,7 @@ import type { AdminClinic } from "@/lib/admin/clinics";
 import type { AdminUser } from "@/lib/admin/queries";
 import { ActionButton, EmptyRow, inputClass } from "./controls";
 
-type Act = (body: Record<string, unknown>) => Promise<void>;
+type Act = (body: Record<string, unknown>) => Promise<{ ok?: boolean; url?: string }>;
 
 const PLAN_IDS = Object.keys(PLANS) as PlanId[];
 
@@ -29,11 +29,13 @@ export function ClinicsTab({
   clinics,
   users,
   connected,
+  supportReady,
   onAct,
 }: {
   clinics: AdminClinic[];
   users: AdminUser[];
   connected: boolean;
+  supportReady: boolean;
   onAct: Act;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -41,8 +43,9 @@ export function ClinicsTab({
 
   async function act(body: Record<string, unknown>) {
     setBusy(true);
-    await onAct(body);
+    const result = await onAct(body);
     setBusy(false);
+    return result;
   }
 
   return (
@@ -95,7 +98,9 @@ export function ClinicsTab({
                   </button>
                 </div>
 
-                {openId === c.id && <ClinicEditor clinic={c} users={users} busy={busy} act={act} />}
+                {openId === c.id && (
+                  <ClinicEditor clinic={c} users={users} busy={busy} supportReady={supportReady} act={act} />
+                )}
               </li>
             ))}
           </ul>
@@ -207,15 +212,18 @@ function ClinicEditor({
   clinic,
   users,
   busy,
+  supportReady,
   act,
 }: {
   clinic: AdminClinic;
   users: AdminUser[];
   busy: boolean;
+  supportReady: boolean;
   act: Act;
 }) {
   return (
     <div className="space-y-3 border-t border-border/60 bg-muted/40 px-3 py-3">
+      <SupportBlock clinic={clinic} busy={busy} supportReady={supportReady} act={act} />
       <SettingsForm clinic={clinic} busy={busy} act={act} />
       <BillingForm clinic={clinic} busy={busy} act={act} />
       <PhoneForm clinic={clinic} busy={busy} act={act} />
@@ -223,6 +231,60 @@ function ClinicEditor({
       <CalendarForm clinic={clinic} busy={busy} act={act} />
       <Members clinic={clinic} users={users} busy={busy} act={act} />
     </div>
+  );
+}
+
+/**
+ * "Panelini aç": the clinic's own panel in a new tab, signed in as the support
+ * account (lib/admin/support.ts). Full access, a "Destek modu" strip on top,
+ * and every opening logged.
+ */
+function SupportBlock({
+  clinic,
+  busy,
+  supportReady,
+  act,
+}: {
+  clinic: AdminClinic;
+  busy: boolean;
+  supportReady: boolean;
+  act: Act;
+}) {
+  async function open() {
+    // Opened inside the click, before the await — a tab opened after it is a popup the browser blocks.
+    const tab = window.open("about:blank", "_blank");
+    const result = await act({ action: "openPanel", clinicId: clinic.id });
+    if (!tab) return;
+    if (result.ok && result.url) {
+      tab.opener = null;
+      tab.location.href = result.url;
+    } else {
+      tab.close();
+    }
+  }
+
+  const last = clinic.lastSupportAccess
+    ? new Date(clinic.lastSupportAccess).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })
+    : null;
+
+  return (
+    <Block
+      title="Destek"
+      hint={
+        supportReady
+          ? "Kliniğin kendi panelini yeni sekmede, sahibi yetkisiyle açar. Panelde \"Destek modu\" şeridi görünür; her giriş kayda geçer."
+          : "SUPPORT_EMAIL ayarlı değil — .env.local'e ve Vercel'e destek hesabının e-postasını ekle."
+      }
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <ActionButton disabled={busy || !supportReady} onClick={() => void open()}>
+          Panelini aç
+        </ActionButton>
+        <span className="text-[11px] text-muted-foreground">
+          {last ? `Son destek girişi: ${last}` : "Henüz destek girişi yok."}
+        </span>
+      </div>
+    </Block>
   );
 }
 

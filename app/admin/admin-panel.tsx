@@ -48,15 +48,17 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
       ok?: boolean;
       message?: string;
       error?: string;
+      url?: string;
     };
     setFlash({
       ok: Boolean(parsed.ok),
       message: parsed.message ?? parsed.error ?? "İşlem başarısız.",
     });
     router.refresh();
+    return parsed;
   }
 
-  const { totals, users, demoRequests, feedback, clinics, connected } = data;
+  const { totals, users, demoRequests, feedback, clinics, connected, supportReady } = data;
   const newFeedback = feedback.filter((f) => f.status === "new").length;
   // Badge on the Sistem tab: unreachable tables plus missing non-optional keys
   // that aren't already covered by an integration's own "not connected" row.
@@ -136,6 +138,7 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
           clinics={clinics}
           users={users}
           connected={connected}
+          supportReady={supportReady}
           onAct={(body) => post("/api/admin/clinics", body)}
         />
       )}
@@ -183,7 +186,7 @@ function UsersTab({
 }: {
   users: AdminUser[];
   connected: boolean;
-  onAct: (action: AdminAction, userId: string, password?: string) => Promise<void>;
+  onAct: (action: AdminAction, userId: string, password?: string) => Promise<unknown>;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -421,7 +424,7 @@ function DemoRequestsTab({
 }: {
   entries: DemoRequest[];
   connected: boolean;
-  onDelete: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<unknown>;
 }) {
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -554,7 +557,7 @@ function FeedbackTab({
 }: {
   entries: FeedbackEntry[];
   connected: boolean;
-  onAct: (body: { action: "set-status" | "delete"; id: string; status?: FeedbackEntry["status"] }) => Promise<void>;
+  onAct: (body: { action: "set-status" | "delete"; id: string; status?: FeedbackEntry["status"] }) => Promise<unknown>;
 }) {
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);

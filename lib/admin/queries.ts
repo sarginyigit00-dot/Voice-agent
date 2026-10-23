@@ -1,5 +1,6 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { listClinics, type AdminClinic } from "@/lib/admin/clinics";
+import { isSupportUser, supportEmail } from "@/lib/admin/support";
 
 /**
  * Everything the /admin panel shows, read with the service-role client.
@@ -57,6 +58,8 @@ export interface FeedbackEntry {
 export interface AdminOverview {
   /** False when SUPABASE_SERVICE_ROLE_KEY / URL are missing — panel says so. */
   connected: boolean;
+  /** SUPPORT_EMAIL is set — "Panelini aç" works. */
+  supportReady: boolean;
   users: AdminUser[];
   demoRequests: DemoRequest[];
   feedback: FeedbackEntry[];
@@ -72,6 +75,7 @@ export interface AdminOverview {
 
 const EMPTY: AdminOverview = {
   connected: false,
+  supportReady: false,
   users: [],
   demoRequests: [],
   feedback: [],
@@ -172,7 +176,9 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     return { ...EMPTY, connected: true };
   }
 
-  const users: AdminUser[] = data.users.map((u) => ({
+  // The support account ("Panelini aç") is not a person — keep it out of every list and count.
+  const support = data.users.filter(isSupportUser);
+  const users: AdminUser[] = data.users.filter((u) => !isSupportUser(u)).map((u) => ({
     id: u.id,
     email: u.email ?? null,
     fullName: (u.user_metadata?.full_name as string | undefined) ?? null,
@@ -191,11 +197,16 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     countRows(supabase, "appointments"),
     listDemoRequests(supabase),
     listFeedback(supabase),
-    listClinics(supabase, new Map(users.map((u) => [u.id, u.email]))),
+    listClinics(
+      supabase,
+      new Map(users.map((u) => [u.id, u.email])),
+      new Set(support.map((u) => u.id)),
+    ),
   ]);
 
   return {
     connected: true,
+    supportReady: supportEmail() !== null,
     users,
     demoRequests,
     feedback,

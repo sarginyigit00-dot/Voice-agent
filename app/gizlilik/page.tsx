@@ -84,6 +84,10 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
         tr: "Verileriniz erişim kontrolü ve şifreli bağlantılar (HTTPS) ile korunur. Hiçbir sistem %100 güvenli değildir; bir ihlal durumunda yasal yükümlülüklerimiz doğrultusunda bilgilendirme yaparız.",
         en: "Your data is protected with access controls and encrypted connections (HTTPS). No system is 100% secure; in the event of a breach we will notify as required by law.",
       },
+      {
+        tr: "Teknik destek gerektiğinde ve yalnızca sorunu gidermek amacıyla Randevox ekibi kliniğinizin paneline erişebilir. Bu erişim sırasında panelde \"Destek modu\" uyarısı görünür ve her erişim tarih ve saatiyle kayıt altına alınır.",
+        en: "When technical support is needed, and only to resolve the issue, the Randevox team may access your clinic's panel. During such access the panel shows a \"Support mode\" notice, and every access is logged with its date and time.",
+      },
     ],
   },
 ];

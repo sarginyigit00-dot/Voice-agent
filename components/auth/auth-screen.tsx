@@ -273,7 +273,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="password">{ui.password}</Label>
-                  <Input id="password" name="password" type="password" autoComplete={isLogin ? "current-password" : "new-password"} required minLength={6} placeholder="••••••••" />
+                  <Input id="password" name="password" type="password" autoComplete={isLogin ? "current-password" : "new-password"} required minLength={isLogin ? undefined : 8} placeholder="••••••••" />
                 </div>
                 {isLogin && (
                   <label

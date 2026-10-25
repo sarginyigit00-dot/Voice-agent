@@ -604,3 +604,15 @@ create table if not exists public.support_access_log (
 create index if not exists support_access_log_clinic_idx on public.support_access_log (clinic_id, created_at desc);
 
 alter table public.support_access_log enable row level security;
+
+-- Onboarding mails (lib/onboarding/emails.ts): one row per clinic per mail that
+-- went out — welcome (marked "Aktif"), ready ("Numaraya bağla"), day3, day7.
+-- The primary key is what keeps each mail to once. Service-role only (RLS on, no policies).
+create table if not exists public.onboarding_emails (
+  clinic_id uuid not null references public.clinics (id) on delete cascade,
+  kind text not null check (kind in ('welcome', 'ready', 'day3', 'day7')),
+  sent_at timestamptz not null default now(),
+  primary key (clinic_id, kind)
+);
+
+alter table public.onboarding_emails enable row level security;

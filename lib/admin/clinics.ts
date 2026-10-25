@@ -20,6 +20,7 @@ import {
 } from "@/lib/vapi/client";
 import { syncAgentToVapi, type VapiSyncResult } from "@/lib/vapi/sync";
 import { openSupportSession } from "@/lib/admin/support";
+import { queueOnboardingEmail } from "@/lib/onboarding/emails";
 
 type Supabase = NonNullable<ReturnType<typeof getSupabaseServer>>;
 
@@ -383,8 +384,14 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
       if (!clinicId) return fail("Klinik seçilmedi.");
       const parsed = parseClinicFields(b.fields);
       if ("error" in parsed) return fail(parsed.error);
+      // The settings form sends billing_status on every save, so only a change *to* "active" welcomes.
+      const { data: before } = await supabase.from("clinics").select("billing_status").eq("id", clinicId).maybeSingle();
       const { error } = await supabase.from("clinics").update(parsed.patch).eq("id", clinicId);
       if (error) return fail(error.message);
+      if (parsed.patch.billing_status === "active" && before?.billing_status !== "active") {
+        queueOnboardingEmail(clinicId, "welcome");
+        return ok("Klinik ayarları kaydedildi. Hoş geldiniz maili bildirim adresine gidiyor.");
+      }
       return ok("Klinik ayarları kaydedildi.");
     }
 
@@ -522,6 +529,8 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
       if (saveError) return fail(saveError.message);
       const res = await routePhoneNumber(clinic.vapiPhoneNumberId);
       if (!res.ok) return fail(`Vapi: ${res.error}`);
+      // The last step of setup: "your assistant is ready", then the day-3/day-7 mails count from here.
+      queueOnboardingEmail(clinic.id, "ready");
       return ok("Numara bağlandı: mesai saatlerinde bu ajan karşılar; mesai dışı ajanı seçiliyse klinik kapalıyken o karşılar.");
     }
 

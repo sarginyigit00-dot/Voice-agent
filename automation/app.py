@@ -257,7 +257,7 @@ def monthly_report():
     send_reports("monthly")
 
 
-# ── job: quota warnings (80 % / 100 % of the monthly minutes) ─────────────
+# ── job: quota warnings (80 % / 100 % of the monthly minutes) + onboarding mails ─
 
 @app.function(image=image, secrets=[secret], schedule=modal.Cron("0 7 * * *"), timeout=300)
 def quota_alerts():
@@ -285,6 +285,12 @@ def quota_alerts():
             )
             sent += 1
     print(f"[quota-alerts] sent {sent}/{len(alerts)}")
+
+    # Rides on this daily job: Modal's plan caps scheduled functions at five.
+    # Day-3 / day-7 onboarding mails, sent by Randevox through Brevo.
+    res = httpx.post(randevox_url("/api/automation/onboarding"), headers=randevox_headers(), timeout=60.0)
+    res.raise_for_status()
+    print(f"[onboarding] {res.json()}")
 
 
 # ── job: signed events from Randevox (booking confirm / cancel / reschedule) ─

@@ -41,16 +41,9 @@ export async function POST(req: Request) {
 
   // After the response, so a slow webhook never holds up the visitor.
   after(() => notify(input));
-  await notifyDemoRequest({
-    source: "demo-talep",
-    message: input.note ? `Not: ${input.note}` : "Not yok.",
-    context: {
-      Klinik: input.clinicName,
-      Yetkili: input.contactName,
-      Telefon: input.phone,
-      "E-posta": input.email,
-    },
-  });
+  // No names or numbers: Telegram's servers are abroad, and the request is
+  // already in /admin → Demo talepleri.
+  await notifyDemoRequest({ source: "demo-talep", message: "Ayrıntılar: /admin → Demo talepleri" });
   return NextResponse.json({ ok: true });
 }
 

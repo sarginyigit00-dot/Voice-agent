@@ -704,6 +704,16 @@ export async function recordingLinkFor(callId: string): Promise<VapiResult<strin
   return { ok: true, data: call.data.artifact?.presignedMonoUrl ?? call.data.artifact?.presignedStereoUrl ?? null };
 }
 
+/**
+ * Deletes a call on Vapi — its recording, transcript and logs — for the
+ * retention cron (lib/privacy/retention.ts). Already gone counts as done.
+ */
+export async function deleteCall(callId: string): Promise<VapiResult<null>> {
+  const res = await vapi<unknown>("DELETE", `/call/${encodeURIComponent(callId)}`);
+  if (res.ok || res.status === 404) return { ok: true, data: null };
+  return res;
+}
+
 /* ───────────────────────────── voice preview ───────────────────────────── */
 
 /**

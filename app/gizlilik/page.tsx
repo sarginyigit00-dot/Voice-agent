@@ -59,8 +59,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "6. Saklama süresi", en: "6. Retention" },
     body: [
       {
-        tr: "Çağrı kayıtları, transkriptler ve randevu verileri hesabınızda, siz silene kadar veya hesabınızı kapatana kadar tutulur. Saklama süresini kendi panelinizden yönetebilirsiniz.",
-        en: "Call recordings, transcripts and appointment data are kept in your account until you delete them or close your account. You can manage retention from your own panel.",
+        tr: "Çağrı ses kayıtları 3 ay sonra, transkriptler, özetler ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir; raporlar için yalnızca kişiyle ilişkilendirilemeyen istatistikler (tarih, süre, sonuç) kalır. Geri arama formu kayıtları da 12 ay sonra silinir. Randevu kayıtları, kliniğin takvimi için hesap kapanana kadar tutulur. Hesap kapandığında kalan veriler 30 gün içinde iade edilir veya silinir.",
+        en: "Call recordings are deleted automatically after 3 months; transcripts, summaries and the caller's name and number after 12 months, leaving only non-identifying statistics (date, duration, outcome) for reports. Callback-form entries are also deleted after 12 months. Appointment records are kept for the clinic's calendar until the account is closed. When an account is closed, the remaining data is returned or deleted within 30 days.",
       },
     ],
   },
@@ -104,7 +104,7 @@ export default function V2PrivacyPage() {
         </p>
         <h1 className="mt-2 font-editorial text-4xl">{lang === "tr" ? "Gizlilik Politikası" : "Privacy Policy"}</h1>
         <p className="mt-3 text-[13px] text-muted-foreground">
-          {lang === "tr" ? "Son güncelleme: 21 Ekim 2026" : "Last updated: October 21, 2026"}
+          {lang === "tr" ? "Son güncelleme: 26 Ekim 2026" : "Last updated: October 26, 2026"}
         </p>
 
         <div className="mt-10 space-y-8">

@@ -211,6 +211,10 @@ alter table public.calls
   add column if not exists recording_url text;
 alter table public.calls
   add column if not exists clinic_id uuid references public.clinics (id) on delete cascade;
+-- Set by the retention cron (lib/privacy/retention.ts) once the call — and with
+-- it the only copy of the recording — has been deleted on Vapi.
+alter table public.calls
+  add column if not exists vapi_purged_at timestamptz;
 
 create index if not exists calls_clinic_started_idx on public.calls (clinic_id, started_at desc);
 

@@ -94,15 +94,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "Mesaj kaydedilemedi." }, { status: 500 });
   }
 
-  await notifyFeedback({
-    source: category,
-    message,
-    context: {
-      klinik: member.clinic.name,
-      kullanıcı: member.user.email,
-      sayfa: pagePath,
-      ek: attachmentName,
-    },
-  });
+  // Only that a message arrived: its text, sender and clinic stay in
+  // /admin → Geri bildirim, off Telegram's servers abroad.
+  await notifyFeedback({ source: category, message: "Ayrıntılar: /admin → Geri bildirim", context: { sayfa: pagePath } });
   return NextResponse.json({ ok: true, message: "Mesajınız iletildi, teşekkürler!" });
 }

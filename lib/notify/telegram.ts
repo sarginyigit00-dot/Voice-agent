@@ -88,9 +88,8 @@ export function notifyCaught(source: string, err: unknown, context?: ErrorReport
 }
 
 /**
- * A new /demo-talep request — a sales lead, not an error, never deduped. The
- * context carries the prospect's contact details (not patient data) to the
- * operator's own private chat only.
+ * A new /demo-talep request — a sales lead, not an error, never deduped.
+ * Carries no personal data: the details stay in /admin.
  */
 export async function notifyDemoRequest(report: ErrorReport): Promise<void> {
   if (!isTelegramConfigured()) return;

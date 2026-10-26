@@ -10,19 +10,20 @@ ve güncel bildirim yöntemi için kvkk.gov.tr → Standart Sözleşmeler.
 
 ## Servisler
 
-Koddan çıkarıldı (Ekim 2026). Yeni bir servis eklendiğinde bu tablo da güncellenir.
+Koddan çıkarıldı (Ekim 2026). Yeni bir servis eklendiğinde bu tablo da güncellenir. Kliniğin kendi
+hesabıyla bağlanan hizmetler Veri İşleme Sözleşmesi md. 4.6 gereği Randevox'un alt işleyeni değildir;
+bu yüzden standart sözleşme yalnızca öncelik 1–2 satırları için gerekir.
 
 | Servis | Şirket / yer | Giden veri | Öncelik | Durum |
 |---|---|---|---|---|
-| Vapi | Vapi Inc., ABD | Ses, transkript, telefon, randevu bilgisi. Kendi alt işleyenleri: OpenAI (dil modeli), Deepgram (ses→metin), ElevenLabs (kullanılıyorsa, ses) | 1 | ☐ yazıldı ☐ imzalandı ☐ bildirildi |
-| Supabase | Supabase Inc., ABD; veritabanı Tokyo | Tüm veriler (aramalar, transkriptler, randevular, hesaplar) | 1 | ☐ ☐ ☐ |
-| Vercel | Vercel Inc., ABD | Tüm istekler sunucudan geçer | 1 | ☐ ☐ ☐ |
+| Vapi | Vapi Inc., ABD | Ses, transkript, telefon, randevu bilgisi. Kendi alt işleyenleri: OpenAI (dil modeli), Deepgram (ses→metin), ElevenLabs (kullanılıyorsa, ses) | 1 | ☑ yazıldı (26.10.2026) ☐ imzalandı ☐ bildirildi |
+| Supabase | Supabase Inc., ABD; veritabanı Tokyo | Tüm veriler (aramalar, transkriptler, randevular, hesaplar) | 1 | ☑ yazıldı (26.10.2026) ☐ ☐ |
+| Vercel | Vercel Inc., ABD | Tüm istekler sunucudan geçer | 1 | ☑ yazıldı (26.10.2026) ☐ ☐ |
 | Modal | Modal Labs, ABD | Hatırlatma/geri arama otomasyonu: hasta adı, telefon, randevu | 2 | ☐ ☐ ☐ |
-| Resend | Resend Inc., ABD | Kliniğe giden e-postalar: arayan adı, telefon, özet | 2 | ☐ ☐ ☐ |
-| Cal.com | Cal.com Inc., ABD | Randevu, hasta adı, e-posta | 2 | ☐ ☐ ☐ |
-| Google | Google LLC, ABD | Personel girişi (Google ile giriş), Google Takvim kullanılıyorsa randevular | 2 | ☐ ☐ ☐ |
-| Meta (WhatsApp) | Meta Platforms, ABD/İrlanda | Hasta telefonu, randevu mesajı | 3 | ☐ ☐ ☐ |
-| Telegram | Telegram, BAE | Operatöre hata bildirimleri, demo talepleri (klinik personeli iletişim bilgisi) | 3 | ☐ ☐ ☐ |
+| Resend | Resend Inc., ABD | Kliniğe giden e-postalar: arayan adı, telefon, özet | 2 | ☑ yazıldı (26.10.2026) ☐ ☐ |
+| Cal.com / Google Takvim | Kliniğin kendi hesabı | Randevu, hasta adı, e-posta | Klinik'in sorumluluğunda (VİS md. 4.6) | — |
+| Meta (WhatsApp Business), SMS, CRM/webhook | Kliniğin kendi hesabı | Hasta telefonu, randevu mesajı | Klinik'in sorumluluğunda (VİS md. 4.6) | — |
+| Telegram | Telegram, BAE | Hata bildirimleri (hasta verisi yok), demo talepleri (Randevox'un kendi müşteri adayı verisi) | 3 — hasta verisi gitmez; demo talebindeki kişi bilgileri Telegram'a yazılmazsa tamamen düşer | ☐ ☐ ☐ |
 | Netgsm | Türkiye | — | Yurt içi, gerekmez | — |
 
 Anthropic listeden çıkarıldı (Ekim 2026): duygu analizi artık Vapi'nin arama sonu analizinde

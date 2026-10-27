@@ -388,8 +388,8 @@ async function toolIdsFor(
  * greeting so no clinic can edit it away or forget it on a new agent.
  */
 const RECORDING_NOTICE = {
-  tr: "Yapay zekâ asistanıyla görüşüyorsunuz; görüşmeniz randevu işlemleriniz ve hizmet kalitesi için kaydedilmektedir. Detaylı bilgi kliniğin aydınlatma metnindedir.",
-  en: "You're speaking with an AI assistant; this call is recorded for your appointment and for quality purposes. Details are in the clinic's privacy notice.",
+  tr: "Yapay zekâ asistanıyla görüşüyorsunuz; görüşmeniz randevu işlemleriniz ve hizmet kalitesi için kaydedilmektedir.",
+  en: "You're speaking with an AI assistant; this call is recorded for your appointment and for quality purposes.",
 };
 
 /** Puts the notice before the closing question, so the line still ends by inviting the caller to speak. */

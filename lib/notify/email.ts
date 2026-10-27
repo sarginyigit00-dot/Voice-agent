@@ -219,3 +219,77 @@ export async function sendFollowUpEmail(clinic: ClinicContext, call: CallFollowU
   if (!email) return false;
   return sendEmail(clinic.notifyEmail, email.subject, email.html, email.text);
 }
+
+/** The acceptance record printed under the contracts in the copy. */
+export interface ContractCopyRecord {
+  clinicName: string;
+  email: string | null;
+  acceptedAt: string;
+  ip: string | null;
+  version: string;
+  digest: string;
+}
+
+/**
+ * The accepted contracts, in full, to whoever accepted them, the clinic's
+ * notice address and the operator — the "copy in hand" a signed paper gives.
+ * One mail per address, so nobody sees another's address.
+ */
+export async function sendContractCopy(
+  to: string[],
+  documents: { title: string; subtitle: string; sections: { title: string; paragraphs: string[] }[] }[],
+  record: ContractCopyRecord,
+): Promise<void> {
+  const when = new Date(record.acceptedAt).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" });
+  const rows: [string, string][] = [
+    ["Klinik", record.clinicName],
+    ["Kabul eden", record.email ?? "—"],
+    ["Tarih", `${when} (Türkiye saati)`],
+    ["IP adresi", record.ip ?? "—"],
+    ["Sözleşme sürümü", record.version],
+    ["Belge özeti (SHA-256)", record.digest],
+  ];
+  const lead = "Aşağıdaki Hizmet Sözleşmesi ve Veri İşleme Sözleşmesi Randevox panelinde elektronik ortamda kabul edildi. Bu e-posta sözleşmelerin kopyasıdır; saklamanızı öneririz.";
+
+  const docHtml = documents
+    .map(
+      (d) =>
+        `<h2 style="font-size:17px;margin:28px 0 2px">${escape(d.title)}</h2><p style="margin:0 0 12px;color:#6b6880;font-size:13px">${escape(d.subtitle)}</p>` +
+        d.sections
+          .map(
+            (s) =>
+              `<h3 style="font-size:14px;margin:16px 0 6px">${escape(s.title)}</h3>` +
+              s.paragraphs.map((p) => `<p style="margin:0 0 8px;line-height:1.5">${escape(p)}</p>`).join(""),
+          )
+          .join(""),
+    )
+    .join("");
+
+  const html = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;color:#1f1d2b;max-width:680px">
+<p style="margin:0 0 14px;font-size:15px">${escape(lead)}</p>
+<table style="border-collapse:collapse;width:100%;margin:0 0 8px">${rows
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:4px 12px 4px 0;color:#6b6880;white-space:nowrap;vertical-align:top">${escape(k)}</td><td style="padding:4px 0;font-weight:600;word-break:break-all">${escape(v)}</td></tr>`,
+    )
+    .join("")}</table>
+${docHtml}
+</div>`;
+
+  const text = [
+    lead,
+    "",
+    ...rows.map(([k, v]) => `${k}: ${v}`),
+    "",
+    ...documents.flatMap((d) => [
+      d.title.toLocaleUpperCase("tr-TR"),
+      d.subtitle,
+      "",
+      ...d.sections.flatMap((s) => [s.title, ...s.paragraphs, ""]),
+      "",
+    ]),
+  ].join("\n");
+
+  const subject = `Sözleşme kopyanız: ${record.clinicName} · Randevox`;
+  for (const address of to) await sendEmail(address, subject, html, text);
+}

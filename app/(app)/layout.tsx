@@ -4,6 +4,7 @@ import { FeedbackWidget } from "@/components/app/feedback-widget";
 import { AppThemeProvider } from "@/components/app/app-theme";
 import { AuthGate } from "@/components/auth/session";
 import { SupportBanner } from "@/components/app/support-banner";
+import { ContractGate } from "@/components/app/contract-gate";
 
 // SessionProvider lives in the root layout now — every route shares it,
 // including /login and /signup, which need a real enterDemo() too.
@@ -13,11 +14,13 @@ export default function AppLayout({
   return (
     <AuthGate>
       <AppThemeProvider>
-        <SupportBanner />
-        <TopNav />
-        <main className="flex-1 overflow-y-auto">{children}</main>
-        <StatusBar />
-        <FeedbackWidget />
+        <ContractGate>
+          <SupportBanner />
+          <TopNav />
+          <main className="flex-1 overflow-y-auto">{children}</main>
+          <StatusBar />
+          <FeedbackWidget />
+        </ContractGate>
       </AppThemeProvider>
     </AuthGate>
   );

@@ -21,6 +21,14 @@ import {
 import { syncAgentToVapi, type VapiSyncResult } from "@/lib/vapi/sync";
 import { openSupportSession } from "@/lib/admin/support";
 import { queueOnboardingEmail } from "@/lib/onboarding/emails";
+import {
+  contractFor,
+  hasCurrentContract,
+  parseContractTerms,
+  recordAcceptance,
+  type ContractAcceptance,
+} from "@/lib/contracts/server";
+import type { ContractTerms } from "@/lib/contracts/text";
 
 type Supabase = NonNullable<ReturnType<typeof getSupabaseServer>>;
 
@@ -82,6 +90,18 @@ export interface AdminClinic {
   callsThisMonth: number;
   /** When the operator last opened this clinic's panel ("Panelini aç"). */
   lastSupportAccess: string | null;
+  /**
+   * Hizmet + Veri İşleme Sözleşmesi (lib/contracts/server.ts). "accepted" =
+   * the latest acceptance covers today's text and terms — the line can't be
+   * connected otherwise.
+   */
+  contract: {
+    status: "none" | "required" | "accepted";
+    /** Why there's nothing to accept yet ("none"). */
+    reason: string | null;
+    terms: ContractTerms | null;
+    accepted: ContractAcceptance | null;
+  };
 }
 
 export interface ClinicActionResult {
@@ -184,8 +204,25 @@ export async function listClinics(
     ]),
   );
 
+  const contracts = new Map(
+    await Promise.all(
+      clinics.data.map(async (c) => {
+        try {
+          return [c.id, await contractFor(supabase, c.id)] as const;
+        } catch (e) {
+          console.error("[admin] failed to read contract:", e instanceof Error ? e.message : e);
+          return [c.id, null] as const;
+        }
+      }),
+    ),
+  );
+  const { data: termRows, error: termsError } = await supabase.from("clinic_contracts").select("clinic_id, terms");
+  if (termsError) console.error("[admin] failed to read contract terms:", termsError.message);
+  const termsBy = new Map((termRows ?? []).map((r) => [r.clinic_id as string, r.terms as ContractTerms]));
+
   return clinics.data.map((c) => {
     const used = usageBy.get(c.id);
+    const contract = contracts.get(c.id) ?? null;
     const clinicAgents = (agents.data ?? [])
       .filter((a) => a.clinic_id === c.id)
       .map((a) => ({ id: a.id, name: a.name, active: a.active, vapiAssistantId: a.vapi_assistant_id }));
@@ -219,6 +256,12 @@ export async function listClinics(
       minutesThisMonth: Math.ceil(Number(used?.seconds ?? 0) / 60),
       callsThisMonth: Number(used?.calls ?? 0),
       lastSupportAccess: lastSupport.get(c.id) ?? null,
+      contract: {
+        status: contract?.status ?? "none",
+        reason: contract ? (contract.status === "none" ? contract.reason : null) : "Sözleşme okunamadı.",
+        terms: termsBy.get(c.id) ?? null,
+        accepted: contract?.accepted ?? null,
+      },
     };
   });
 }
@@ -501,6 +544,10 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
 
       // Empty agentId = detach the number.
       const agentId = str("agentId");
+      // No line without a signed contract (Hizmet Sözleşmesi 4.4) — detaching is always allowed.
+      if (agentId && !(await hasCurrentContract(supabase, clinic.id))) {
+        return fail("Klinik güncel sözleşmeyi kabul etmeden hat bağlanamaz. Sözleşme bölümünden bilgileri gir; klinik panelden kabul etsin ya da ıslak imzayı işaretle.");
+      }
       let assistantId: string | null = null;
       if (agentId) {
         const { data, error } = await supabase
@@ -607,6 +654,32 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
         message: "Kliniğin paneli yeni sekmede açıldı (destek modu). Bu giriş kayda geçti.",
         url: `/auth/destek?token_hash=${encodeURIComponent(res.tokenHash)}`,
       };
+    }
+
+    case "setContractTerms": {
+      if (!clinicId) return fail("Klinik seçilmedi.");
+      const parsed = parseContractTerms(b.terms);
+      if ("error" in parsed) return fail(parsed.error);
+      const { error } = await supabase
+        .from("clinic_contracts")
+        .upsert({ clinic_id: clinicId, terms: parsed.terms, updated_at: new Date().toISOString() }, { onConflict: "clinic_id" });
+      if (error) return fail(error.message);
+      const state = await contractFor(supabase, clinicId);
+      if (state.status === "none") return ok(`Kaydedildi, ama sözleşme henüz gösterilemiyor: ${state.reason}`);
+      return ok(
+        state.status === "accepted"
+          ? "Kaydedildi. Bilgiler değişmedi; mevcut kabul geçerli."
+          : "Kaydedildi. Klinik panele bir sonraki girişinde sözleşmeyi görüp kabul edecek.",
+      );
+    }
+
+    case "recordPaperContract": {
+      // The clinic signed the Word version by hand. Same terms as entered here — check before marking.
+      const clinic = clinicId ? await clinicById(clinicId) : null;
+      if (!clinic) return fail("Klinik bulunamadı.");
+      const res = await recordAcceptance({ supabase, clinicId: clinic.id, clinicName: clinic.name, method: "paper" });
+      if (!res.ok) return fail(res.error);
+      return ok("Islak imzalı sözleşme kaydedildi. İmzalı nüshayı sakla.");
     }
 
     case "rotateLeadKey": {

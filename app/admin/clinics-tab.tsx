@@ -14,6 +14,7 @@ import {
 } from "@/lib/admin/constants";
 import type { AdminClinic } from "@/lib/admin/clinics";
 import type { AdminUser } from "@/lib/admin/queries";
+import type { ContractTerms } from "@/lib/contracts/text";
 import { ActionButton, EmptyRow, inputClass } from "./controls";
 
 type Act = (body: Record<string, unknown>) => Promise<{ ok?: boolean; url?: string }>;
@@ -226,6 +227,7 @@ function ClinicEditor({
       <SupportBlock clinic={clinic} busy={busy} supportReady={supportReady} act={act} />
       <SettingsForm clinic={clinic} busy={busy} act={act} />
       <BillingForm clinic={clinic} busy={busy} act={act} />
+      <ContractForm clinic={clinic} busy={busy} act={act} />
       <PhoneForm clinic={clinic} busy={busy} act={act} />
       <CallbackForm clinic={clinic} busy={busy} act={act} />
       <CalendarForm clinic={clinic} busy={busy} act={act} />
@@ -466,6 +468,114 @@ function BillingForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean
               }}
             >
               {copied ? "Kopyalandı" : "Linki kopyala"}
+            </ActionButton>
+          )}
+        </div>
+      </form>
+    </Block>
+  );
+}
+
+const CONTRACT_STATUS = {
+  none: "hazır değil",
+  required: "kabul bekliyor",
+  accepted: "kabul edildi",
+} as const;
+
+/**
+ * Hizmet + Veri İşleme Sözleşmesi (lib/contracts/server.ts): the customer's
+ * details and Ek-1 go in here; the clinic then accepts both in its panel with
+ * two ticks. A paper signature of the same terms can be recorded instead.
+ * Any change to these fields asks the clinic to accept again.
+ */
+function ContractForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
+  const t = clinic.contract.terms;
+  const [f, setF] = useState({
+    legalName: t?.legalName ?? "",
+    taxId: t?.taxId ?? "",
+    address: t?.address ?? "",
+    email: t?.email ?? clinic.notifyEmail ?? "",
+    monthlyFee: t?.monthlyFee ?? `${PLANS[clinic.plan].priceUsd} USD`,
+    overageFee: t?.overageFee ?? `${usd(OVERAGE_USD_PER_MIN, 2)} USD`,
+    setupFee: t?.setupFee ?? "",
+    trialDays: t?.trialDays ? String(t.trialDays) : "",
+    paymentMethod: t?.paymentMethod ?? "Ödeme bağlantısı (Ruul)",
+    lineFeesBy: (t?.lineFeesBy ?? "clinic") as ContractTerms["lineFeesBy"],
+  });
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setF((p) => ({ ...p, [k]: e.target.value }));
+  const { status, reason, accepted } = clinic.contract;
+  const when = accepted ? new Date(accepted.acceptedAt).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" }) : null;
+
+  return (
+    <Block
+      title={`Sözleşme — ${CONTRACT_STATUS[status]}`}
+      hint="Bilgileri gir ve kaydet; klinik panele girince iki sözleşmeyi görüp tik atarak kabul eder. Kabul olmadan hat bağlanmaz. Bilgileri değiştirirsen yeniden kabul ister."
+    >
+      {accepted && (
+        <p className="text-[11px] text-muted-foreground">
+          Son kabul: {when} · {accepted.method === "paper" ? "ıslak imza" : accepted.email ?? "—"} · sürüm {accepted.version}
+          {status === "required" && <span className="text-warning"> — eski metin/bilgiler; yeniden kabul gerekiyor</span>}
+        </p>
+      )}
+      {status === "none" && reason && <p className="text-[11px] text-missed">{reason}</p>}
+      <form
+        className="space-y-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void act({ action: "setContractTerms", clinicId: clinic.id, terms: f });
+        }}
+      >
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Field label="Unvan">
+            <input value={f.legalName} onChange={set("legalName")} placeholder="Örnek Ağız ve Diş Sağlığı Ltd. Şti." className={inputClass} />
+          </Field>
+          <Field label="Vergi dairesi / no">
+            <input value={f.taxId} onChange={set("taxId")} placeholder="Nilüfer VD / 1234567890" className={inputClass} />
+          </Field>
+          <Field label="Adres">
+            <input value={f.address} onChange={set("address")} className={inputClass} />
+          </Field>
+          <Field label="Bildirim e-postası">
+            <input value={f.email} onChange={set("email")} placeholder="info@klinik.com" className={inputClass} />
+          </Field>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <Field label="Aylık ücret (KDV hariç)">
+            <input value={f.monthlyFee} onChange={set("monthlyFee")} className={inputClass} />
+          </Field>
+          <Field label="Aşım ücreti / dk">
+            <input value={f.overageFee} onChange={set("overageFee")} className={inputClass} />
+          </Field>
+          <Field label="Kurulum ücreti (boş = yok)">
+            <input value={f.setupFee} onChange={set("setupFee")} className={inputClass} />
+          </Field>
+          <Field label="Ücretsiz deneme, gün (boş = yok)">
+            <input value={f.trialDays} onChange={set("trialDays")} inputMode="numeric" placeholder="14" className={inputClass} />
+          </Field>
+          <Field label="Ödeme yöntemi">
+            <input value={f.paymentMethod} onChange={set("paymentMethod")} className={inputClass} />
+          </Field>
+          <Field label="Hat / operatör ücretleri">
+            <select value={f.lineFeesBy} onChange={set("lineFeesBy")} className={inputClass}>
+              <option value="clinic">Klinik öder</option>
+              <option value="provider">Hizmet Sağlayıcı öder</option>
+            </select>
+          </Field>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Paket ve dakika, yukarıdaki Ayarlar&apos;dan gelir ({PLANS[clinic.plan].label}, {clinic.minutesQuota} dk).
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <ActionButton type="submit" disabled={busy}>
+            Sözleşme bilgilerini kaydet
+          </ActionButton>
+          {status === "required" && (
+            <ActionButton
+              disabled={busy}
+              onClick={() => void act({ action: "recordPaperContract", clinicId: clinic.id })}
+            >
+              Islak imzalı olarak işaretle
             </ActionButton>
           )}
         </div>

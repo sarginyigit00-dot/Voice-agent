@@ -620,3 +620,38 @@ create table if not exists public.onboarding_emails (
 );
 
 alter table public.onboarding_emails enable row level security;
+
+-- Contracts accepted in the panel (lib/contracts/server.ts). The operator fills
+-- each clinic's terms (customer details + Ek-1) in /admin; the clinic's staff
+-- accept Hizmet Sözleşmesi + Veri İşleme Sözleşmesi with two ticks
+-- (components/app/contract-gate.tsx), or the operator records a paper
+-- signature. Each acceptance keeps the exact documents shown and their
+-- SHA-256 — the evidence the contracts' HMK md. 193 clause points at — so rows
+-- are never updated, and a clinic can't be deleted out from under them.
+-- Service-role only (RLS on, no policies).
+create table if not exists public.clinic_contracts (
+  clinic_id uuid primary key references public.clinics (id) on delete cascade,
+  terms jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.clinic_contracts enable row level security;
+
+create table if not exists public.contract_acceptances (
+  id uuid primary key default gen_random_uuid(),
+  clinic_id uuid not null references public.clinics (id) on delete restrict,
+  -- 'click' = accepted in the panel; 'paper' = signed by hand, recorded in /admin
+  method text not null check (method in ('click', 'paper')),
+  user_id uuid references auth.users (id) on delete set null,
+  email text,
+  version text not null,
+  digest text not null,
+  document jsonb not null,
+  ip text,
+  user_agent text,
+  accepted_at timestamptz not null default now()
+);
+
+create index if not exists contract_acceptances_clinic_idx on public.contract_acceptances (clinic_id, accepted_at desc);
+
+alter table public.contract_acceptances enable row level security;

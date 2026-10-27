@@ -55,18 +55,18 @@ Kişisel verileriniz yalnızca yukarıdaki amaçlarla ve gerektiği ölçüde ş
 
 **Yurt dışına aktarım:** Ses altyapısı, yapay zekâ dil modeli ve veri barındırma
 sağlayıcılarının sunucuları yurt dışında bulunduğundan, form ve görüşme verileriniz yurt
-dışına aktarılır. Bu aktarım KVKK
-md. 9'da öngörülen güvencelerle yapılır. [Hangi güvence: standart sözleşme vb. — Randevox'tan
-teyit edilecek]
+dışına aktarılır. Bu aktarım, söz konusu sağlayıcıların veri işleme sözleşmeleri kapsamında,
+yalnızca yukarıdaki amaçlarla yapılır.
 
 ### 6. Toplama yöntemi
 Verileriniz web sitemizdeki form, reklam platformlarındaki başvuru formları ve telefon
 görüşmeleri aracılığıyla, elektronik ortamda, otomatik yollarla toplanır.
 
 ### 7. Saklama süresi
-Görüşme kayıtları ve form başvuruları [süre, ör. 2 yıl], randevu ve tedaviye ilişkin kayıtlar
-ilgili mevzuatta öngörülen süreler boyunca saklanır; süre sonunda silinir, yok edilir veya
-anonim hale getirilir.
+Görüşmelerin ses kayıtları 3 ay; yazılı dökümleri, özetleri, adınız ve telefon numaranız ile
+form başvuruları 12 ay saklanır ve süre sonunda otomatik olarak silinir. Randevu ve tedaviye
+ilişkin kayıtlar ilgili mevzuatta öngörülen süreler boyunca saklanır; süre sonunda silinir, yok
+edilir veya anonim hale getirilir.
 
 ### 8. Haklarınız (KVKK md. 11)
 Klinik'e başvurarak şu haklarınızı kullanabilirsiniz:

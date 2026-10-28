@@ -197,18 +197,23 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Block({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+/** A section's body: its hint, then its controls. The title lives on the SectionRow above it. */
+function Block({ hint, children }: { hint?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2 border-t border-border/60 pt-3 first:border-t-0 first:pt-0">
-      <div>
-        <h3 className="text-xs font-semibold">{title}</h3>
-        {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
-      </div>
+    <div className="space-y-2">
+      {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
       {children}
     </div>
   );
 }
 
+type Group = "setup" | "account";
+
+/**
+ * "Yönet": three cards. Destek opens the clinic's panel straight away; Kurulum
+ * and Hesap ve ödeme each open their own list of collapsed sections, one group
+ * and one section at a time — so only one form is ever on screen.
+ */
 function ClinicEditor({
   clinic,
   users,
@@ -222,26 +227,192 @@ function ClinicEditor({
   supportReady: boolean;
   act: Act;
 }) {
+  const [group, setGroup] = useState<Group | null>(null);
+  const [section, setSection] = useState<string | null>(null);
+
+  function pickGroup(g: Group) {
+    setGroup(group === g ? null : g);
+    setSection(null);
+  }
+
+  const inbound = clinic.agents.find((a) => a.id === clinic.phone?.inboundAgentId);
+  const phoneOk = Boolean(clinic.vapiPhoneNumberId && !clinic.phone?.error && inbound);
+  const callback = clinic.agents.find((a) => a.id === clinic.callbackAgentId);
+  const billing = effectiveBilling(clinic);
+
+  const setup: Section[] = [
+    {
+      id: "phone",
+      title: "Telefon ve ajanlar",
+      status: !clinic.vapiPhoneNumberId
+        ? { text: "numara yok", ok: false }
+        : inbound && phoneOk
+          ? { text: `${clinic.phone?.number ?? "numara"} → ${inbound.name}`, ok: true }
+          : { text: clinic.phone?.error ? "hata" : "ajana bağlı değil", ok: false },
+      body: <PhoneForm clinic={clinic} busy={busy} act={act} />,
+    },
+    {
+      id: "calendar",
+      title: "Takvim (Cal.com)",
+      status: { text: clinic.calendarConnected ? "bağlı" : "bağlı değil", ok: clinic.calendarConnected },
+      body: <CalendarForm clinic={clinic} busy={busy} act={act} />,
+    },
+    {
+      id: "callback",
+      title: "Hızlı geri dönüş",
+      status: { text: callback ? `açık (${callback.name})` : "kapalı" },
+      body: <CallbackForm clinic={clinic} busy={busy} act={act} />,
+    },
+    {
+      id: "contact",
+      title: "İletişim ve mesajlar",
+      status: { text: `hasta mesajları: ${MESSAGE_CHANNEL[clinic.messageChannel]}` },
+      body: <ContactForm clinic={clinic} busy={busy} act={act} />,
+    },
+    {
+      id: "members",
+      title: "Kullanıcılar",
+      status: { text: `${clinic.members.length} kullanıcı`, ok: clinic.members.length > 0 },
+      body: <Members clinic={clinic} users={users} busy={busy} act={act} />,
+    },
+  ];
+
+  const account: Section[] = [
+    {
+      id: "plan",
+      title: "Paket ve durum",
+      status: {
+        text: `${PLANS[clinic.plan].label} · ${clinic.minutesQuota} dk${clinic.status === "suspended" ? " · askıda" : ""}`,
+        ok: clinic.status === "suspended" ? false : undefined,
+      },
+      body: <PlanForm clinic={clinic} busy={busy} act={act} />,
+    },
+    {
+      id: "billing",
+      title: "Abonelik (Ruul)",
+      status: { text: BILLING_STATUSES[billing].toLocaleLowerCase("tr-TR"), ok: billing === "active" },
+      body: <BillingForm clinic={clinic} busy={busy} act={act} />,
+    },
+    {
+      id: "contract",
+      title: "Sözleşme",
+      status: { text: CONTRACT_STATUS[clinic.contract.status], ok: clinic.contract.status === "accepted" },
+      body: <ContractForm clinic={clinic} busy={busy} act={act} />,
+    },
+  ];
+
+  const sections = group === "setup" ? setup : group === "account" ? account : null;
+
   return (
     <div className="space-y-3 border-t border-border/60 bg-muted/40 px-3 py-3">
-      <SupportBlock clinic={clinic} busy={busy} supportReady={supportReady} act={act} />
-      <SettingsForm clinic={clinic} busy={busy} act={act} />
-      <BillingForm clinic={clinic} busy={busy} act={act} />
-      <ContractForm clinic={clinic} busy={busy} act={act} />
-      <PhoneForm clinic={clinic} busy={busy} act={act} />
-      <CallbackForm clinic={clinic} busy={busy} act={act} />
-      <CalendarForm clinic={clinic} busy={busy} act={act} />
-      <Members clinic={clinic} users={users} busy={busy} act={act} />
+      <div className="grid gap-2 sm:grid-cols-3">
+        <SupportCard clinic={clinic} busy={busy} supportReady={supportReady} act={act} />
+        <GroupCard title="Kurulum" active={group === "setup"} onClick={() => pickGroup("setup")}>
+          <Check ok={phoneOk}>Telefon</Check>
+          <Check ok={clinic.calendarConnected}>Takvim</Check>
+          <span>{clinic.members.length} kullanıcı</span>
+        </GroupCard>
+        <GroupCard title="Hesap ve ödeme" active={group === "account"} onClick={() => pickGroup("account")}>
+          <span>{PLANS[clinic.plan].label}</span>
+          <Check ok={billing === "active"}>Abonelik</Check>
+          <Check ok={clinic.contract.status === "accepted"}>Sözleşme</Check>
+        </GroupCard>
+      </div>
+
+      {sections && (
+        <ul className="divide-y divide-border/60 rounded-lg border border-border bg-background">
+          {sections.map((sec) => (
+            <SectionRow
+              key={sec.id}
+              section={sec}
+              open={section === sec.id}
+              onToggle={() => setSection(section === sec.id ? null : sec.id)}
+            />
+          ))}
+        </ul>
+      )}
     </div>
+  );
+}
+
+interface Section {
+  id: string;
+  title: string;
+  /** ok: true = green, false = red, undefined = neutral. */
+  status: { text: string; ok?: boolean };
+  body: React.ReactNode;
+}
+
+const MESSAGE_CHANNEL = { off: "kapalı", sms: "SMS", whatsapp: "WhatsApp" } as const;
+
+function GroupCard({
+  title,
+  active,
+  onClick,
+  children,
+}: {
+  title: string;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-expanded={active}
+      className={cn(
+        "cursor-pointer rounded-lg border bg-background p-3 text-left transition-colors",
+        active ? "border-foreground" : "border-border hover:border-foreground/40",
+      )}
+    >
+      <span className="flex items-center justify-between text-sm font-semibold">
+        {title}
+        <span className="text-xs text-muted-foreground">{active ? "▴" : "▾"}</span>
+      </span>
+      <span className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">{children}</span>
+    </button>
+  );
+}
+
+function Check({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+  return (
+    <span>
+      <span className={ok ? "text-booked" : "text-missed"}>{ok ? "✓" : "✗"}</span> {children}
+    </span>
+  );
+}
+
+function SectionRow({ section, open, onToggle }: { section: Section; open: boolean; onToggle: () => void }) {
+  const { title, status, body } = section;
+  return (
+    <li>
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/40"
+      >
+        <span className="font-medium">{title}</span>
+        <span
+          className={cn(
+            "ml-auto min-w-0 truncate text-xs",
+            status.ok === true ? "text-booked" : status.ok === false ? "text-missed" : "text-muted-foreground",
+          )}
+        >
+          {status.text}
+        </span>
+        <span className="shrink-0 text-xs text-muted-foreground">{open ? "▴" : "▾"}</span>
+      </button>
+      {open && <div className="border-t border-border/60 px-3 py-3">{body}</div>}
+    </li>
   );
 }
 
 /**
  * "Panelini aç": the clinic's own panel in a new tab, signed in as the support
  * account (lib/admin/support.ts). Full access, a "Destek modu" strip on top,
- * and every opening logged.
+ * and every opening logged. The whole card is the button.
  */
-function SupportBlock({
+function SupportCard({
   clinic,
   busy,
   supportReady,
@@ -266,49 +437,48 @@ function SupportBlock({
   }
 
   const last = clinic.lastSupportAccess
-    ? new Date(clinic.lastSupportAccess).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })
+    ? new Date(clinic.lastSupportAccess).toLocaleString("tr-TR", {
+        timeZone: "Europe/Istanbul",
+        dateStyle: "short",
+        timeStyle: "short",
+      })
     : null;
 
   return (
-    <Block
-      title="Destek"
-      hint={
-        supportReady
-          ? "Kliniğin kendi panelini yeni sekmede, sahibi yetkisiyle açar. Panelde \"Destek modu\" şeridi görünür; her giriş kayda geçer."
-          : "SUPPORT_EMAIL ayarlı değil — .env.local'e ve Vercel'e destek hesabının e-postasını ekle."
-      }
+    <button
+      onClick={() => void open()}
+      disabled={busy || !supportReady}
+      title={'Kliniğin panelini yeni sekmede sahibi yetkisiyle açar. Panelde "Destek modu" şeridi görünür; her giriş kayda geçer.'}
+      className="cursor-pointer rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-foreground/40 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <ActionButton disabled={busy || !supportReady} onClick={() => void open()}>
-          Panelini aç
-        </ActionButton>
-        <span className="text-[11px] text-muted-foreground">
-          {last ? `Son destek girişi: ${last}` : "Henüz destek girişi yok."}
-        </span>
-      </div>
-    </Block>
+      <span className="flex items-center justify-between text-sm font-semibold">
+        Destek
+        <span className="text-xs text-muted-foreground">↗</span>
+      </span>
+      <span className="mt-1.5 block text-xs text-muted-foreground">
+        {!supportReady
+          ? "SUPPORT_EMAIL ayarlı değil — .env.local'e ve Vercel'e ekle."
+          : last
+            ? `Panelini aç · son giriş ${last}`
+            : "Panelini aç · henüz giriş yok"}
+      </span>
+    </button>
   );
 }
 
-function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
+/** Hesap ve ödeme → Paket ve durum. Sends only its own fields; the server patches what it gets. */
+function PlanForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
   const [f, setF] = useState({
     name: clinic.name,
     plan: clinic.plan,
     minutesQuota: String(clinic.minutesQuota),
     status: clinic.status,
-    notifyEmail: clinic.notifyEmail ?? "",
-    transferNumber: clinic.transferNumber ?? "",
-    crmWebhookUrl: clinic.crmWebhookUrl ?? "",
-    timeZone: clinic.timeZone,
-    vapiPhoneNumberId: clinic.vapiPhoneNumberId ?? "",
-    vapiOutboundPhoneNumberId: clinic.vapiOutboundPhoneNumberId ?? "",
-    messageChannel: clinic.messageChannel,
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((prev) => ({ ...prev, [k]: e.target.value }));
 
   return (
-    <Block title="Ayarlar" hint="Paketi değiştirmek kotayı değiştirmez; özel anlaşmalar için kotayı ayrıca yaz.">
+    <Block hint="Paketi değiştirmek kotayı değiştirmez; özel anlaşmalar için kotayı ayrıca yaz.">
       <form
         className="space-y-2"
         onSubmit={(e) => {
@@ -332,33 +502,42 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
               <option value="suspended">Askıda (ajan aramaları yetkiliye aktarır)</option>
             </select>
           </Field>
+        </div>
+        <ActionButton type="submit" disabled={busy}>
+          Kaydet
+        </ActionButton>
+      </form>
+    </Block>
+  );
+}
+
+/** Kurulum → İletişim ve mesajlar: where the clinic is reached, and how patients are messaged. */
+function ContactForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
+  const [f, setF] = useState({
+    notifyEmail: clinic.notifyEmail ?? "",
+    transferNumber: clinic.transferNumber ?? "",
+    messageChannel: clinic.messageChannel,
+    crmWebhookUrl: clinic.crmWebhookUrl ?? "",
+    timeZone: clinic.timeZone,
+  });
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setF((prev) => ({ ...prev, [k]: e.target.value }));
+
+  return (
+    <Block>
+      <form
+        className="space-y-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void act({ action: "update", clinicId: clinic.id, fields: f });
+        }}
+      >
+        <div className="grid gap-2 sm:grid-cols-3">
           <Field label="Bildirim e-postası">
             <input value={f.notifyEmail} onChange={set("notifyEmail")} placeholder="klinik@ornek.com" className={inputClass} />
           </Field>
           <Field label="Aktarma numarası">
             <input value={f.transferNumber} onChange={set("transferNumber")} placeholder="+90 212 555 00 00" className={inputClass} />
-          </Field>
-          <Field label="CRM webhook (opsiyonel)">
-            <input value={f.crmWebhookUrl} onChange={set("crmWebhookUrl")} placeholder="https://…" className={inputClass} />
-          </Field>
-          <Field label="Saat dilimi">
-            <input value={f.timeZone} onChange={set("timeZone")} className={inputClass} />
-          </Field>
-          <Field label="Vapi numara ID">
-            <input
-              value={f.vapiPhoneNumberId}
-              onChange={set("vapiPhoneNumberId")}
-              placeholder="Vapi → Phone Numbers → ID"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Giden arama numara ID (opsiyonel)">
-            <input
-              value={f.vapiOutboundPhoneNumberId}
-              onChange={set("vapiOutboundPhoneNumberId")}
-              placeholder="Boşsa gelen arama numarası"
-              className={inputClass}
-            />
           </Field>
           <Field label="Hasta mesajları (onay, hatırlatma)">
             {/* SMS needs the NETGSM_* variables on the automation app; WhatsApp needs Meta-approved templates. */}
@@ -368,9 +547,15 @@ function SettingsForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
               <option value="whatsapp">WhatsApp</option>
             </select>
           </Field>
+          <Field label="CRM webhook (opsiyonel)">
+            <input value={f.crmWebhookUrl} onChange={set("crmWebhookUrl")} placeholder="https://…" className={inputClass} />
+          </Field>
+          <Field label="Saat dilimi">
+            <input value={f.timeZone} onChange={set("timeZone")} className={inputClass} />
+          </Field>
         </div>
         <ActionButton type="submit" disabled={busy}>
-          Ayarları kaydet
+          Kaydet
         </ActionButton>
       </form>
     </Block>
@@ -397,7 +582,7 @@ function BillingBadge({ clinic }: { clinic: AdminClinic }) {
 /**
  * Ruul subscription, recorded by hand: the checkout link goes to the clinic
  * over WhatsApp/e-mail, and the operator marks it paid here. Changing it never
- * suspends the clinic — that stays a separate, deliberate choice in Ayarlar.
+ * suspends the clinic — that stays a separate, deliberate choice in Paket ve durum.
  */
 function BillingForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
   const [f, setF] = useState({
@@ -410,7 +595,6 @@ function BillingForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean
 
   return (
     <Block
-      title={`Abonelik (Ruul) — ${BILLING_STATUSES[effectiveBilling(clinic)].toLocaleLowerCase("tr-TR")}`}
       hint="Ödeme linkini müşteriye kendin gönderirsin; ödeme gelince durumu ve son günü buradan işaretle."
     >
       <form
@@ -509,7 +693,6 @@ function ContractForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
 
   return (
     <Block
-      title={`Sözleşme — ${CONTRACT_STATUS[status]}`}
       hint="Bilgileri gir ve kaydet; klinik panele girince iki sözleşmeyi görüp tik atarak kabul eder. Kabul olmadan hat bağlanmaz. Bilgileri değiştirirsen yeniden kabul ister."
     >
       {accepted && (
@@ -564,7 +747,7 @@ function ContractForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
           </Field>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Paket ve dakika, yukarıdaki Ayarlar&apos;dan gelir ({PLANS[clinic.plan].label}, {clinic.minutesQuota} dk).
+          Paket ve dakika, Paket ve durum bölümünden gelir ({PLANS[clinic.plan].label}, {clinic.minutesQuota} dk).
         </p>
         <div className="flex flex-wrap gap-2">
           <ActionButton type="submit" disabled={busy}>
@@ -595,15 +778,18 @@ function PhoneForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; 
   const night = clinic.agents.find((a) => a.id === clinic.afterHoursAgentId);
   const [agentId, setAgentId] = useState(clinic.phone?.inboundAgentId ?? "");
   const [nightId, setNightId] = useState(clinic.afterHoursAgentId ?? "");
+  const [ids, setIds] = useState({
+    vapiPhoneNumberId: clinic.vapiPhoneNumberId ?? "",
+    vapiOutboundPhoneNumberId: clinic.vapiOutboundPhoneNumberId ?? "",
+  });
 
   return (
     <Block
-      title="Telefon (Vapi)"
       hint="Numara Vapi panelinde bir kez eklenir (TELEFON-KURULUMU.md). Ajanlar buradan kurulur, numarayı hangisinin açacağını buradan seçersin."
     >
       <p className="text-xs">
         {!clinic.vapiPhoneNumberId ? (
-          <span className="text-missed">{"Numara yok — Ayarlar'a Vapi numara ID'sini yaz."}</span>
+          <span className="text-missed">{"Numara yok — aşağıya Vapi numara ID'sini yaz."}</span>
         ) : clinic.phone?.error ? (
           <span className="text-missed">{clinic.phone.error}</span>
         ) : (
@@ -679,6 +865,37 @@ function PhoneForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; 
       <p className="text-[11px] text-muted-foreground">
         {"Mesai saatleri, gündüz ajanının çalışma saatleridir. Mesai dışı ajanı randevuyu bu saatlere verir, aktarma yapmaz."}
       </p>
+      <form
+        className="flex flex-wrap items-end gap-2 border-t border-border/60 pt-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void act({ action: "update", clinicId: clinic.id, fields: ids });
+        }}
+      >
+        <div className="w-full max-w-[240px]">
+          <Field label="Vapi numara ID">
+            <input
+              value={ids.vapiPhoneNumberId}
+              onChange={(e) => setIds((p) => ({ ...p, vapiPhoneNumberId: e.target.value }))}
+              placeholder="Vapi → Phone Numbers → ID"
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        <div className="w-full max-w-[240px]">
+          <Field label="Giden arama numara ID (opsiyonel)">
+            <input
+              value={ids.vapiOutboundPhoneNumberId}
+              onChange={(e) => setIds((p) => ({ ...p, vapiOutboundPhoneNumberId: e.target.value }))}
+              placeholder="Boşsa gelen arama numarası"
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        <ActionButton type="submit" disabled={busy}>
+          Numara ID kaydet
+        </ActionButton>
+      </form>
     </Block>
   );
 }
@@ -699,13 +916,11 @@ const LEAD_STATUS_LABEL = {
 function CallbackForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
   const provisioned = clinic.agents.filter((a) => a.vapiAssistantId);
   const [agentId, setAgentId] = useState(clinic.callbackAgentId ?? "");
-  const current = clinic.agents.find((a) => a.id === clinic.callbackAgentId);
   const url = clinic.leadFormKey ? `https://www.${appConfig.domain}/api/leads?key=${clinic.leadFormKey}` : null;
   const counts = Object.entries(clinic.leadCounts).filter(([, n]) => n > 0);
 
   return (
     <Block
-      title={`Hızlı geri dönüş — ${current ? `açık (${current.name})` : "kapalı"}`}
       hint="Kliniğin formunu dolduran hastayı seçilen ajan hemen arar; mesai dışındaysa klinik açılınca. Kurulum: HIZLI-GERI-DONUS.md."
     >
       <div className="flex flex-wrap items-end gap-2">
@@ -753,7 +968,6 @@ function CalendarForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
 
   return (
     <Block
-      title={`Takvim (Cal.com) — ${clinic.calendarConnected ? "bağlı" : "bağlı değil"}`}
       hint="Anahtar kaydedildikten sonra bir daha gösterilmez. Değiştirmek için yenisini yaz."
     >
       <form
@@ -817,7 +1031,7 @@ function Members({
   const [role, setRole] = useState<"owner" | "staff">("staff");
 
   return (
-    <Block title="Kullanıcılar" hint="Kayıt kapalı: klinik çalışanlarının hesabını buradan sen açarsın, şifreyi kendin iletirsin.">
+    <Block hint="Kayıt kapalı: klinik çalışanlarının hesabını buradan sen açarsın, şifreyi kendin iletirsin.">
       {clinic.members.length === 0 ? (
         <p className="text-xs text-missed">Bu klinikte kimse yok — panele kimse giremez.</p>
       ) : (

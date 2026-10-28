@@ -1,6 +1,7 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { listClinics, type AdminClinic } from "@/lib/admin/clinics";
 import { isSupportUser, supportEmail } from "@/lib/admin/support";
+import { featureLabel } from "@/lib/usage/features";
 
 /**
  * Everything the /admin panel shows, read with the service-role client.
@@ -55,6 +56,28 @@ export interface FeedbackEntry {
   createdAt: string;
 }
 
+/** A person in the Özet tab's lists. */
+export interface ActivityUser {
+  id: string;
+  email: string | null;
+  clinicName: string | null;
+  /** Last panel visit or sign-in, whichever is later; null = never. */
+  lastSeenAt: string | null;
+  createdAt: string;
+}
+
+/** The /admin "Özet" tab — panel usage over the last 7 days (usage_events). */
+export interface AdminActivity {
+  /** False when usage_events has no rows yet (tracking just started). */
+  tracking: boolean;
+  /** First day with any usage row, YYYY-MM-DD. */
+  since: string | null;
+  activeUsers: number;
+  topFeatures: { label: string; hits: number; users: number }[];
+  inactive: ActivityUser[];
+  newThisWeek: ActivityUser[];
+}
+
 export interface AdminOverview {
   /** False when SUPABASE_SERVICE_ROLE_KEY / URL are missing — panel says so. */
   connected: boolean;
@@ -64,6 +87,7 @@ export interface AdminOverview {
   demoRequests: DemoRequest[];
   feedback: FeedbackEntry[];
   clinics: AdminClinic[];
+  activity: AdminActivity;
   totals: {
     users: number;
     newToday: number;
@@ -80,6 +104,7 @@ const EMPTY: AdminOverview = {
   demoRequests: [],
   feedback: [],
   clinics: [],
+  activity: { tracking: false, since: null, activeUsers: 0, topFeatures: [], inactive: [], newThisWeek: [] },
   totals: { users: 0, newToday: 0, unconfirmed: 0, appointments: null },
 };
 
@@ -166,6 +191,91 @@ async function listFeedback(
   );
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const ISTANBUL_OFFSET = 3 * 60 * 60 * 1000;
+
+/** YYYY-MM-DD of an instant in Istanbul — the calendar usage_events.day is kept in. */
+function istanbulDay(at: Date): string {
+  return new Date(at.getTime() + ISTANBUL_OFFSET).toISOString().slice(0, 10);
+}
+
+/** Monday 00:00 of the current week, Istanbul time. */
+function weekStartIstanbul(now = new Date()): Date {
+  const local = new Date(now.getTime() + ISTANBUL_OFFSET);
+  const sinceMonday = (local.getUTCDay() + 6) % 7;
+  const monday = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - sinceMonday);
+  return new Date(monday - ISTANBUL_OFFSET);
+}
+
+/**
+ * Last 7 days of usage_events, folded into the Özet tab's four boxes. Users
+ * and clinics come from the overview already loaded, so the support account
+ * stays out here too.
+ */
+async function getActivity(
+  supabase: NonNullable<ReturnType<typeof getSupabaseServer>>,
+  users: AdminUser[],
+  clinics: AdminClinic[],
+): Promise<AdminActivity> {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * DAY_MS);
+
+  const [recent, first] = await Promise.all([
+    supabase
+      .from("usage_events")
+      .select("user_id, feature, hits, last_at")
+      .gte("day", istanbulDay(new Date(now.getTime() - 6 * DAY_MS))),
+    supabase.from("usage_events").select("day").order("day").limit(1).maybeSingle(),
+  ]);
+  if (recent.error) console.error("[admin] failed to read usage_events:", recent.error.message);
+  const rows = recent.data ?? [];
+
+  const lastUse = new Map<string, string>();
+  const byFeature = new Map<string, { hits: number; users: Set<string> }>();
+  for (const r of rows) {
+    const userId = r.user_id as string;
+    const at = r.last_at as string;
+    if ((lastUse.get(userId) ?? "") < at) lastUse.set(userId, at);
+    const f = byFeature.get(r.feature as string) ?? { hits: 0, users: new Set<string>() };
+    f.hits += r.hits as number;
+    f.users.add(userId);
+    byFeature.set(r.feature as string, f);
+  }
+
+  const clinicOf = new Map<string, string>();
+  for (const c of clinics) for (const m of c.members) if (!clinicOf.has(m.userId)) clinicOf.set(m.userId, c.name);
+
+  const person = (u: AdminUser): ActivityUser => {
+    const used = lastUse.get(u.id) ?? null;
+    const signedIn = u.lastSignInAt;
+    return {
+      id: u.id,
+      email: u.email,
+      clinicName: clinicOf.get(u.id) ?? null,
+      lastSeenAt: used && signedIn ? (used > signedIn ? used : signedIn) : (used ?? signedIn),
+      createdAt: u.createdAt,
+    };
+  };
+
+  const weekStart = weekStartIstanbul(now);
+  const inactive = users
+    .map(person)
+    .filter((p) => !p.lastSeenAt || new Date(p.lastSeenAt) < weekAgo)
+    .sort((a, b) => (a.lastSeenAt ?? "").localeCompare(b.lastSeenAt ?? ""));
+
+  return {
+    tracking: Boolean(first.data),
+    since: (first.data?.day as string | undefined) ?? null,
+    activeUsers: users.filter((u) => lastUse.has(u.id)).length,
+    topFeatures: [...byFeature.entries()]
+      .map(([id, f]) => ({ label: featureLabel(id), hits: f.hits, users: f.users.size }))
+      .sort((a, b) => b.hits - a.hits)
+      .slice(0, 3),
+    inactive,
+    newThisWeek: users.filter((u) => new Date(u.createdAt) >= weekStart).map(person),
+  };
+}
+
 export async function getAdminOverview(): Promise<AdminOverview> {
   const supabase = getSupabaseServer();
   if (!supabase) return EMPTY;
@@ -204,6 +314,8 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     ),
   ]);
 
+  const activity = await getActivity(supabase, users, clinics);
+
   return {
     connected: true,
     supportReady: supportEmail() !== null,
@@ -211,6 +323,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     demoRequests,
     feedback,
     clinics,
+    activity,
     totals: {
       users: users.length,
       newToday: users.filter((u) => new Date(u.createdAt) >= startOfToday).length,

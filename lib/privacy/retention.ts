@@ -13,11 +13,14 @@ import { deleteCall, isVapiConfigured } from "@/lib/vapi/client";
  *   (date, duration, outcome, sentiment): transcript, summary, name and
  *   number are wiped. CRM records and callback leads are deleted.
  *
+ * - After USAGE_DAYS panel usage rows (usage_events) are deleted.
+ *
  * Appointments are left alone: the clinic's calendar needs them.
  */
 
 export const RECORDING_DAYS = 90;
 export const TRANSCRIPT_DAYS = 365;
+export const USAGE_DAYS = 180;
 
 /** Vapi deletions per run — each is one HTTP call; the rest wait for tomorrow. */
 const VAPI_BATCH = 50;
@@ -28,6 +31,7 @@ export interface RetentionResult {
   callsAnonymised: number;
   crmRecordsDeleted: number;
   leadsDeleted: number;
+  usageRowsDeleted: number;
   errors: string[];
 }
 
@@ -40,6 +44,7 @@ export async function runRetention(): Promise<RetentionResult> {
     callsAnonymised: 0,
     crmRecordsDeleted: 0,
     leadsDeleted: 0,
+    usageRowsDeleted: 0,
     errors: [],
   };
   const supabase = getSupabaseServer();
@@ -99,6 +104,15 @@ export async function runRetention(): Promise<RetentionResult> {
     .select("id");
   if (leadsError) result.errors.push(`leads silinemedi: ${leadsError.message}`);
   else result.leadsDeleted = leads?.length ?? 0;
+
+  // 4. Panel usage rows (the /admin Özet tab only looks back 7 days).
+  const { data: usage, error: usageError } = await supabase
+    .from("usage_events")
+    .delete()
+    .lt("day", daysAgo(USAGE_DAYS).slice(0, 10))
+    .select("user_id");
+  if (usageError) result.errors.push(`usage_events silinemedi: ${usageError.message}`);
+  else result.usageRowsDeleted = usage?.length ?? 0;
 
   if (result.errors.length) result.status = "partial";
   return result;

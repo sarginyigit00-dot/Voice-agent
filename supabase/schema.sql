@@ -609,6 +609,36 @@ create index if not exists support_access_log_clinic_idx on public.support_acces
 
 alter table public.support_access_log enable row level security;
 
+-- Panel kullanımı (app/api/usage): one row per user, feature and Istanbul day,
+-- with a hit counter — which cockpit page was opened on which day, nothing
+-- from the page itself. Feeds the /admin "Özet" tab; deleted after 180 days
+-- (lib/privacy/retention.ts). Service-role only (RLS on, no policies).
+create table if not exists public.usage_events (
+  user_id uuid not null,
+  clinic_id uuid references public.clinics (id) on delete cascade,
+  feature text not null,
+  day date not null default ((now() at time zone 'Europe/Istanbul')::date),
+  hits int not null default 1,
+  last_at timestamptz not null default now(),
+  primary key (user_id, feature, day)
+);
+
+create index if not exists usage_events_day_idx on public.usage_events (day desc);
+
+alter table public.usage_events enable row level security;
+
+create or replace function public.bump_usage(p_user uuid, p_clinic uuid, p_feature text)
+returns void
+language sql
+as $$
+  insert into public.usage_events (user_id, clinic_id, feature)
+  values (p_user, p_clinic, p_feature)
+  on conflict (user_id, feature, day)
+  do update set hits = public.usage_events.hits + 1, last_at = now(), clinic_id = excluded.clinic_id;
+$$;
+
+revoke execute on function public.bump_usage(uuid, uuid, text) from public, anon, authenticated;
+
 -- Onboarding mails (lib/onboarding/emails.ts): one row per clinic per mail that
 -- went out — welcome (marked "Aktif"), ready ("Numaraya bağla"), day3, day7.
 -- The primary key is what keeps each mail to once. Service-role only (RLS on, no policies).

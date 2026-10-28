@@ -59,8 +59,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "6. Saklama süresi", en: "6. Retention" },
     body: [
       {
-        tr: "Çağrı ses kayıtları 3 ay sonra, transkriptler, özetler ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir; raporlar için yalnızca kişiyle ilişkilendirilemeyen istatistikler (tarih, süre, sonuç) kalır. Geri arama formu kayıtları da 12 ay sonra silinir. Randevu kayıtları, kliniğin takvimi için hesap kapanana kadar tutulur. Hesap kapandığında kalan veriler 30 gün içinde iade edilir veya silinir.",
-        en: "Call recordings are deleted automatically after 3 months; transcripts, summaries and the caller's name and number after 12 months, leaving only non-identifying statistics (date, duration, outcome) for reports. Callback-form entries are also deleted after 12 months. Appointment records are kept for the clinic's calendar until the account is closed. When an account is closed, the remaining data is returned or deleted within 30 days.",
+        tr: "Çağrı ses kayıtları 3 ay sonra, transkriptler, özetler ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir; raporlar için yalnızca kişiyle ilişkilendirilemeyen istatistikler (tarih, süre, sonuç) kalır. Geri arama formu kayıtları da 12 ay sonra silinir. Panel kullanım kayıtları (hangi panel sayfasının hangi gün açıldığı) 6 ay sonra silinir. Randevu kayıtları, kliniğin takvimi için hesap kapanana kadar tutulur. Hesap kapandığında kalan veriler 30 gün içinde iade edilir veya silinir.",
+        en: "Call recordings are deleted automatically after 3 months; transcripts, summaries and the caller's name and number after 12 months, leaving only non-identifying statistics (date, duration, outcome) for reports. Callback-form entries are also deleted after 12 months. Panel usage records (which panel page was opened on which day) are deleted after 6 months. Appointment records are kept for the clinic's calendar until the account is closed. When an account is closed, the remaining data is returned or deleted within 30 days.",
       },
     ],
   },

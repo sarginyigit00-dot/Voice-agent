@@ -9,6 +9,7 @@ import { MIN_PASSWORD_LENGTH } from "@/lib/admin/constants";
 import type { AdminOverview, AdminUser, DemoRequest, FeedbackEntry } from "@/lib/admin/queries";
 import type { EnvCheck, SystemHealth } from "@/lib/admin/health";
 import { ClinicsTab } from "./clinics-tab";
+import { OverviewTab } from "./overview-tab";
 import { ActionButton, EmptyRow } from "./controls";
 
 /**
@@ -27,7 +28,9 @@ import { ActionButton, EmptyRow } from "./controls";
 export function AdminPanel({ data, health }: { data: AdminOverview; health: SystemHealth }) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
-  const [tab, setTab] = useState<"clinics" | "users" | "requests" | "feedback" | "health">("clinics");
+  const [tab, setTab] = useState<"overview" | "clinics" | "users" | "requests" | "feedback" | "health">(
+    "overview",
+  );
   const [flash, setFlash] = useState<{ ok: boolean; message: string } | null>(null);
 
   async function logout() {
@@ -115,6 +118,9 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
       </div>
 
       <div className="mt-4 flex items-center gap-1 border-b border-border">
+        <Tab active={tab === "overview"} onClick={() => setTab("overview")}>
+          Özet
+        </Tab>
         <Tab active={tab === "clinics"} onClick={() => setTab("clinics")}>
           Klinikler ({clinics.length})
         </Tab>
@@ -133,6 +139,7 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
         </Tab>
       </div>
 
+      {tab === "overview" && <OverviewTab activity={data.activity} totalUsers={totals.users} />}
       {tab === "clinics" && (
         <ClinicsTab
           clinics={clinics}

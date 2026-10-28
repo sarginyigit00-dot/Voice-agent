@@ -113,6 +113,8 @@ export default function AppointmentsPage() {
     postCall: lang === "tr" ? "Görüşme sonrası" : "After the call",
     manual: lang === "tr" ? "Panelden" : "From the panel",
     newAppt: lang === "tr" ? "Yeni randevu" : "New appointment",
+    openGoogle: lang === "tr" ? "Google Takvim'de aç" : "Open in Google Calendar",
+    openGoogleDay: lang === "tr" ? "Bu günü Google Takvim'de aç" : "Open this day in Google Calendar",
     fName: lang === "tr" ? "Hasta adı" : "Patient name",
     fPhone: lang === "tr" ? "Telefon" : "Phone",
     fEmail: lang === "tr" ? "E-posta (isteğe bağlı)" : "Email (optional)",
@@ -176,6 +178,12 @@ export default function AppointmentsPage() {
       hour: "2-digit",
       minute: "2-digit",
     }).format(new Date(iso));
+
+  // Google Calendar's day view; Cal.com doesn't hand us the Google event id, so the day is as close as we get.
+  const googleDayUrl = (iso?: string) => {
+    const d = iso ? new Date(iso) : new Date();
+    return `https://calendar.google.com/calendar/r/day/${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+  };
 
   const open = rows?.find((r) => r.id === openId) ?? null;
 
@@ -350,6 +358,18 @@ export default function AppointmentsPage() {
             <span className="rounded px-2 py-1 font-mono text-[10px] uppercase tracking-wider" style={{ background: "var(--color-muted)", color: "var(--color-muted-foreground)" }}>
               {L.demoBadge}
             </span>
+          )}
+          {!isDemoData && (
+            <a
+              href={googleDayUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={L.openGoogle}
+              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Icon name="external-link" className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{L.openGoogle}</span>
+            </a>
           )}
           <button
             onClick={openCreate}
@@ -573,6 +593,17 @@ export default function AppointmentsPage() {
                 <p className="font-mono text-[12px] text-muted-foreground">
                   {fmtDate(open.startsAt)} · {fmtTime(open.startsAt)}
                 </p>
+                {!isDemoData && (
+                  <a
+                    href={googleDayUrl(open.startsAt)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-[12px] text-violet hover:underline"
+                  >
+                    <Icon name="external-link" className="h-3 w-3" />
+                    {L.openGoogleDay}
+                  </a>
+                )}
               </div>
               <button onClick={() => selectAppointment(null)} aria-label={L.close} className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted">
                 <Icon name="x" className="h-4 w-4" />

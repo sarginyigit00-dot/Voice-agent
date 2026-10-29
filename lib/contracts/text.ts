@@ -228,9 +228,9 @@ export const SERVICE_CLAUSES: Clause[] = [
   {
     title: "5. Ücret ve ödeme",
     paragraphs: [
-      "5.1. Klinik, Ek-1'de belirtilen aylık Paket ücretini her fatura döneminin başında peşin öder. Fatura dönemi Başlangıç Tarihi'nden itibaren birer aylık sürelerdir.",
+      "5.1. Klinik, Ek-1'de belirtilen aylık Paket ücretini her fatura döneminin başında peşin öder. Fatura dönemi takvim ayıdır (Türkiye saatiyle ayın 1'i 00:00'dan ay sonuna kadar). İlk ayın Paket ücreti, Başlangıç Tarihi'nden ay sonuna kadar kalan gün sayısıyla orantılı alınır; ilk ayın dakika hakkı tam Paket kotasıdır.",
       "5.2. Ödeme, Hizmet Sağlayıcı'nın ilettiği ödeme bağlantısı veya Ek-1'de belirtilen yöntemle yapılır. Ücretlere KDV ve yasal kesintiler dahil değildir, ayrıca eklenir.",
-      "5.3. Paket'teki dakika hakkını aşan kullanım, Ek-1'deki aşım ücreti üzerinden bir sonraki fatura döneminde faturalanır. Kullanılmayan dakikalar sonraki aya devretmez.",
+      "5.3. Paket'teki dakika hakkını aşan kullanım ay sonunda kesinleşir; Ek-1'deki aşım ücreti üzerinden hesaplanarak bir sonraki takvim ayının faturasına eklenir. Kullanılmayan dakikalar sonraki aya devretmez.",
       "5.4. Telefon hattı, operatör ve SMS ücretleri, Ek-1'de aksi belirtilmedikçe Klinik'e aittir.",
       "5.5. Ödeme vadesinden itibaren 7 gün içinde yapılmazsa Hizmet Sağlayıcı, e-postayla bildirimde bulunduktan sonra Hizmet'i ödeme yapılana kadar askıya alabilir. Askı süresince arama kayıtları korunur.",
     ],

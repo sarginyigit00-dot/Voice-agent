@@ -320,6 +320,20 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
                   {isLogin ? ui.requestDemo : ui.signIn}
                 </Link>
               </p>
+
+              {/* Notice only, not a consent box: the contract itself is
+                  accepted inside the panel, per clinic and version. */}
+              <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                {isLogin ? ui.legalBeforeLogin : ui.legalBeforeSignup}
+                <Link href="/sartlar" className="underline underline-offset-4 hover:text-foreground">
+                  {ui.legalTerms}
+                </Link>
+                {ui.legalMid}
+                <Link href="/gizlilik" className="underline underline-offset-4 hover:text-foreground">
+                  {ui.legalPrivacy}
+                </Link>
+                {ui.legalAfter}
+              </p>
             </>
           )}
         </div>

@@ -118,7 +118,7 @@ Her arama için: ses kaydı, transkript ve özet, eylem maddeleri, dahili hasta 
 **Sizden istediğimiz:** hizmet ve fiyat listesi, hekimler ve saatler, hangi aramaların insana gideceği.
 
 ### 14 günlük pilot
-Kaçan aramaları ve randevuları birlikte sayalım.
+Kaçan aramaları ve randevuları birlikte sayalım. Pilotta paket ücreti yok; yalnızca tek seferlik kurulum ücreti peşin alınır, devam ederseniz ilk aydan düşülür.
 
 ---
 
@@ -128,10 +128,10 @@ Kaçan aramaları ve randevuları birlikte sayalım.
 |---|---|---|
 | Fiyat | **$499 / ay** | **$899 / ay** |
 | Uygun | 1–3 hekim, implant ve estetik | 4+ hekim, ADSM |
-| Süre | 1.000 dk / ay | 2.500 dk / ay |
+| Süre | 300 dk / ay | 1.000 dk / ay |
 | İçerik | 7/24 karşılama, takvime randevu, kayıt ve özet, randevusuz aramada e-posta, canlı aktarma, mesai dışı ajan, randevu hatırlatma, hızlı geri dönüş, dahili CRM ve aylık rapor | Klinik'teki her şey + haftalık rapor, kendi CRM'inize canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi |
 
-Aşım: dakikası $0,30.
+Aşım: dakikası $0,60.
 
 ---
 
@@ -140,7 +140,7 @@ Aşım: dakikası $0,30.
 | Ne zaman | Ne olur |
 |---|---|
 | **Bugün** | Teklifi ve özeti e-postayla gönderirim. |
-| **Bu hafta** | Klinik bilgilerini ve takvimi birlikte hazırlarız. |
+| **Bu hafta** | Kurulum ücreti ödenir; klinik bilgilerini ve takvimi birlikte hazırlarız. |
 | **14 gün** | Kaçan aramaları birlikte sayarız. |
 
 Yiğit | [telefon] | [e-posta] | www.randevoxai.com
@@ -172,8 +172,8 @@ Yiğit | [telefon] | [e-posta] | www.randevoxai.com
   - *Veri / KVKK?* Kayıt ve saklama detayını sözleşmede netleştiririz. Kesin hukuki söz verme.
   - *Ekip tepki gösterir mi?* Sabah arama özetiyle işe başlarlar.
 - **Bölüm 7:** Liste örnek ekrandır, canlı panelde gerçek arama göster. Klinik yazılımına aktarım kapsamını demo sonrası netleştir.
-- **Bölüm 8:** Numara değişmez, yalnızca yönlendirilir. Öneri: 14 günlük pilot.
-- **Bölüm 9 (fiyat):** İstemezsen atla. Önce ROI'ye dön: "Ayda tek hastayı kurtarması paketin maliyetini çıkarır." Hekim sayısına göre öner: 1-3 → Klinik, 4+ → Poliklinik. 1.000 dk ≈ 330 arama (3 dk'lık arama).
+- **Bölüm 8:** Numara değişmez, yalnızca yönlendirilir. Öneri: 14 günlük pilot. Kurulum ücreti 300 $ (ilk 3 kliniğe kurucu müşteri fiyatı 150 $), kurulumdan önce peşin; iade yok, devam ederse ilk aydan düşülür. Aylık ücrete "bakım" deme, "7/24 telefon karşılama, dakikalar dahil" de.
+- **Bölüm 9 (fiyat):** İstemezsen atla. Önce ROI'ye dön: "Ayda tek hastayı kurtarması paketin maliyetini çıkarır." Hekim sayısına göre öner: 1-3 → Klinik, 4+ → Poliklinik. 300 dk ≈ 200 arama (ortalama 1,5 dk'lık arama), 1.000 dk ≈ 650 arama.
 
 **Canlı demo (müşteri kendi telefonundan arar)**
 

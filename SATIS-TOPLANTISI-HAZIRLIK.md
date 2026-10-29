@@ -139,7 +139,7 @@ Kurtarılan aylık gelir = A × B × C × D × E
 Aşım: dakikası 0,30 $. (Kabaca: ortalama 3 dk'lık aramayla 1.000 dk ≈ 330 arama, 2.500 dk ≈ 830 arama. Müşterinin arama hacmine göre paketi doğrulayın.)
 
 ### Vaka çalışması yerine
-Henüz gerçek vaka yoksa: **pilot önerin** ("14 gün deneyin, kaçan aramaları ve randevuları birlikte sayalım"). Gerçek pilot verisi geldikçe bu bölümü gerçek rakamlarla güncelleyin.
+Henüz gerçek vaka yoksa: **pilot önerin** ("14 gün deneyin, kaçan aramaları ve randevuları birlikte sayalım"). Pilotta paket ücreti yok; tek seferlik kurulum ücreti (300 $, ilk 3 kliniğe kurucu müşteri fiyatı 150 $) kurulumdan önce peşin alınır, iade edilmez, devam edilirse ilk aydan düşülür. Gerçek pilot verisi geldikçe bu bölümü gerçek rakamlarla güncelleyin.
 
 ---
 
@@ -151,6 +151,7 @@ Henüz gerçek vaka yoksa: **pilot önerin** ("14 gün deneyin, kaçan aramalar�
 | "Pahalı." | "Bir implant hastası sizin için kaç TL? Ayda tek bir kaçan hastayı kurtarması paketin maliyetini çıkarır. Birlikte hesaplayalım." (bölüm 5 tablosu) |
 | "Sekreter maaşı daha ucuz." | "Sekreteri değiştirmiyoruz; gece, hafta sonu, öğle arası ve hattın meşgul olduğu anları kapatıyoruz. Bir sekreter 7/24 çalışamaz." |
 | "Bütçem yok." | "Klinik paketiyle, sadece meşgul/mesai dışı kapsamla başlayabiliriz." |
+| "Neden kurulum ücreti var?" | "Kurulumu sizin bilgilerinizle tek tek biz yapıyoruz: ajan, takvim, yönlendirme, test. Devam ederseniz bu ücret ilk aydan düşülüyor, yani fiilen ek bir maliyet değil." (Aylık ücrete "bakım" demeyin; "7/24 telefon karşılama, dakikalar dahil" deyin.) |
 
 ### Güven / teknoloji
 | İtiraz | Yanıt |
@@ -170,7 +171,7 @@ Henüz gerçek vaka yoksa: **pilot önerin** ("14 gün deneyin, kaçan aramalar�
 
 ### "Düşünmem gerek"
 - "Elbette. Sizi tam olarak neyin tereddüte düşürdüğünü öğrenebilir miyim: fiyat, teknoloji, ekip mi?"
-- "Karar vermeden görmeniz için 14 günlük pilot önerebilirim; kaçan arama sayısını birlikte ölçeriz."
+- "Karar vermeden görmeniz için 14 günlük pilot önerebilirim; kaçan arama sayısını birlikte ölçeriz. Pilotta paket ücreti yok, kurulum ücreti de devam ederseniz ilk aydan düşülüyor."
 - Bir sonraki adımın **tarihini** alın ("Perşembe 15:00'te sonuçlara bakalım mı?"). Süresiz "haber veririm" bırakmayın.
 
 ---

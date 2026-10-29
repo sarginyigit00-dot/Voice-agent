@@ -36,6 +36,14 @@ export const PLANS = {
 /** Billed per minute past a clinic's monthly quota. */
 export const OVERAGE_USD_PER_MIN = 0.6;
 
+/**
+ * One-off setup fee, the default in a clinic's contract terms (editable per
+ * clinic). Paid up front before setup starts, not refunded once it has, and
+ * deducted from the first package invoice if the clinic stays (Hizmet
+ * Sözleşmesi 5.6).
+ */
+export const SETUP_FEE_USD = 300;
+
 export type PlanId = keyof typeof PLANS;
 
 export function isPlan(v: unknown): v is PlanId {

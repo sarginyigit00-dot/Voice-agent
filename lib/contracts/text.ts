@@ -13,7 +13,7 @@
  * hash changes anyway, the version is what a human reads in the records.
  */
 
-export const CONTRACT_VERSION = "2026-10-27";
+export const CONTRACT_VERSION = "2026-10-29";
 
 export interface Clause {
   title: string;
@@ -125,7 +125,7 @@ export function renderContracts(input: {
           `Kapsam: ${PACKAGE_SCOPE[pkg.id] ?? PACKAGE_SCOPE.klinik}`,
           `Aylık paket ücreti (KDV hariç): ${terms.monthlyFee}`,
           `Aşım ücreti (dakika başına, KDV hariç): ${terms.overageFee}`,
-          `Kurulum ücreti: ${terms.setupFee || "Yok"}`,
+          `Kurulum ücreti (tek seferlik, peşin, KDV hariç; devam edilirse ilk Paket faturasından düşülür): ${terms.setupFee || "Yok"}`,
           `Ücretsiz deneme süresi: ${terms.trialDays ? `${terms.trialDays} gün` : "Yok"}`,
           `Ödeme yöntemi: ${terms.paymentMethod}`,
           `Telefon hattı ve operatör ücretleri: ${terms.lineFeesBy === "provider" ? "Hizmet Sağlayıcı öder" : "Klinik öder"}`,
@@ -233,6 +233,8 @@ export const SERVICE_CLAUSES: Clause[] = [
       "5.3. Paket'teki dakika hakkını aşan kullanım ay sonunda kesinleşir; Ek-1'deki aşım ücreti üzerinden hesaplanarak bir sonraki takvim ayının faturasına eklenir. Kullanılmayan dakikalar sonraki aya devretmez.",
       "5.4. Telefon hattı, operatör ve SMS ücretleri, Ek-1'de aksi belirtilmedikçe Klinik'e aittir.",
       "5.5. Ödeme vadesinden itibaren 7 gün içinde yapılmazsa Hizmet Sağlayıcı, e-postayla bildirimde bulunduktan sonra Hizmet'i ödeme yapılana kadar askıya alabilir. Askı süresince arama kayıtları korunur.",
+      "5.6. Ek-1'de kurulum ücreti belirtilmişse bu ücret tek seferliktir ve kurulum çalışmalarına başlanmadan önce peşin ödenir; ödeme yapılmadan kurulum başlamaz. Kurulum ücreti, kurulum çalışmalarına başlandıktan sonra iade edilmez. Klinik, varsa ücretsiz deneme süresinin sonunda Hizmet'e devam ederse kurulum ücreti ilk Paket faturasından düşülür.",
+      "5.7. Ek-1'de ücretsiz deneme süresi belirtilmişse bu süre Başlangıç Tarihi'nde başlar; deneme süresince Paket ücreti alınmaz ve 5.1'deki orantılı ilk ay hesabı deneme süresinin bitiminden itibaren yapılır. Klinik, deneme süresi bitmeden yazılı bildirimde bulunursa sözleşme ek bir ücret doğmadan sona erer.",
     ],
   },
   {

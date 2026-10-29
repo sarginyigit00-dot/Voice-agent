@@ -41,6 +41,14 @@ describe("contracts/text", () => {
     expect(text).toContain("HMK md. 193");
   });
 
+  it("states the setup fee as one-off and deducted from the first invoice", () => {
+    const none = contractsAsText(renderContracts({ terms, provider, pkg }));
+    const fee = contractsAsText(renderContracts({ terms: { ...terms, setupFee: "300 USD" }, provider, pkg }));
+    expect(none).toMatch(/Kurulum ücreti \(tek seferlik[^)]*\): Yok/);
+    expect(fee).toMatch(/ilk Paket faturasından düşülür\): 300 USD/);
+    expect(fee).toContain("kurulum çalışmalarına başlandıktan sonra iade edilmez");
+  });
+
   it("states the guardian's consent only when set", () => {
     const off = contractsAsText(renderContracts({ terms, provider, pkg }));
     const on = contractsAsText(renderContracts({ terms, provider: { ...provider, guardianConsent: true }, pkg }));

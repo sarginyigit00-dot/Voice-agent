@@ -8,6 +8,7 @@ import {
   BILLING_STATUSES,
   MIN_PASSWORD_LENGTH,
   OVERAGE_USD_PER_MIN,
+  SETUP_FEE_USD,
   PLANS,
   type BillingStatus,
   type PlanId,
@@ -681,7 +682,7 @@ function ContractForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
     email: t?.email ?? clinic.notifyEmail ?? "",
     monthlyFee: t?.monthlyFee ?? `${PLANS[clinic.plan].priceUsd} USD`,
     overageFee: t?.overageFee ?? `${usd(OVERAGE_USD_PER_MIN, 2)} USD`,
-    setupFee: t?.setupFee ?? "",
+    setupFee: t?.setupFee ?? `${SETUP_FEE_USD} USD`,
     trialDays: t?.trialDays ? String(t.trialDays) : "",
     paymentMethod: t?.paymentMethod ?? "Ödeme bağlantısı (Ruul)",
     lineFeesBy: (t?.lineFeesBy ?? "clinic") as ContractTerms["lineFeesBy"],
@@ -730,7 +731,7 @@ function ContractForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
           <Field label="Aşım ücreti / dk">
             <input value={f.overageFee} onChange={set("overageFee")} className={inputClass} />
           </Field>
-          <Field label="Kurulum ücreti (boş = yok)">
+          <Field label="Kurulum ücreti (tek seferlik, boş = yok)">
             <input value={f.setupFee} onChange={set("setupFee")} className={inputClass} />
           </Field>
           <Field label="Ücretsiz deneme, gün (boş = yok)">

@@ -53,7 +53,7 @@ export default function AgentsPage() {
     const current = previewAudio.current;
     if (current) {
       if (previewPlaying) current.pause();
-      else void current.play();
+      else void current.play().catch(() => {});
       return;
     }
     setPreviewError(false);

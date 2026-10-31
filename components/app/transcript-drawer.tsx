@@ -140,7 +140,9 @@ function RealPlayer({ callId, tint, lang }: { callId: string; tint: string; lang
   return (
     <div className="flex items-center gap-2.5">
       <button
-        onClick={() => (playing ? ref.current?.pause() : ref.current?.play())}
+        // play() rejects with AbortError when a pause (or closing the drawer) lands
+        // before playback starts — harmless, but unhandled it reaches the error alerts.
+        onClick={() => (playing ? ref.current?.pause() : void ref.current?.play().catch(() => {}))}
         disabled={!src}
         className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-50"
         style={{ background: tint, color: "var(--color-primary-foreground)" }}

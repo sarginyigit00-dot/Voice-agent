@@ -67,16 +67,37 @@ const ELEVEN_SAMPLES: Record<string, string> = {
 };
 const ELEVEN_MODEL = "eleven_turbo_v2_5";
 /**
- * Voice settings for both ElevenLabs voices. Vapi does not read a voice's
- * saved ElevenLabs settings; it sends these per call. Balanced for the phone:
- * a low stability makes the tone drift from sentence to sentence. Lower it if
- * calls sound flat, raise it if they sound unsteady.
+ * Voice settings per ElevenLabs voice. Vapi does not read a voice's saved
+ * ElevenLabs settings; it sends these per call. Lower stability if calls
+ * sound flat, raise it if they sound unsteady.
+ *
+ * At speed 1.05 both voices rushed long stock lines ("Notunuzu alayım,
+ * klinik sizi en kısa sürede arasın") and swallowed syllables, so both run
+ * slightly under 1. Lyra gets more stability to stay even; Orion gets less
+ * stability and more style so the deep voice doesn't go monotone.
  */
-const ELEVEN_SETTINGS = { speed: 1.05, stability: 0.3, similarityBoost: 0.75, style: 0.3, useSpeakerBoost: true } as const;
+type ElevenSettings = { speed: number; stability: number; similarityBoost: number; style: number; useSpeakerBoost: boolean };
+const ELEVEN_SETTINGS: Record<string, ElevenSettings> = {
+  Lyra: { speed: 0.95, stability: 0.45, similarityBoost: 0.75, style: 0.2, useSpeakerBoost: true },
+  Orion: { speed: 0.97, stability: 0.35, similarityBoost: 0.8, style: 0.35, useSpeakerBoost: true },
+};
+
+/**
+ * Hand the TTS text at sentence and comma boundaries rather than whole
+ * replies, so a long sentence isn't read in one breath.
+ */
+const ELEVEN_CHUNK_PLAN = { enabled: true, minCharacters: 30, punctuationBoundaries: [".", "!", "?", ",", ";", ":"] };
 
 type VoiceConfig =
   | { provider: "vapi"; version: "2"; voiceId: string; language: string }
-  | ({ provider: "11labs"; voiceId: string; model: string; language: string; enableSsmlParsing: boolean } & typeof ELEVEN_SETTINGS);
+  | ({
+      provider: "11labs";
+      voiceId: string;
+      model: string;
+      language: string;
+      enableSsmlParsing: boolean;
+      chunkPlan: typeof ELEVEN_CHUNK_PLAN;
+    } & ElevenSettings);
 
 const DEFAULT_MALE_VOICE = "Nico";
 
@@ -84,7 +105,17 @@ export function voiceFor(label: string): VoiceConfig {
   // "Defne · warm female" → "Defne"
   const persona = label.split("·")[0].trim();
   const eleven = ELEVEN_VOICES[persona];
-  if (eleven) return { provider: "11labs", voiceId: eleven, model: ELEVEN_MODEL, language: "tr", enableSsmlParsing: true, ...ELEVEN_SETTINGS };
+  if (eleven) {
+    return {
+      provider: "11labs",
+      voiceId: eleven,
+      model: ELEVEN_MODEL,
+      language: "tr",
+      enableSsmlParsing: true,
+      chunkPlan: ELEVEN_CHUNK_PLAN,
+      ...ELEVEN_SETTINGS[persona],
+    };
+  }
   // Rows saved before the persona list was renamed still carry the old names
   // ("Atlas · confident male", "Nova · warm female") — those fall back on the
   // gender word. \bmale\b doesn't match inside "female".
@@ -191,7 +222,7 @@ export const BOOKING_TOOLS = [
     },
     // Said while the calendar loads, so the line never goes silent.
     messages: [
-      { type: "request-start", content: "Hemen bakıyorum." },
+      { type: "request-start", content: "Tabii, hemen bakıyorum." },
       { type: "request-response-delayed", content: "Takvime bakıyorum, bir saniye.", timingMilliseconds: 2500 },
     ],
   },
@@ -241,7 +272,7 @@ export const BOOKING_TOOLS = [
         required: ["name", "date"],
       },
     },
-    messages: [{ type: "request-start", content: "Hemen bakıyorum." }],
+    messages: [{ type: "request-start", content: "Tabii, hemen bakıyorum." }],
   },
   {
     type: "function",
@@ -346,7 +377,7 @@ function transferToolId(clinic: ClinicContext, number: string): Promise<VapiResu
       {
         type: "number",
         number,
-        message: "Sizi hemen bir yetkiliye aktarıyorum, lütfen hatta kalın.",
+        message: "Tabii, sizi hemen bir yetkiliye aktarıyorum. Lütfen hatta kalın.",
         description: `${clinic.name} resepsiyonu`,
         // Netgsm rejects SIP REFER (Vapi's default on SIP lines), so dial the number out over the trunk instead.
         transferPlan: { mode: "blind-transfer", sipVerb: "dial" },
@@ -462,22 +493,23 @@ export function buildAssistant(
         // A finished sentence ends in punctuation — react quickly.
         onPunctuationSeconds: 0.3,
         // No punctuation means the caller is probably still thinking.
-        onNoPunctuationSeconds: 1.5,
+        onNoPunctuationSeconds: 1.8,
         // Digits arrive in bursts (phone numbers, dates) — never cut those.
         onNumberSeconds: 0.6,
       },
     },
     // When the caller does talk over the agent, stop — but not on a cough or
-    // an "hı hı": two real words, and then stay quiet long enough to listen.
-    stopSpeakingPlan: { numWords: 2, voiceSeconds: 0.3, backoffSeconds: 1.5 },
-    // Dead air: nudge twice ("Orada mısınız?"), then hang up rather than
+    // an "hı hı" or an "evet evet": three real words, and then stay quiet long
+    // enough to listen.
+    stopSpeakingPlan: { numWords: 3, voiceSeconds: 0.3, backoffSeconds: 1.5 },
+    // Dead air: nudge twice, gently, then hang up rather than
     // bill an empty line. Phone lines also carry street noise — filter it.
     silenceTimeoutSeconds: 25,
     maxDurationSeconds: 600,
     backgroundDenoisingEnabled: true,
     messagePlan: {
-      idleMessages: ["Orada mısınız?", "Sizi duyamıyorum, hâlâ hatta mısınız?"],
-      idleTimeoutSeconds: 8,
+      idleMessages: ["Acele etmeyin, buradayım.", "Sesiniz gelmiyor galiba, hâlâ hatta mısınız?"],
+      idleTimeoutSeconds: 6,
       idleMessageMaxSpokenCount: 2,
       silenceTimeoutMessage: "Sizi duyamıyorum, isterseniz daha sonra tekrar arayabilirsiniz. İyi günler.",
     },

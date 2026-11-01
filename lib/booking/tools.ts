@@ -100,7 +100,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
   if (!baseCfg) {
     return JSON.stringify({
       ok: false,
-      spoken: "Takvim sistemine şu anda bağlanamıyorum. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
+      spoken: "Takvim sistemine şu anda bağlanamıyorum. Kusura bakmayın. Notunuzu alayım, klinikten sizi en kısa sürede arasınlar.",
     });
   }
   // A named doctor with their own calendar is read from that calendar.
@@ -165,7 +165,7 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
       ok: false,
       spoken: date
         ? `O gün ${who}boş yerimiz kalmamış. Başka bir güne bakmamı ister misiniz?`
-        : `Önümüzdeki hafta ${who}boş yerimiz görünmüyor. Notunuzu alayım, klinik sizi en kısa sürede arasın.`,
+        : `Önümüzdeki hafta ${who}boş yerimiz görünmüyor. Kusura bakmayın. Notunuzu alayım, klinikten sizi en kısa sürede arasınlar.`,
     });
   }
 
@@ -261,7 +261,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
   if (!baseCfg) {
     return JSON.stringify({
       ok: false,
-      spoken: "Randevu sistemine şu anda bağlanamıyorum. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
+      spoken: "Randevu sistemine şu anda bağlanamıyorum. Kusura bakmayın. Notunuzu alayım, klinikten sizi en kısa sürede arasınlar.",
     });
   }
   // Booked into the named doctor's own calendar when they have one; their
@@ -323,7 +323,7 @@ export async function bookAppointment(args: ToolArgs, ctx: ToolContext): Promise
     await notifyError({ source: "booking/book_appointment", message: String(booking.error) });
     return JSON.stringify({
       ok: false,
-      spoken: "Randevuyu kaydederken bir sorun oldu. Notunuzu alayım, klinik sizi en kısa sürede arasın.",
+      spoken: "Randevuyu kaydederken bir sorun oldu. Kusura bakmayın. Notunuzu alayım, klinikten sizi en kısa sürede arasınlar.",
     });
   }
 
@@ -456,7 +456,7 @@ async function cancelByPhone(args: ToolArgs, ctx: ToolContext): Promise<string> 
   if (!result.ok) {
     console.error("[booking] cancel_appointment failed:", result.error);
     await notifyError({ source: "booking/cancel_appointment", message: String(result.error) });
-    return JSON.stringify({ ok: false, spoken: "İptal ederken bir sorun oldu. Notunuzu alayım, klinik sizi en kısa sürede arasın." });
+    return JSON.stringify({ ok: false, spoken: "İptal ederken bir sorun oldu. Kusura bakmayın. Notunuzu alayım, klinikten sizi en kısa sürede arasınlar." });
   }
   return JSON.stringify({
     ok: true,
@@ -486,7 +486,7 @@ async function rescheduleByPhone(args: ToolArgs, ctx: ToolContext): Promise<stri
   if (!result.ok) {
     console.error("[booking] reschedule_appointment failed:", result.error);
     await notifyError({ source: "booking/reschedule_appointment", message: String(result.error) });
-    return JSON.stringify({ ok: false, spoken: "Randevuyu değiştirirken bir sorun oldu. Notunuzu alayım, klinik sizi en kısa sürede arasın." });
+    return JSON.stringify({ ok: false, spoken: "Randevuyu değiştirirken bir sorun oldu. Kusura bakmayın. Notunuzu alayım, klinikten sizi en kısa sürede arasınlar." });
   }
   return JSON.stringify({
     ok: true,

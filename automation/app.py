@@ -11,7 +11,8 @@ Six jobs, one shared secret (AUTOMATION_SECRET):
                         appointment.cancelled / appointment.rescheduled.
   - `reminders`       — every 15 min: pulls due 24h/2h reminders and sends them.
   - `lead_callbacks`  — every 5 min: pokes Randevox to phone waiting leads.
-  - `weekly_report` / `monthly_report` — Mondays / the 1st: emails each clinic its numbers.
+  - `weekly_report` / `monthly_report` — Mondays / the 1st: emails each clinic its numbers
+                        (weekly: short summary; Poliklinik also gets the breakdown).
   - `quota_alerts`    — daily: warns a clinic at 80 % and 100 % of its monthly minutes.
 
 Deploy: see README.md in this folder.
@@ -200,36 +201,88 @@ def lead_callbacks():
     print(f"[lead-callbacks] {res.json()}")
 
 
-# ── jobs: performance report by email (monthly: every clinic; weekly: Poliklinik) ──
+# ── jobs: performance report by email (every active clinic; weekly detail for Poliklinik) ──
 
 OUTCOME_LABELS = {"booked": "Randevu alındı", "resolved": "Çözüldü", "transferred": "Aktarıldı", "voicemail": "Sesli mesaj", "missed": "Cevapsız"}
 
 
-def report_html(r: dict) -> tuple[str, str]:
+TR_MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+
+
+def report_period(r: dict) -> tuple[str, str]:
+    """(short "2–8 Kasım", long "02.11.2026 – 08.11.2026") in Türkiye time."""
     from datetime import datetime, timedelta, timezone
 
     tr = timezone(timedelta(hours=3))
+    start = datetime.fromisoformat(r["from"].replace("Z", "+00:00")).astimezone(tr)
+    end = (datetime.fromisoformat(r["to"].replace("Z", "+00:00")) - timedelta(seconds=1)).astimezone(tr)
+    if start.month == end.month:
+        short = f"{start.day}–{end.day} {TR_MONTHS[end.month - 1]}"
+    else:
+        short = f"{start.day} {TR_MONTHS[start.month - 1]} – {end.day} {TR_MONTHS[end.month - 1]}"
+    return short, f"{start:%d.%m.%Y} – {end:%d.%m.%Y}"
 
-    def day(dt: datetime) -> str:
-        return dt.astimezone(tr).strftime("%d.%m.%Y")
 
-    start = datetime.fromisoformat(r["from"].replace("Z", "+00:00"))
-    end = datetime.fromisoformat(r["to"].replace("Z", "+00:00")) - timedelta(seconds=1)
-    period = f"{day(start)} – {day(end)}"
-    title = "Haftalık" if r["kind"] == "weekly" else "Aylık"
+def weekly_report_html(r: dict) -> tuple[str, str] | None:
+    """Monday mail. Klinik: 3-line summary. Poliklinik: same summary + breakdown.
+    None when the week had no calls — an empty report reads worse than none."""
+    from html import escape
+
+    if not r["calls"]:
+        return None
+    short, _ = report_period(r)
+    name = escape(r["clinicName"])
+    booked, calls = r["appointmentsBooked"], r["calls"]
+    subject = (
+        f"Geçen hafta {booked} randevuyu siz uğraşmadan aldık"
+        if booked
+        else f"Geçen hafta {calls} aramanızı karşıladık"
+    )
+    summary = (
+        f"<p>Merhaba <b>{name}</b>,</p>"
+        f"<p>{short} haftasında Randevox sizin için:</p>"
+        f"<ul style='padding-left:18px;margin:0 0 12px'>"
+        f"<li><b>{calls}</b> aramayı karşıladı, <b>{booked}</b> yeni randevu aldı</li>"
+        f"<li><b>{r['remindersSent']}</b> hastaya randevu hatırlatması gönderdi</li>"
+        f"<li>Ekibinize tahminen <b>{r['minutesSaved']} dakika</b> kazandırdı</li>"
+        f"</ul>"
+    )
+    detail = ""
+    if r.get("plan") == "poliklinik":
+        outcomes = " · ".join(
+            f"{OUTCOME_LABELS.get(k, k)} {v}" for k, v in sorted(r["outcomes"].items(), key=lambda kv: -kv[1])
+        )
+        quota = (
+            f"<br><b>Bu ayki kullanım:</b> {r['monthMinutes']} / {r['quota']} dakika"
+            if r.get("quota") and r.get("monthMinutes") is not None
+            else ""
+        )
+        detail = (
+            f"<p><b>Arama sonuçları</b><br>{outcomes}<br>"
+            f"<b>İptal:</b> {r['appointmentsCancelled']} randevu{quota}</p>"
+        )
+    footer = (
+        f"<p>Detaylar için panelinize bakabilirsiniz → <a href='{randevox_url('/dashboard')}'>Paneli aç</a></p>"
+        f"<p style='color:#888;font-size:12px'>Randevox</p>"
+    )
+    return subject, summary + detail + footer
+
+
+def monthly_report_html(r: dict) -> tuple[str, str]:
+    _, period = report_period(r)
     rows = "".join(
         f"<tr><td style='padding:4px 12px 4px 0'>{OUTCOME_LABELS.get(k, k)}</td><td><b>{v}</b></td></tr>"
         for k, v in sorted(r["outcomes"].items(), key=lambda kv: -kv[1])
     ) or "<tr><td>Bu dönemde arama yok.</td></tr>"
-    quota = f" / {r['quota']} dk kota" if r["kind"] == "monthly" and r.get("quota") else ""
+    quota = f" / {r['quota']} dk kota" if r.get("quota") else ""
     html = (
-        f"<h2>{r['clinicName']} — {title} performans raporu</h2><p>{period}</p>"
+        f"<h2>{r['clinicName']} — Aylık performans raporu</h2><p>{period}</p>"
         f"<p><b>{r['calls']}</b> arama · <b>{r['minutes']}</b> dakika{quota}<br>"
         f"<b>{r['appointmentsBooked']}</b> yeni randevu · <b>{r['appointmentsCancelled']}</b> iptal</p>"
         f"<p>Arama sonuçları:</p><table>{rows}</table>"
         f"<p style='color:#888;font-size:12px'>Randevox · Detaylar için panelinize bakın.</p>"
     )
-    return f"Randevox {title.lower()} rapor — {r['clinicName']} ({period})", html
+    return f"Randevox aylık rapor — {r['clinicName']} ({period})", html
 
 
 def send_reports(kind: str) -> None:
@@ -238,12 +291,16 @@ def send_reports(kind: str) -> None:
     res = httpx.get(randevox_url(f"/api/automation/reports?kind={kind}"), headers=randevox_headers(), timeout=60.0)
     res.raise_for_status()
     reports = res.json().get("reports", [])
-    sent = 0
+    sent = skipped = 0
     for r in reports:
-        subject, html = report_html(r)
+        mail = weekly_report_html(r) if kind == "weekly" else monthly_report_html(r)
+        if mail is None:
+            skipped += 1
+            continue
+        subject, html = mail
         if send_clinic_email(r["email"], subject, html):
             sent += 1
-    print(f"[{kind}-report] sent {sent}/{len(reports)}")
+    print(f"[{kind}-report] sent {sent}/{len(reports)} (skipped {skipped} with no calls)")
 
 
 # Modal cron runs in UTC: 06:00 UTC = 09:00 in Türkiye.

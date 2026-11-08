@@ -133,8 +133,8 @@ Kurtarılan aylık gelir = A × B × C × D × E
 ### Paket seçim rehberi
 | Klinik | Paket | Fiyat | Dakika | Kilit fark |
 |---|---|---|---|---|
-| 1–3 hekim, implant/estetik | **Klinik** | $499/ay | 1.000 | Karşılama, randevu, canlı aktarma, mesai dışı ajan, randevu hatırlatma, hızlı geri dönüş, dahili CRM, aylık rapor |
-| 4+ hekim, poliklinik/ADSM | Poliklinik | $899/ay | 2.500 | Klinik'teki her şey + haftalık rapor, kendi CRM'ine canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi |
+| 1–3 hekim, implant/estetik | **Klinik** | $499/ay | 1.000 | Karşılama, randevu, canlı aktarma, mesai dışı ajan, randevu hatırlatma, hızlı geri dönüş, dahili CRM, haftalık özet, aylık rapor |
+| 4+ hekim, poliklinik/ADSM | Poliklinik | $899/ay | 2.500 | Klinik'teki her şey + detaylı haftalık rapor, kendi CRM'ine canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi |
 
 Aşım: dakikası 0,30 $. (Kabaca: ortalama 3 dk'lık aramayla 1.000 dk ≈ 330 arama, 2.500 dk ≈ 830 arama. Müşterinin arama hacmine göre paketi doğrulayın.)
 

@@ -604,8 +604,8 @@ function Pricing() {
           </h2>
           <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
             {lang === "tr"
-              ? "Poliklinik, Klinik'teki her şeye ek dakika, haftalık rapor ve CRM aktarımı ekler. Kurulumu biz yaparız: telefon yönlendirme, takvim bağlantısı, klinik bilgileri ve ajan ayarı."
-              : "Poliklinik adds more minutes, a weekly report and CRM feed on top of everything in Klinik. We do the setup: phone forwarding, calendar connection, clinic information and agent configuration."}
+              ? "Poliklinik, Klinik'teki her şeye ek dakika, detaylı haftalık rapor ve CRM aktarımı ekler. Kurulumu biz yaparız: telefon yönlendirme, takvim bağlantısı, klinik bilgileri ve ajan ayarı."
+              : "Poliklinik adds more minutes, a detailed weekly report and CRM feed on top of everything in Klinik. We do the setup: phone forwarding, calendar connection, clinic information and agent configuration."}
           </p>
         </div>
 

@@ -129,7 +129,7 @@ Kaçan aramaları ve randevuları birlikte sayalım. Pilotta paket ücreti yok; 
 | Fiyat | **$499 / ay** | **$899 / ay** |
 | Uygun | 1–3 hekim, implant ve estetik | 4+ hekim, ADSM |
 | Süre | 300 dk / ay | 1.000 dk / ay |
-| İçerik | 7/24 karşılama, takvime randevu, kayıt ve özet, randevusuz aramada e-posta, canlı aktarma, mesai dışı ajan, randevu hatırlatma, hızlı geri dönüş, dahili CRM ve aylık rapor | Klinik'teki her şey + haftalık rapor, kendi CRM'inize canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi |
+| İçerik | 7/24 karşılama, takvime randevu, kayıt ve özet, randevusuz aramada e-posta, canlı aktarma, mesai dışı ajan, randevu hatırlatma, hızlı geri dönüş, dahili CRM, haftalık özet ve aylık rapor | Klinik'teki her şey + detaylı haftalık rapor, kendi CRM'inize canlı aktarım, doktor bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi |
 
 Aşım: dakikası $0,60.
 

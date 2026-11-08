@@ -1,21 +1,19 @@
-# Hızlı geri dönüş — kurulum
+# Geri arama formu — kurulum
 
-Hasta kliniğin formunu doldurur, kliniğin seçtiği ajan onu hemen arar. Mesai dışında gelen
-başvuru klinik açılınca aranır. Başarısız arama en fazla 3 kez denenir; 3 günden eski başvuru
-aranmaz. Aramalar /calls'ta diğer aramalar gibi görünür.
+Hasta kliniğin formunu doldurur, başvuru **kliniğin bildirim e-postasına** düşer ve klinik hastayı
+**kendisi arar**. Ajan kimseyi aramaz (01.11.2026'dan beri; yapay zekânın dışarıyı araması KVKK
+açısından riskli görüldüğü için kapatıldı). Aynı numara 24 saat içinde tekrar gelirse ikinci
+e-posta gitmez.
 
 ```
-Klinik sitesi formu ──────────► POST /api/leads?key=… ─► ajan arar (Vapi)
-Otomasyon uygulaması (Modal, 5 dk) ─► /api/automation/lead-callbacks ─► bekleyenleri arar
+Klinik sitesi formu ──► POST /api/leads?key=… ──► leads tablosu + kliniğe e-posta ──► klinik arar
 ```
 
 ## 1. Admin
 
 admin → Klinikler → Yönet:
-1. **Ayarlar → Giden arama numara ID**: Vapi'de giden arama için ayrı bir numara varsa onun ID'si.
-   Boşsa gelen arama numarasından aranır. Netgsm'de giden aramanın açık olması gerekir.
-2. **Hızlı geri dönüş → Arayacak ajan** seç → **Kaydet**. Form adresi burada çıkar.
-   Ajanın çalışma saatleri, ne zaman aranacağını belirler.
+1. **İletişim → Bildirim e-postası** dolu olmalı. Boşsa başvurular sadece admin'de görünür.
+2. **Geri arama formu → Formu aç**. Form adresi burada çıkar. **Formu kapat** adresi geçersiz kılar.
 
 ## 2. Kliniğin web sitesi
 
@@ -26,8 +24,8 @@ Form adresine `POST` edilir. JSON ya da düz HTML form olur.
 | `phone` | evet | `0532…`, `+90532…` |
 | `consent` | evet | `true` / `on`. **Açık rıza kutusu işaretlenmeden gönderilmemeli.** |
 | `consent_text` | önerilir | İşaretlenen kutunun metni, aynen. Rızanın ispatı olarak lead'le birlikte saklanır. |
-| `name` | hayır | Ajan hitap ederken kullanır |
-| `note` | hayır | Ajana iletilir (ör. "implant fiyatı") |
+| `name` | hayır | E-postada görünür |
+| `note` | hayır | E-postada görünür (ör. "implant fiyatı") |
 | `source` | hayır | `web` (varsayılan), `meta` |
 | `website` | — | Gizli bırakılacak bot tuzağı; doluysa başvuru yok sayılır |
 
@@ -46,7 +44,7 @@ Hazır form. Değiştirilecekler: `FORM_ADRESI` (admin'deki adres), `[Klinik Ad�
   </p>
   <label>
     <input type="checkbox" name="consent" required />
-    <span id="randevox-consent-text">Paylaştığım sağlık bilgileri dahil kişisel verilerimin, [Klinik Adı] tarafından beni yapay zekâ destekli sesli asistanla arayarak talebime dönüş yapılması amacıyla işlenmesine ve bu görüşmenin kaydedilmesine, Aydınlatma Metni kapsamında açık rıza veriyorum. Rızamı dilediğim zaman geri alabileceğimi biliyorum.</span>
+    <span id="randevox-consent-text">Paylaştığım sağlık bilgileri dahil kişisel verilerimin, [Klinik Adı] tarafından telefonla aranarak talebime dönüş yapılması amacıyla işlenmesine Aydınlatma Metni kapsamında açık rıza veriyorum. Rızamı dilediğim zaman geri alabileceğimi biliyorum.</span>
   </label>
   <button>Beni arayın</button>
 </form>
@@ -57,7 +55,7 @@ Hazır form. Değiştirilecekler: `FORM_ADRESI` (admin'deki adres), `[Klinik Ad�
     // Rızanın ispatı: işaretlenen metin aynen gönderilir.
     data.append("consent_text", document.getElementById("randevox-consent-text").textContent.trim());
     const res = await fetch("FORM_ADRESI", { method: "POST", body: data });
-    e.target.innerHTML = res.ok ? "Teşekkürler, birazdan sizi arayacağız." : "Gönderilemedi, lütfen kliniği arayın.";
+    e.target.innerHTML = res.ok ? "Teşekkürler, en kısa sürede sizi arayacağız." : "Gönderilemedi, lütfen kliniği arayın.";
   });
 </script>
 ```
@@ -69,7 +67,8 @@ KVKK notları (formu klinik kendi metniyle değiştirirse de geçerli):
   bir kutu olur ve klinik onu İYS'ye kendisi işler. Randevox bu alanı kullanmaz.
 
 Yanıtlar: `200 {ok:true}`; aynı numara 24 saat içinde tekrar gelirse `{ok:true, duplicate:true}` ve
-ikinci arama yapılmaz. `400 consent` / `400 phone`; `404 unknown_form` (adres yenilenmiş ya da yanlış).
+ikinci e-posta gitmez. `400 consent` / `400 phone`; `404 unknown_form` (adres yenilenmiş, form
+kapalı ya da yanlış).
 
 ## 3. Meta reklam formu (klinik kendi otomasyonunu bağlar)
 
@@ -92,18 +91,12 @@ bir akış kurar:
    ```
    Alan adları formdaki sorulara ve araca göre değişir. **`consent`'e sabit `true` yazılmaz**:
    değer Meta'dan gelen onay kutusu cevabından gelmeli, yoksa rıza ispatlanamaz. Cevap gelmezse
-   başvuru `400 consent` ile reddedilir ve aranmaz.
-
-## 4. Bekleyenler
-
-Otomasyon uygulaması (`automation/app.py`, `lead_callbacks` işi) her 5 dakikada bir
-`/api/automation/lead-callbacks`'i çağırır — kurulumu için `automation/README.md`.
+   başvuru `400 consent` ile reddedilir.
 
 ## Test
 
 - Yanlış adres: `curl -X POST "https://www.randevoxai.com/api/leads?key=yanlis"` → **404**.
 - Açık rıza yok → **400 consent**.
 - Gönderilen başvurunun `leads` tablosunda `consent_text` (ve web'den geldiyse `consent_ip`) ile
-  kaydedildiğini kontrol et.
-- Gerçek arama: form adresine kendi numaranla gönder; mesai içindeyse telefonun çalmalı, sonra
-  arama /calls'ta görünmeli.
+  kaydedildiğini, `error` sütununda "Kliniğe e-postayla bildirildi" yazdığını kontrol et.
+- Kliniğin bildirim e-postasına "Geri arama talebi: …" konulu mail gelmeli. Hiçbir telefon çalmamalı.

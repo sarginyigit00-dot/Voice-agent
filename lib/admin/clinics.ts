@@ -62,7 +62,7 @@ export interface AdminClinic {
   vapiPhoneNumberId: string | null;
   messageChannel: MessageChannel;
   vapiOutboundPhoneNumberId: string | null;
-  /** Hızlı geri dönüş: who phones new leads (null = off), and the key in the clinic's form URL. */
+  /** Legacy (agents no longer dial out; always null after a save), and the key in the clinic's call-back form URL. */
   callbackAgentId: string | null;
   leadFormKey: string | null;
   /** Last 30 days, counts only — the operator never sees a patient's name or number. */
@@ -613,35 +613,28 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
     }
 
     case "setCallback": {
-      // Empty agentId = Hızlı geri dönüş off. The form URL keeps working, but leads are only recorded.
+      // Geri arama formu on/off. On = the clinic gets a form URL; each lead is
+      // emailed to the clinic, which calls back by hand. No agent dials out
+      // (lib/leads/callback.ts), so callback_agent_id is always cleared.
       const clinic = clinicId ? await clinicById(clinicId) : null;
       if (!clinic) return fail("Klinik bulunamadı.");
-      const agentId = str("agentId");
-      const patch: Record<string, unknown> = { callback_agent_id: agentId || null };
+      const enabled = b.enabled === true;
+      const patch: Record<string, unknown> = { callback_agent_id: null };
 
-      if (agentId) {
-        const { data, error } = await supabase
-          .from("agents")
-          .select("vapi_assistant_id")
-          .eq("id", agentId)
-          .eq("clinic_id", clinic.id)
-          .maybeSingle();
-        if (error) return fail(error.message);
-        if (!data) return fail("Ajan bu klinikte değil.");
-        if (!data.vapi_assistant_id) return fail("Bu ajan henüz Vapi'de kurulu değil — önce \"Ajanları Vapi'ye kur\".");
-
+      if (enabled) {
         const { data: current } = await supabase.from("clinics").select("lead_form_key").eq("id", clinic.id).single();
         if (!current?.lead_form_key) patch.lead_form_key = newLeadFormKey();
+      } else {
+        patch.lead_form_key = null;
       }
 
       const { error } = await supabase.from("clinics").update(patch).eq("id", clinic.id);
       if (error) return fail(error.message);
-      if (!agentId) return ok("Hızlı geri dönüş kapatıldı. Formdan gelen başvurular kaydedilir ama aranmaz.");
-      const outbound = clinic.vapiOutboundPhoneNumberId ?? clinic.vapiPhoneNumberId;
+      if (!enabled) return ok("Geri arama formu kapatıldı. Eski form adresi artık başvuru kabul etmez.");
       return ok(
-        outbound
-          ? "Hızlı geri dönüş açıldı. Form adresini kliniğin sitesine ve (varsa) Meta reklam otomasyonuna ver."
-          : "Hızlı geri dönüş açıldı, ama klinikte Vapi numarası yok — Ayarlar'dan ekle, yoksa kimse aranamaz.",
+        clinic.notifyEmail
+          ? "Geri arama formu açıldı. Form adresini kliniğin sitesine ve (varsa) Meta reklam otomasyonuna ver; başvurular kliniğin e-postasına gider."
+          : "Geri arama formu açıldı, ama klinikte bildirim e-postası yok — İletişim bölümünden ekle, yoksa başvurular sadece burada görünür.",
       );
     }
 

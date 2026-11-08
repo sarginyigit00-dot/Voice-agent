@@ -707,8 +707,8 @@ function Faq() {
     {
       q: { tr: "Hasta verileri ne oluyor? KVKK açısından durum nedir?", en: "What happens to patient data?" },
       a: {
-        tr: "Kayıtlar ve transkriptler sizin hesabınızda tutulur, dilediğiniz zaman silebilirsiniz. Saklama süresini siz belirlersiniz. Sağlık verisi işlediğiniz için kendi aydınlatma metninizi arama başında okutabilirsiniz.",
-        en: "Recordings and transcripts stay in your account and you can delete them at any time. You set the retention period, and you can have your own privacy notice read at the start of the call.",
+        tr: "Kayıtlar ve transkriptler yalnızca sizin hesabınızda görünür. Ses kayıtları 30 gün sonra otomatik silinir, dilerseniz panelden hemen silebilirsiniz; transkriptler 12 ay sonra silinir. Her aramanın başında arayana yapay zekâ ile görüştüğü ve kayıt yapıldığı otomatik olarak söylenir. Web siteniz için hazır aydınlatma metni şablonunu biz veriyoruz.",
+        en: "Recordings and transcripts are visible only in your account. Call recordings are deleted automatically after 30 days, or right away from the panel; transcripts after 12 months. Every call opens by telling the caller they're speaking with an AI and that the call is recorded. We provide a ready privacy-notice template for your website.",
       },
     },
   ];

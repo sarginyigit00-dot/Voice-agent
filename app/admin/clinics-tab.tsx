@@ -238,7 +238,6 @@ function ClinicEditor({
 
   const inbound = clinic.agents.find((a) => a.id === clinic.phone?.inboundAgentId);
   const phoneOk = Boolean(clinic.vapiPhoneNumberId && !clinic.phone?.error && inbound);
-  const callback = clinic.agents.find((a) => a.id === clinic.callbackAgentId);
   const billing = effectiveBilling(clinic);
 
   const setup: Section[] = [
@@ -260,8 +259,8 @@ function ClinicEditor({
     },
     {
       id: "callback",
-      title: "Hızlı geri dönüş",
-      status: { text: callback ? `açık (${callback.name})` : "kapalı" },
+      title: "Geri arama formu",
+      status: { text: clinic.leadFormKey ? "açık · klinik elle arar" : "kapalı" },
       body: <CallbackForm clinic={clinic} busy={busy} act={act} />,
     },
     {
@@ -911,35 +910,21 @@ const LEAD_STATUS_LABEL = {
 } as const;
 
 /**
- * Hızlı geri dönüş: which agent phones new leads, and the form URL that
- * feeds it. Steps and a ready-made form: HIZLI-GERI-DONUS.md.
+ * Geri arama formu: the form URL a clinic puts on its site (or behind a Meta
+ * lead ad). Each lead is emailed to the clinic, which calls back by hand — no
+ * agent dials out. Steps and a ready-made form: HIZLI-GERI-DONUS.md.
  */
 function CallbackForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
-  const provisioned = clinic.agents.filter((a) => a.vapiAssistantId);
-  const [agentId, setAgentId] = useState(clinic.callbackAgentId ?? "");
   const url = clinic.leadFormKey ? `https://www.${appConfig.domain}/api/leads?key=${clinic.leadFormKey}` : null;
   const counts = Object.entries(clinic.leadCounts).filter(([, n]) => n > 0);
 
   return (
     <Block
-      hint="Kliniğin formunu dolduran hastayı seçilen ajan hemen arar; mesai dışındaysa klinik açılınca. Kurulum: HIZLI-GERI-DONUS.md."
+      hint="Kliniğin formunu dolduran hasta kliniğin bildirim e-postasına düşer; klinik kendisi arar. Ajan kimseyi aramaz. Kurulum: HIZLI-GERI-DONUS.md."
     >
       <div className="flex flex-wrap items-end gap-2">
-        <div className="w-full max-w-[240px]">
-          <Field label="Arayacak ajan">
-            <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className={inputClass}>
-              <option value="">— kapalı —</option>
-              {provisioned.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                  {a.active ? "" : " (duraklatılmış)"}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-        <ActionButton disabled={busy} onClick={() => void act({ action: "setCallback", clinicId: clinic.id, agentId })}>
-          Kaydet
+        <ActionButton disabled={busy} onClick={() => void act({ action: "setCallback", clinicId: clinic.id, enabled: !url })}>
+          {url ? "Formu kapat" : "Formu aç"}
         </ActionButton>
         {url && (
           <ActionButton disabled={busy} onClick={() => void act({ action: "rotateLeadKey", clinicId: clinic.id })}>
@@ -947,6 +932,9 @@ function CallbackForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolea
           </ActionButton>
         )}
       </div>
+      {!clinic.notifyEmail && url && (
+        <p className="text-[11px] text-missed">Klinikte bildirim e-postası yok — başvurular kimseye gitmez.</p>
+      )}
       {url && (
         <p className="break-all font-mono text-[11px]">
           <span className="text-muted-foreground">Form adresi (POST): </span>

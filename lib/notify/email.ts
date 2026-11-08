@@ -220,6 +220,43 @@ export async function sendFollowUpEmail(clinic: ClinicContext, call: CallFollowU
   return sendEmail(clinic.notifyEmail, email.subject, email.html, email.text);
 }
 
+/** A patient who filled in the clinic's call-back form. */
+export interface LeadNotice {
+  name: string;
+  /** E.164, as stored. */
+  phone: string;
+  source: "web" | "meta" | "manual";
+  note: string | null;
+  createdAt: string;
+}
+
+const LEAD_SOURCE_LABEL: Record<LeadNotice["source"], string> = {
+  web: "Web sitesi formu",
+  meta: "Meta (Facebook/Instagram) reklamı",
+  manual: "Elle eklendi",
+};
+
+/**
+ * "Bu hasta aranmak istiyor" — the clinic calls back itself. No agent places
+ * outbound calls: an AI phoning someone is a KVKK risk the product doesn't take.
+ */
+export async function sendLeadNotice(clinic: ClinicContext, lead: LeadNotice): Promise<boolean> {
+  if (!clinic.notifyEmail || clinic.status === "suspended") return false;
+  const when = localParts(lead.createdAt, clinic.timeZone);
+  const { html, text } = mailShell(
+    "Bir hasta formu doldurup aranmak istedi. Lütfen kliniğinizden arayın.",
+    [
+      ["Hasta", lead.name || "—"],
+      ["Telefon", readableTr(lead.phone)],
+      ["Kaynak", LEAD_SOURCE_LABEL[lead.source]],
+      ["Not", lead.note?.trim() || "—"],
+      ["Zaman", `${when.date}, ${when.time}`],
+    ],
+    `${clinic.name} · Randevox`,
+  );
+  return sendEmail(clinic.notifyEmail, `Geri arama talebi: ${lead.name || readableTr(lead.phone)}`, html, text);
+}
+
 /** The acceptance record printed under the contracts in the copy. */
 export interface ContractCopyRecord {
   clinicName: string;

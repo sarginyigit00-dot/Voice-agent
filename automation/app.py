@@ -10,7 +10,6 @@ Six jobs, one shared secret (AUTOMATION_SECRET):
                         (lib/automation/emit.ts) on call.completed /
                         appointment.cancelled / appointment.rescheduled.
   - `reminders`       — every 15 min: pulls due 24h/2h reminders and sends them.
-  - `lead_callbacks`  — every 5 min: pokes Randevox to phone waiting leads.
   - `weekly_report` / `monthly_report` — Mondays / the 1st: emails each clinic its numbers
                         (weekly: short summary; Poliklinik also gets the breakdown).
   - `quota_alerts`    — daily: warns a clinic at 80 % and 100 % of its monthly minutes.
@@ -190,15 +189,8 @@ def reminders():
             )
 
 
-# ── job: Hızlı geri dönüş (waiting lead callbacks) ───────────────────────
-
-@app.function(image=image, secrets=[secret], schedule=modal.Period(minutes=5), timeout=120)
-def lead_callbacks():
-    import httpx
-
-    res = httpx.post(randevox_url("/api/automation/lead-callbacks"), headers=randevox_headers(), timeout=HTTP_TIMEOUT)
-    res.raise_for_status()
-    print(f"[lead-callbacks] {res.json()}")
+# (lead_callbacks removed 01.11.2026: agents no longer phone leads; the clinic
+#  gets an email and calls back itself — see lib/leads/callback.ts.)
 
 
 # ── jobs: performance report by email (every active clinic; weekly detail for Poliklinik) ──

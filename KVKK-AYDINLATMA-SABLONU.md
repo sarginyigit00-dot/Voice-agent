@@ -1,6 +1,6 @@
 # Aydınlatma metni şablonu (klinik için)
 
-Hızlı geri dönüş formu ve telefon ajanı kullanan klinik, bu metni kendi sitesinde yayınlar ve
+Geri arama formu ve telefon ajanı kullanan klinik, bu metni kendi sitesinde yayınlar ve
 formdaki "Aydınlatma Metni" bağlantısını buraya verir. Köşeli parantezleri klinik doldurur.
 Veri sorumlusu kliniktir; Randevox veri işleyendir. Yayından önce kliniğin kendi hukukçusuna
 kontrol ettirilmesi önerilir.
@@ -32,11 +32,11 @@ bilgilendiririz.
 - Hizmet kalitesinin denetlenmesi ve iyileştirilmesi
 - Hukuki yükümlülüklerin yerine getirilmesi ve olası uyuşmazlıklarda ispat
 
-### 3. Görüşmeyi yapay zekâ asistanı yapar
-Formunuza dönüş aramaları ve telefon hattımıza gelen aramalar, Klinik adına çalışan yapay
-zekâ destekli bir sesli asistan tarafından yapılabilir veya karşılanabilir. Asistan
-görüşmenin başında kendini ve kaydı bildirir. Talep etmeniz halinde görüşmeye bir Klinik
-çalışanı aktarılabilirsiniz.
+### 3. Gelen aramaları yapay zekâ asistanı karşılar
+Telefon hattımıza gelen aramalar, Klinik adına çalışan yapay zekâ destekli bir sesli asistan
+tarafından karşılanabilir. Asistan görüşmenin başında kendini ve kaydı bildirir. Talep
+etmeniz halinde görüşmeye bir Klinik çalışanı aktarılabilirsiniz. Formunuza dönüş
+aramalarını asistan değil, Klinik çalışanları yapar.
 
 ### 4. Hukuki sebepler
 - Telefonla dönüş ve randevu işlemleri: bir sözleşmenin kurulması veya ifasıyla doğrudan

@@ -338,7 +338,7 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
   if (appointment) payload.outcome = "booked";
 
   await logCall(payload, results);
-  // A no-op unless this was a Hızlı geri dönüş call.
+  // A no-op unless this was an old Hızlı geri dönüş call (agents no longer dial out).
   await markLeadCallEnded(payload.callId, payload.outcome);
 
   // After the log, so the automation app never hears about a call the panel doesn't have.

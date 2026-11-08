@@ -28,6 +28,7 @@ import {
 } from "@/lib/demo/data";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { conflictFor, describeConflict } from "@/lib/agents/conflict";
 import { fetchCalls } from "@/lib/calls/queries";
 import { fetchAgents, saveAgent } from "@/lib/agents/queries";
 import { fetchUsage } from "@/lib/clinics/usage-queries";
@@ -406,6 +407,8 @@ function AgentsPanel({
   agents: Agent[];
   setAgents: (fn: (list: Agent[]) => Agent[]) => void;
 }) {
+  // Same rule as /agents: no two active agents on the same hours.
+  const [conflict, setConflict] = useState<{ agentId: string; message: string } | null>(null);
   return (
     <section className="rounded-lg border border-border bg-card/30">
       <header className="flex items-center justify-between border-b border-border px-3 py-2">
@@ -425,12 +428,23 @@ function AgentsPanel({
               <p className="truncate text-[12.5px] font-semibold leading-tight">{a.name}</p>
               <p className="truncate font-mono text-[10px] text-muted-foreground">{a.voice}</p>
               <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground">{t(a.purpose)}</p>
+              {conflict?.agentId === a.id && (
+                <p role="alert" className="mt-1 text-[10.5px] leading-snug text-missed">
+                  {conflict.message}
+                </p>
+              )}
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="font-mono text-[11px] font-semibold tabular-nums">{a.callsToday} <span className="text-[9px] font-normal text-muted-foreground">{callsTodayLabel}</span></span>
               <button
                 onClick={() => {
                   const toggled: Agent = { ...a, active: !a.active };
+                  const clash = toggled.active ? conflictFor(toggled, agents) : null;
+                  if (clash) {
+                    setConflict({ agentId: a.id, message: describeConflict(clash, lang) });
+                    return;
+                  }
+                  setConflict(null);
                   setAgents((list) => list.map((x) => (x.id === a.id ? toggled : x)));
                   if (isSupabaseConfigured) saveAgent(toggled);
                 }}

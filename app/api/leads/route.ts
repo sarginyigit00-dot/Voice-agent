@@ -1,12 +1,13 @@
 import { after, NextResponse } from "next/server";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { intakeLead, isLeadSource, processLead } from "@/lib/leads/callback";
+import { intakeLead, isLeadSource, notifyClinicOfLead } from "@/lib/leads/callback";
 
 /**
  * POST /api/leads?key=<clinic's form key> — a clinic's lead form, from its
  * own website (cross-origin, JSON or a plain HTML form) or relayed by
  * whatever the clinic uses from a Meta lead ad. Fields: name, phone, consent,
- * consent_text?, note?, source?. The call starts right after the response (lib/leads/callback.ts).
+ * consent_text?, note?, source?. Right after the response the clinic gets an
+ * email to call the patient back — no agent dials out (lib/leads/callback.ts).
  * Setup and a ready form: HIZLI-GERI-DONUS.md.
  */
 
@@ -59,6 +60,6 @@ export async function POST(req: Request) {
   if (!res.ok) return json({ ok: false, error: res.error }, res.status);
 
   const leadId = res.leadId;
-  if (leadId) after(() => processLead(leadId).then(() => undefined));
+  if (leadId) after(() => notifyClinicOfLead(leadId).then(() => undefined));
   return json({ ok: true, duplicate: res.duplicate });
 }

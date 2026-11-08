@@ -1,36 +1,33 @@
 import { randomBytes } from "node:crypto";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { agentInClinic, clinicById } from "@/lib/clinics/server";
-import { isWithinHours } from "@/lib/agents/hours";
-import { isVapiConfigured, startCallbackCall, toE164 } from "@/lib/vapi/client";
+import { clinicById } from "@/lib/clinics/server";
+import { toE164 } from "@/lib/vapi/client";
+import { sendLeadNotice } from "@/lib/notify/email";
 import type { Outcome } from "@/lib/demo/data";
 
 /**
- * Hızlı geri dönüş: a patient fills in a clinic's lead form (its website, or a
- * Meta lead ad relayed by whatever the clinic uses), and the clinic's
- * callback agent phones them within a minute.
+ * Geri arama formu: a patient fills in a clinic's lead form (its website, or a
+ * Meta lead ad relayed by whatever the clinic uses), and the clinic gets an
+ * email to call them back — the clinic calls, by hand.
+ *
+ * No agent phones anyone. That used to happen (a "callback agent" dialled the
+ * lead within a minute); it was switched off on 01.11.2026 because an AI
+ * placing outbound calls is a KVKK risk the product doesn't take.
+ * `clinics.callback_agent_id` and `leads.vapi_call_id` stay in the schema but
+ * nothing writes them any more.
  *
  * - app/api/leads takes the form (`?key=` names the clinic, never an id) and
- *   calls `processLead` right after answering.
- * - Outside the agent's working hours a lead waits; the automation app
- *   (automation/app.py) polls app/api/automation/lead-callbacks every few
- *   minutes and `processDueLeads` phones it once the clinic opens. Failed
- *   calls retry the same way.
- * - The call itself is an ordinary call on the agent's own assistant, so the
- *   webhook logs it to /calls like any other; `markLeadCallEnded` only notes
- *   the outcome back on the lead.
+ *   calls `notifyClinicOfLead` right after answering.
+ * - The lead stays `new`; its `error` column notes whether the email went out.
  */
 
 export type LeadSource = "web" | "meta" | "manual";
 export type LeadStatus = "new" | "waiting" | "calling" | "called" | "failed" | "skipped";
 export const LEAD_STATUSES: LeadStatus[] = ["new", "waiting", "calling", "called", "failed", "skipped"];
 
-const MAX_ATTEMPTS = 3;
 const HOUR = 60 * 60 * 1000;
-/** The same number again within a day is the same person resubmitting — one call is enough. */
+/** The same number again within a day is the same person resubmitting — one email is enough. */
 const DEDUPE_MS = 24 * HOUR;
-/** A lead nobody could reach in three days is cold; calling it now would surprise more than help. */
-const EXPIRE_MS = 72 * HOUR;
 
 export const isLeadSource = (v: unknown): v is LeadSource => v === "web" || v === "meta" || v === "manual";
 
@@ -55,7 +52,7 @@ export type IntakeResult =
   | { ok: true; leadId: string | null; duplicate: boolean }
   | { ok: false; status: 400 | 404 | 429 | 500 | 503; error: string };
 
-/** A leaked form key must not turn a clinic's agent into an autodialer: at most this many new leads per clinic per day. */
+/** A leaked form key must not flood a clinic's inbox: at most this many new leads per clinic per day. */
 const MAX_LEADS_PER_CLINIC_PER_DAY = 100;
 
 export async function intakeLead(key: string, input: LeadInput): Promise<IntakeResult> {
@@ -127,102 +124,51 @@ interface LeadRow {
   source: string;
   note: string | null;
   status: LeadStatus;
-  attempts: number;
   created_at: string;
 }
 
 /**
- * Phones one lead if it can be phoned now. Safe to call twice at once: the
- * lead is claimed with a conditional update before Vapi is asked for a call.
+ * Emails the clinic about one new lead so someone there calls back. Best
+ * effort: the lead is already stored and visible in /admin either way; the
+ * outcome is noted on the lead's `error` column.
  */
-export async function processLead(leadId: string): Promise<LeadStatus | null> {
+export async function notifyClinicOfLead(leadId: string): Promise<boolean> {
   const supabase = getSupabaseServer();
-  if (!supabase) return null;
+  if (!supabase) return false;
 
   const { data } = await supabase.from("leads").select("*").eq("id", leadId).maybeSingle();
   const lead = data as LeadRow | null;
-  if (!lead || (lead.status !== "new" && lead.status !== "waiting")) return lead?.status ?? null;
-
-  const set = async (patch: Record<string, unknown>) => {
-    const { error } = await supabase.from("leads").update(patch).eq("id", lead.id);
-    if (error) console.error("[leads] update failed:", error.message);
-  };
-  const skip = async (reason: string): Promise<LeadStatus> => {
-    await set({ status: "skipped", error: reason });
-    return "skipped";
-  };
-
-  if (Date.now() - new Date(lead.created_at).getTime() > EXPIRE_MS) return skip("3 gün içinde aranamadı.");
+  if (!lead) return false;
 
   const clinic = await clinicById(lead.clinic_id);
-  if (!clinic) return skip("Klinik bulunamadı.");
-  if (clinic.status === "suspended") return skip("Klinik askıda.");
-  if (!clinic.callbackAgentId) return skip("Klinikte hızlı geri dönüş kapalı.");
-  const phoneNumberId = clinic.vapiOutboundPhoneNumberId ?? clinic.vapiPhoneNumberId;
-  if (!phoneNumberId) return skip("Klinikte arama yapılacak Vapi numarası yok.");
-  if (!isVapiConfigured()) return skip("Vapi bağlı değil.");
-
-  const found = await agentInClinic(clinic.callbackAgentId, clinic.id);
-  if (!found?.vapiAssistantId) return skip("Geri arama ajanı Vapi'de kurulu değil.");
-  if (!found.agent.active) return skip("Geri arama ajanı duraklatılmış.");
-
-  if (!isWithinHours(new Date(), found.agent.workingHours)) {
-    if (lead.status !== "waiting") await set({ status: "waiting", error: "Mesai dışı; klinik açılınca aranacak." });
-    return "waiting";
+  let note: string;
+  let sent = false;
+  if (!clinic) note = "Klinik bulunamadı.";
+  else if (clinic.status === "suspended") note = "Klinik askıda; bildirim gönderilmedi.";
+  else if (!clinic.notifyEmail) note = "Klinikte bildirim e-postası yok; talep sadece panelde.";
+  else {
+    sent = await sendLeadNotice(clinic, {
+      name: lead.name,
+      phone: lead.phone,
+      source: isLeadSource(lead.source) ? lead.source : "web",
+      note: lead.note,
+      createdAt: lead.created_at,
+    });
+    note = sent ? "Kliniğe e-postayla bildirildi; arama klinikte." : "E-posta gönderilemedi.";
   }
 
-  const attempts = lead.attempts + 1;
-  const { data: claimed } = await supabase
-    .from("leads")
-    .update({ status: "calling", attempts })
-    .eq("id", lead.id)
-    .eq("status", lead.status)
-    .select("id");
-  if (!claimed?.length) return null; // someone else is already on it
-
-  const res = await startCallbackCall({
-    assistantId: found.vapiAssistantId,
-    phoneNumberId,
-    number: lead.phone,
-    name: lead.name,
-    note: lead.note,
-    source: isLeadSource(lead.source) ? lead.source : "web",
-    clinic,
-  });
-
-  if (res.ok) {
-    await set({ status: "called", vapi_call_id: res.data.id, called_at: new Date().toISOString(), error: null });
-    return "called";
-  }
-  const status: LeadStatus = attempts >= MAX_ATTEMPTS ? "failed" : "waiting";
-  await set({ status, error: `Vapi: ${res.error}` });
-  return status;
+  const { error } = await supabase.from("leads").update({ error: note }).eq("id", lead.id);
+  if (error) console.error("[leads] update failed:", error.message);
+  return sent;
 }
 
-/** The automation app's poll: everything still owed a call, oldest first. */
+/**
+ * The automation app's old 5-minute poll. Nothing is owed a call any more
+ * (agents don't dial out), so this does nothing; kept so a still-deployed
+ * automation app gets a clean answer instead of a 404.
+ */
 export async function processDueLeads(): Promise<Record<string, number>> {
-  const supabase = getSupabaseServer();
-  if (!supabase) return {};
-
-  const { data, error } = await supabase
-    .from("leads")
-    .select("id")
-    .in("status", ["new", "waiting"])
-    // Fresh ones are still being handled by the intake request itself.
-    .lte("created_at", new Date(Date.now() - 2 * 60 * 1000).toISOString())
-    .order("created_at")
-    .limit(25);
-  if (error) {
-    console.error("[leads] due lookup failed:", error.message);
-    return {};
-  }
-
-  const counts: Record<string, number> = {};
-  for (const { id } of data ?? []) {
-    const status = (await processLead(id)) ?? "untouched";
-    counts[status] = (counts[status] ?? 0) + 1;
-  }
-  return counts;
+  return {};
 }
 
 /** From the webhook: how the callback went. A no-op for every call that wasn't one. */

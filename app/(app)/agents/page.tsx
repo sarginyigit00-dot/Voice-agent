@@ -13,6 +13,7 @@ import { STARTER_AGENTS } from "@/lib/agents/starter";
 import { authedFetch } from "@/lib/supabase/authed-fetch";
 import { useSession } from "@/components/auth/session";
 import { DAY_KEYS, DAY_LABEL, defaultWorkingHours, normalizeWorkingHours, type DayKey, type WorkingHours } from "@/lib/agents/hours";
+import { conflictFor, describeConflict as conflictText, type AgentConflict } from "@/lib/agents/conflict";
 
 const STORAGE_KEY = "randevox:agents";
 
@@ -37,6 +38,8 @@ export default function AgentsPage() {
   const [vapiSync, setVapiSync] = useState<
     { agentId: string; state: "pending" | "ok" | "error"; message: string; warning?: string } | null
   >(null);
+  // A blocked activation/save because another active agent already has those hours.
+  const [conflict, setConflict] = useState<{ agentId: string; message: string } | null>(null);
   useEffect(() => {
     previewAudio.current?.pause();
     previewAudio.current = null;
@@ -204,7 +207,18 @@ export default function AgentsPage() {
     vapiPending: lang === "tr" ? "Telefon hattına gönderiliyor…" : "Sending to the phone line…",
     vapiOk: lang === "tr" ? "Telefon hattına eşitlendi" : "Synced to the phone line",
     vapiLinked: lang === "tr" ? "Hatta kurulu" : "Live on the line",
+    clashBanner: lang === "tr" ? "Aynı saatte çalışan birden fazla aktif ajan var:" : "More than one active agent works the same hours:",
+    clashBannerHint:
+      lang === "tr"
+        ? "Birini duraklatın ya da saatlerini ayırın."
+        : "Pause one of them or split their hours.",
   };
+
+  const describeConflict = (c: AgentConflict) => conflictText(c, lang);
+
+  // Active agents that already share hours (seeded before this rule, or
+  // edited elsewhere). Shown, not forced off — the clinic decides which stays.
+  const clashing = agents.filter((a) => a.active && conflictFor(a, agents));
 
   // Runs after the row is saved: mirrors it onto the agent's Vapi assistant.
   const pushToVapi = (id: string) => {
@@ -253,6 +267,12 @@ export default function AgentsPage() {
       systemPrompt: systemPromptRef.current?.value ?? selected.systemPrompt,
       workingHours: hours,
     };
+    const clash = updated.active ? conflictFor(updated, agents) : null;
+    if (clash) {
+      setConflict({ agentId: updated.id, message: describeConflict(clash) });
+      return;
+    }
+    setConflict(null);
     setAgents((list) => list.map((x) => (x.id === selected.id ? updated : x)));
     setJustSaved(true);
     window.setTimeout(() => setJustSaved(false), 1600);
@@ -288,6 +308,23 @@ export default function AgentsPage() {
           {L.newAgent}
         </button>
       </div>
+
+      {clashing.length > 1 && (
+        <div
+          role="status"
+          className="flex items-start gap-2 rounded-lg border px-3 py-2 text-[12px] leading-snug"
+          style={{
+            borderColor: "color-mix(in oklch, var(--color-missed) 35%, transparent)",
+            background: "color-mix(in oklch, var(--color-missed) 8%, transparent)",
+          }}
+        >
+          <Icon name="triangle-alert" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-missed" />
+          <span>
+            {L.clashBanner} <span className="font-semibold">{clashing.map((a) => a.name).join(", ")}</span>.{" "}
+            <span className="text-muted-foreground">{L.clashBannerHint}</span>
+          </span>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         {/* agents list */}
@@ -354,6 +391,14 @@ export default function AgentsPage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     const toggled: Agent = { ...a, active: !a.active };
+                    const clash = toggled.active ? conflictFor(toggled, agents) : null;
+                    if (clash) {
+                      setSelectedId(a.id);
+                      setVoice(a.voice);
+                      setConflict({ agentId: a.id, message: describeConflict(clash) });
+                      return;
+                    }
+                    setConflict(null);
                     setAgents((list) => list.map((x) => (x.id === a.id ? toggled : x)));
                     if (live) saveAgent(toggled).then((saved) => saved && pushToVapi(toggled.id));
                   }}
@@ -362,6 +407,11 @@ export default function AgentsPage() {
                   <span className={cn("absolute top-0.5 h-3 w-3 rounded-full transition-all", a.active ? "left-[14px] bg-violet" : "left-0.5 bg-foreground/60")} />
                 </span>
               </div>
+              {conflict?.agentId === a.id && (
+                <p role="alert" className="mt-2 text-[11px] leading-snug text-missed">
+                  {conflict.message}
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -564,6 +614,11 @@ export default function AgentsPage() {
               <Icon name={justSaved ? "check" : "save"} className="h-3.5 w-3.5" />
               {justSaved ? L.saved : L.save}
             </button>
+            {conflict?.agentId === selected.id && (
+              <p role="alert" className="text-[11px] leading-snug text-missed">
+                {conflict.message}
+              </p>
+            )}
             {vapiSync?.agentId === selected.id && (
               <p
                 role="status"

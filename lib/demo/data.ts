@@ -265,7 +265,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag2", name: "Hasta Danışmanı", voice: "Kerem · confident male", active: true, callsToday: 98,
+    id: "ag2", name: "Hasta Danışmanı", voice: "Kerem · confident male", active: false, callsToday: 98,
     purpose: { tr: "Tedavi adaylarını nitelendirir, hasta danışmanına iletir.", en: "Qualifies treatment leads and forwards them to the patient coordinator." },
     greeting: { tr: "Estetenova Diş Kliniği'ne hoş geldiniz! Hangi konuda yardımcı olabilirim?", en: "Welcome to Estetenova Dental! What can I help you with today?" },
     actionIds: ["qualify", "crm"],
@@ -274,7 +274,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag3", name: "Randevu Masası", voice: "Deniz · calm neutral", active: true, callsToday: 67,
+    id: "ag3", name: "Randevu Masası", voice: "Deniz · calm neutral", active: false, callsToday: 67,
     purpose: { tr: "Hasta randevuları ve rutin talepleri yönetir.", en: "Handles patient bookings and routine requests." },
     greeting: { tr: "Estetenova Diş Kliniği, ben Randevox. Size nasıl yardımcı olabilirim?", en: "Estetenova Dental, this is Randevox. How can I help you today?" },
     actionIds: ["book"],
@@ -283,7 +283,7 @@ export const AGENTS: Agent[] = [
     workingHours: defaultWorkingHours(),
   },
   {
-    id: "ag4", name: "Mesai Dışı", voice: "Ada · soft female", active: false, callsToday: 35,
+    id: "ag4", name: "Mesai Dışı", voice: "Ada · soft female", active: true, callsToday: 35,
     purpose: { tr: "Mesai dışı mesaj alır ve acil olanları yönlendirir.", en: "Takes after-hours messages and escalates urgent ones." },
     greeting: { tr: "Şu an kapalıyız. Mesajınızı bırakın, sabah ilk iş dönüş yapalım.", en: "We're closed right now. Leave a message and we'll call back first thing." },
     actionIds: ["transfer"],

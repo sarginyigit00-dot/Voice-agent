@@ -38,7 +38,7 @@ export const STARTER_AGENTS: Agent[] = [
     id: "ag2",
     name: "Hasta Danışmanı",
     voice: "Kerem · confident male",
-    active: true,
+    active: false,
     callsToday: 0,
     purpose: {
       tr: "Hasta adaylarını nitelendirir ve hasta danışmanına iletir.",
@@ -56,7 +56,7 @@ export const STARTER_AGENTS: Agent[] = [
     id: "ag3",
     name: "Randevu Masası",
     voice: "Deniz · calm neutral",
-    active: true,
+    active: false,
     callsToday: 0,
     purpose: {
       tr: "Hasta randevuları ve rutin talepleri yönetir.",

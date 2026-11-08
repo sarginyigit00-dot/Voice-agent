@@ -113,6 +113,18 @@ function RealPlayer({ callId, tint, lang }: { callId: string; tint: string; lang
   const [playing, setPlaying] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  // Deleting takes two clicks — "Sil" arms it, "Emin misiniz?" sends it — so a
+  // stray click can't destroy a recording, and no browser confirm() is needed.
+  const [del, setDel] = useState<"idle" | "confirm" | "busy" | "done" | "error">("idle");
+
+  const remove = () => {
+    if (del === "idle" || del === "error") return setDel("confirm");
+    setDel("busy");
+    ref.current?.pause();
+    authedFetch(`/api/calls/${encodeURIComponent(callId)}/recording`, { method: "DELETE" })
+      .then((res) => setDel(res.ok ? "done" : "error"))
+      .catch(() => setDel("error"));
+  };
 
   useEffect(() => {
     let alive = true;
@@ -128,6 +140,14 @@ function RealPlayer({ callId, tint, lang }: { callId: string; tint: string; lang
       alive = false;
     };
   }, [callId]);
+
+  if (del === "done") {
+    return (
+      <p className="py-1.5 font-mono text-[11px] text-muted-foreground">
+        {lang === "tr" ? "Ses kaydı silindi." : "The recording was deleted."}
+      </p>
+    );
+  }
 
   if (failed) {
     return (
@@ -159,6 +179,23 @@ function RealPlayer({ callId, tint, lang }: { callId: string; tint: string; lang
         onEnded={() => setPlaying(false)}
         className="h-8 flex-1"
       />
+      <button
+        onClick={remove}
+        onBlur={() => del === "confirm" && setDel("idle")}
+        disabled={del === "busy"}
+        title={lang === "tr" ? "Ses kaydını kalıcı olarak sil" : "Delete the recording permanently"}
+        className={cn(
+          "flex h-8 shrink-0 items-center gap-1 rounded-md px-2 font-mono text-[10.5px] transition-colors disabled:cursor-wait disabled:opacity-50",
+          del === "confirm" ? "bg-destructive text-destructive-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        )}
+      >
+        <Icon name="trash-2" className="h-3.5 w-3.5" />
+        {del === "confirm"
+          ? lang === "tr" ? "Emin misiniz?" : "Sure?"
+          : del === "error"
+            ? lang === "tr" ? "Silinemedi, tekrar" : "Failed, retry"
+            : lang === "tr" ? "Sil" : "Delete"}
+      </button>
     </div>
   );
 }

@@ -131,6 +131,48 @@ export function isWithinHours(instant: Date, hours: WorkingHours): boolean {
   return minutes >= open && minutes < close;
 }
 
+export interface HoursOverlap {
+  day: DayKey;
+  /** "HH:MM" */
+  from: string;
+  /** "HH:MM" — exclusive, "24:00" when it runs to midnight. */
+  to: string;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const fromMinutes = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+
+/**
+ * A day's window in minutes, or null when closed. A malformed window counts as
+ * the whole day, the same way `isWithinHours` treats it as open.
+ */
+function dayWindow(day: DayHours | undefined): [number, number] | null {
+  if (!day || day.closed) return null;
+  const open = toMinutes(day.open);
+  const close = toMinutes(day.close);
+  if (open === null || close === null || close <= open) return [0, 24 * 60];
+  return [open, close];
+}
+
+/**
+ * The first stretch of the week both schedules are open at the same time —
+ * used to keep two active agents of a clinic off the same hours. Closing is
+ * exclusive, so one agent ending at 18:00 and another starting at 18:00 don't
+ * clash. Both are read as wall-clock times: every clinic is on
+ * Europe/Istanbul, so time zones aren't converted here.
+ */
+export function findOverlap(a: WorkingHours, b: WorkingHours): HoursOverlap | null {
+  for (const day of DAY_KEYS) {
+    const wa = dayWindow(a.days[day]);
+    const wb = dayWindow(b.days[day]);
+    if (!wa || !wb) continue;
+    const from = Math.max(wa[0], wb[0]);
+    const to = Math.min(wa[1], wb[1]);
+    if (from < to) return { day, from: fromMinutes(from), to: fromMinutes(to) };
+  }
+  return null;
+}
+
 /** The day's window, for telling a caller when we're actually open. */
 export function hoursForDate(instant: Date, hours: WorkingHours): DayHours {
   return hours.days[zonedParts(instant, hours.timeZone).day];

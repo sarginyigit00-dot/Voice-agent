@@ -18,7 +18,7 @@ import { deleteCall, isVapiConfigured } from "@/lib/vapi/client";
  * Appointments are left alone: the clinic's calendar needs them.
  */
 
-export const RECORDING_DAYS = 90;
+export const RECORDING_DAYS = 30;
 export const TRANSCRIPT_DAYS = 365;
 export const USAGE_DAYS = 180;
 

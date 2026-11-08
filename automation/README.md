@@ -6,7 +6,6 @@ n8n'in yerini aldı. Tek dosya (`app.py`), üç iş:
 |---|---|
 | `events` (web endpoint) | Arama bitince Randevox imzalı bir olay gönderir (`lib/automation/emit.ts`). Randevu alındıysa hastaya onay mesajı, alınmadıysa kliniğe e-posta gider. Panelden iptal edilen/ertelenen randevu için de hastaya mesaj gider. |
 | `reminders` (her 15 dk) | Randevuya 24 saat ve 2 saat kala hastaya hatırlatma gönderir. |
-| `lead_callbacks` (her 5 dk) | "Hızlı geri dönüş" — mesai dışı gelen ya da araması başarısız olan başvuruları arattırır. |
 
 Hasta mesajı kliniğin **mesaj kanalından** gider (admin → Klinikler → Yönet → Ayarlar →
 **Hasta mesajları**): Kapalı, SMS (Netgsm) ya da WhatsApp. SMS yalnızca Türkiye cep
@@ -54,7 +53,7 @@ cd automation
 modal deploy app.py
 ```
 
-Çıktıda üç şey görürsün: iki zamanlanmış fonksiyon (`reminders`, `lead_callbacks`) ve bir web
+Çıktıda şunları görürsün: zamanlanmış fonksiyonlar (`reminders` vb.) ve bir web
 endpoint URL'i, şuna benzer:
 
 ```

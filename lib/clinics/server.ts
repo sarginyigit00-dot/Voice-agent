@@ -36,7 +36,7 @@ export interface ClinicContext {
   vapiPhoneNumberId: string | null;
   /** Patient messages via the automation app: Netgsm SMS, or WhatsApp once Meta approves the templates. */
   messageChannel: MessageChannel;
-  /** Hızlı geri dönüş: the agent that phones new leads. Null = off. */
+  /** Legacy: agents no longer phone leads (lib/leads/callback.ts); nothing reads this. */
   callbackAgentId: string | null;
   /** The Vapi number outbound calls go out on, when it isn't the inbound one. */
   vapiOutboundPhoneNumberId: string | null;

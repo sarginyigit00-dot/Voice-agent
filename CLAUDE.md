@@ -112,6 +112,17 @@ has no real source yet — it just goes empty, since that needs a real-time
 Vapi status feed, not a REST table. `/calls` and the dashboard both resolve
 `agentId` through whichever agents list is active (real or demo).
 
+## Agent rules
+
+- **One active agent per hour.** /agents and the dashboard refuse to switch an
+  agent on (or save new hours) while another active agent covers any of the
+  same hours (`lib/agents/conflict.ts`, overlap in `lib/agents/hours.ts`).
+  Day line + after-hours line don't overlap, so they coexist.
+- **Agents never dial out.** The clinic call-back form (`app/api/leads`,
+  `lib/leads/callback.ts`, `HIZLI-GERI-DONUS.md`) only emails the clinic,
+  which calls back by hand — an AI placing outbound calls was dropped as a
+  KVKK risk. Don't reintroduce outbound agent calls without asking.
+
 ## Post-call actions (the EYLEMLER toggles)
 
 Each agent's 5 action toggles (book / transfer / SMS / CRM / qualify, defined once in

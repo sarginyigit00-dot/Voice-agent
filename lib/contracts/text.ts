@@ -13,7 +13,7 @@
  * hash changes anyway, the version is what a human reads in the records.
  */
 
-export const CONTRACT_VERSION = "2026-11-01";
+export const CONTRACT_VERSION = "2026-11-09";
 
 export interface Clause {
   title: string;
@@ -149,7 +149,7 @@ export function renderContracts(input: {
           "İlgili kişiler: Klinik'i arayanlar ve Klinik'in geri arama formlarını dolduranlar (hasta ve hasta adayları), Klinik personeli (panel kullanıcıları).",
           "Veri kategorileri: kimlik ve iletişim (ad soyad, telefon, e-posta); görüşme (ses kaydı — Klinik etkinleştirdiyse —, transkript, özet, duygu etiketi, görüşme süresi ve sonucu); randevu (tarih, saat, hizmet, hekim); sağlık verisi (özel nitelikli: görüşmede veya formda paylaşılan şikâyet, tedavi ilgisi); rıza kaydı (rıza metni, zamanı, IP adresi); personel (ad, e-posta, giriş kayıtları).",
           "Amaçlar: Klinik adına gelen aramaların karşılanması ve geri arama yapılması; randevu oluşturma, değiştirme, iptal ve hatırlatma; arama kayıtlarının ve özetlerinin Klinik paneline ve Klinik'in belirlediği entegrasyonlara (CRM, takvim) aktarılması; hasta bildirimleri (SMS/WhatsApp) ve Klinik'e e-posta bildirimleri.",
-          "Süre: Ses kayıtları 30 gün sonra, Klinik dilerse daha önce panelden silinir; transkript, özet ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir (kişiyle ilişkilendirilemeyen istatistikler kalır). Geri arama formu kayıtları 12 ay sonra silinir. Randevu kayıtları ve personel bilgileri hesap kapanana kadar tutulur; sonrası madde 11'e göre.",
+          "Süre: Ses kayıtları 14 gün içinde, Klinik dilerse daha önce panelden silinir; transkript, özet ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir (kişiyle ilişkilendirilemeyen istatistikler kalır). Geri arama formu kayıtları 12 ay sonra silinir. Randevu kayıtları ve personel bilgileri hesap kapanana kadar tutulur; sonrası madde 11'e göre.",
         ],
       },
       {

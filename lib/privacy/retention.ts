@@ -18,7 +18,10 @@ import { deleteCall, isVapiConfigured } from "@/lib/vapi/client";
  * Appointments are left alone: the clinic's calendar needs them.
  */
 
-export const RECORDING_DAYS = 30;
+// Vapi's plan only serves the last 14 days of calls; past that it refuses the
+// delete ("exceeds your retention window"), so this must stay under 14. The
+// cron runs daily, so 13 days means every recording is deleted inside it.
+export const RECORDING_DAYS = 13;
 export const TRANSCRIPT_DAYS = 365;
 export const USAGE_DAYS = 180;
 

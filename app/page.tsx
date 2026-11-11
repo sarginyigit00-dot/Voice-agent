@@ -22,6 +22,7 @@ import { LogoMark } from "@/components/ui/logo";
 import { Waveform } from "@/components/app/waveform";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 import { HeroCallDemo } from "@/components/marketing/hero-call-demo";
+import { LegalEntityInfo } from "@/components/marketing/legal-entity-info";
 import { useLang } from "@/components/i18n/language-provider";
 import type { L } from "@/lib/i18n/config";
 import { ForceLightRoute } from "./force-light";
@@ -679,8 +680,8 @@ function Faq() {
     {
       q: { tr: "Hasta karşısındakinin bot olduğunu anlar mı?", en: "Will patients realise it's a bot?" },
       a: {
-        tr: "Çoğu anlamıyor. Düşük gecikmeli akışlı ses, doğal duraklamalar ve araya girme desteği var — hasta sözünü kesebilir, asistan uyum sağlar. Yine de isterseniz açılışta yapay zekâ asistanı olduğunu söyletebilirsiniz — bu tamamen sizin tercihiniz.",
-        en: "Most don't. It streams low-latency speech with natural pauses and barge-in, so a patient can interrupt and it adapts. You can still have it disclose that it's an AI assistant in the greeting — that's entirely your call.",
+        tr: "Anlar, çünkü baştan söylüyoruz. Randevox her görüşmenin başında yapay zekâ asistanı olduğunu ve görüşmenin kayıt altına alınıp işlendiğini söyler; bu bildirim kapatılamaz. Sonrası akıcı bir telefon görüşmesi: düşük gecikmeli akışlı ses, doğal duraklamalar ve araya girme desteği var — hasta sözünü kesebilir, asistan uyum sağlar.",
+        en: "Yes — because we tell them up front. Randevox opens every call by saying it's an AI assistant and that the call is recorded and processed; this notice can't be switched off. From there it's a smooth phone conversation: low-latency streamed speech, natural pauses and barge-in, so a patient can interrupt and it adapts.",
       },
     },
     {
@@ -707,8 +708,8 @@ function Faq() {
     {
       q: { tr: "Hasta verileri ne oluyor? KVKK açısından durum nedir?", en: "What happens to patient data?" },
       a: {
-        tr: "Kayıtlar ve transkriptler yalnızca sizin hesabınızda görünür. Ses kayıtları 14 gün içinde otomatik silinir, dilerseniz panelden hemen silebilirsiniz; transkriptler 12 ay sonra silinir. Her aramanın başında arayana yapay zekâ ile görüştüğü ve kayıt yapıldığı otomatik olarak söylenir. Web siteniz için hazır aydınlatma metni şablonunu biz veriyoruz.",
-        en: "Recordings and transcripts are visible only in your account. Call recordings are deleted automatically within 14 days, or right away from the panel; transcripts after 12 months. Every call opens by telling the caller they're speaking with an AI and that the call is recorded. We provide a ready privacy-notice template for your website.",
+        tr: "Kayıtlar ve transkriptler yalnızca sizin hesabınızda görünür. Ses kayıtları 14 gün içinde otomatik silinir, dilerseniz panelden hemen silebilirsiniz; transkriptler 12 ay sonra silinir. Her aramanın başında arayana yapay zekâ ile görüştüğü ve görüşmenin kaydedilip işlendiği otomatik olarak söylenir. Web siteniz için hazır aydınlatma metni şablonunu biz veriyoruz.",
+        en: "Recordings and transcripts are visible only in your account. Call recordings are deleted automatically within 14 days, or right away from the panel; transcripts after 12 months. Every call opens by telling the caller they're speaking with an AI and that the call is recorded and processed. We provide a ready privacy-notice template for your website.",
       },
     },
   ];
@@ -806,6 +807,7 @@ function Footer() {
           </Link>
         ))}
       </div>
+      <LegalEntityInfo className="w-full text-[12.5px] leading-relaxed text-muted-foreground" />
     </footer>
   );
 }

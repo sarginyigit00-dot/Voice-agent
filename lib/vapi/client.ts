@@ -416,11 +416,27 @@ async function toolIdsFor(
  * the caller is told so in the opening line — the clinic's name, said first,
  * names who is recording; that an AI is speaking, and what the recording is
  * for, are said too (KVKK aydınlatma). Added here rather than typed into each
- * greeting so no clinic can edit it away or forget it on a new agent.
+ * greeting so no clinic can edit it away or forget it on a new agent. There is
+ * deliberately no setting to turn it off.
+ *
+ * With the starter greeting ("Merhaba, {klinik}. Size nasıl yardımcı
+ * olabilirim?") the opening line reads:
+ * "Merhaba, {klinik}. Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu
+ * oluşturmak için kaydedilir ve işlenir. Size nasıl yardımcı olabilirim?"
  */
+// TODO(yasal): aydınlatma linki akışı yok — aydınlatma metnini hastaya SMS ile
+// gönderen bir akış kurulunca buraya "Aydınlatma metnine kısa mesajla
+// ulaşabilirsiniz." / "You can get our privacy notice by text message." yazılacak.
+// Olmayan bir özelliği ajan söylememeli; o zamana kadar boş kalır.
+const PRIVACY_NOTICE_SENTENCE = { tr: "", en: "" };
+
 const RECORDING_NOTICE = {
-  tr: "Yapay zekâ asistanıyla görüşüyorsunuz; görüşmeniz randevu işlemleriniz ve hizmet kalitesi için kaydedilmektedir.",
-  en: "You're speaking with an AI assistant; this call is recorded for your appointment and for quality purposes.",
+  tr: ["Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu oluşturmak için kaydedilir ve işlenir.", PRIVACY_NOTICE_SENTENCE.tr]
+    .filter(Boolean)
+    .join(" "),
+  en: ["I'm an AI assistant. This call is recorded and processed to book your appointment.", PRIVACY_NOTICE_SENTENCE.en]
+    .filter(Boolean)
+    .join(" "),
 };
 
 /** Puts the notice before the closing question, so the line still ends by inviting the caller to speak. */

@@ -5,6 +5,7 @@ import appConfig from "@/app.config";
 import { LogoMark } from "@/components/ui/logo";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 import { useLang } from "@/components/i18n/language-provider";
+import { LegalEntityInfo } from "@/components/marketing/legal-entity-info";
 import { ForceLightRoute } from "./force-light";
 
 /**
@@ -70,6 +71,7 @@ function LegalFooter() {
           </Link>
         ))}
       </div>
+      <LegalEntityInfo className="w-full text-[12.5px] leading-relaxed text-muted-foreground" />
     </footer>
   );
 }

@@ -27,8 +27,8 @@ export const STARTER_AGENTS: Agent[] = [
       en: "Greets inbound calls, books appointments and routes.",
     },
     greeting: {
-      tr: "{klinik}, iyi günler. Size nasıl yardımcı olabilirim?",
-      en: "{klinik}, good day. How can I help you?",
+      tr: "Merhaba, {klinik}. Size nasıl yardımcı olabilirim?",
+      en: "Hello, {klinik}. How can I help you?",
     },
     actionIds: ["book", "transfer"],
     systemPrompt: "",
@@ -45,8 +45,8 @@ export const STARTER_AGENTS: Agent[] = [
       en: "Qualifies patient leads and forwards them to the patient coordinator.",
     },
     greeting: {
-      tr: "{klinik}, merhaba. Hangi konuda yardımcı olabilirim?",
-      en: "{klinik}, hello. What can I help you with?",
+      tr: "Merhaba, {klinik}. Size nasıl yardımcı olabilirim?",
+      en: "Hello, {klinik}. How can I help you?",
     },
     actionIds: ["qualify", "crm"],
     systemPrompt: "",
@@ -63,8 +63,8 @@ export const STARTER_AGENTS: Agent[] = [
       en: "Handles patient bookings and routine requests.",
     },
     greeting: {
-      tr: "{klinik}, merhaba. Nasıl yardımcı olabilirim?",
-      en: "{klinik}, hello. How can I help?",
+      tr: "Merhaba, {klinik}. Size nasıl yardımcı olabilirim?",
+      en: "Hello, {klinik}. How can I help you?",
     },
     actionIds: ["book"],
     systemPrompt: "",
@@ -82,8 +82,8 @@ export const STARTER_AGENTS: Agent[] = [
     },
     // It answers from evening to early morning, so no "iyi akşamlar" at 7 a.m.
     greeting: {
-      tr: "{klinik}, merhaba. Şu an mesai saatlerimiz dışındayız ama randevunuzu alabilirim. Size nasıl yardımcı olabilirim?",
-      en: "{klinik}, hello. We're closed right now, but I can still book you in. How can I help?",
+      tr: "Merhaba, {klinik}. Şu an mesai saatlerimiz dışındayız ama randevunuzu alabilirim. Size nasıl yardımcı olabilirim?",
+      en: "Hello, {klinik}. We're closed right now, but I can still book you in. How can I help you?",
     },
     // Books into the clinic's opening hours; nobody is there to take a transfer.
     actionIds: ["book"],

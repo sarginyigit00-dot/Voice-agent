@@ -1,6 +1,7 @@
 "use client";
 
 import { useLang } from "@/components/i18n/language-provider";
+import { LegalEntityInfo } from "@/components/marketing/legal-entity-info";
 import { LegalShell } from "../legal-shell";
 
 type LL = { tr: string; en: string };
@@ -19,8 +20,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "2. Sağlık verisi ve KVKK", en: "2. Health data and KVKK" },
     body: [
       {
-        tr: "Kliniğiniz sağlık hizmeti verdiği için, arayanların paylaştığı bilgiler özel nitelikli kişisel veri (sağlık verisi) sayılabilir. Bu verilerin işlenmesinden ve arayanlara KVKK kapsamında aydınlatma yapılmasından veri sorumlusu sıfatıyla siz (klinik) sorumlusunuz; biz veri işleyen sıfatıyla sadece sizin talimatlarınız doğrultusunda işleriz. Arama başında okutmak üzere kendi aydınlatma metninizi ajan talimatlarınıza ekleyebilirsiniz.",
-        en: "Because your clinic provides healthcare, information callers share may qualify as special-category personal data (health data). As the data controller, your clinic is responsible for processing this data lawfully and informing callers (e.g. under Turkey's KVKK); we act only as a data processor, on your instructions. You can add your own disclosure text to your agent's instructions to be read at the start of a call.",
+        tr: "Kliniğiniz sağlık hizmeti verdiği için, arayanların paylaştığı bilgiler özel nitelikli kişisel veri (sağlık verisi) sayılabilir. Bu verilerin işlenmesinden ve arayanlara KVKK kapsamında aydınlatma yapılmasından veri sorumlusu sıfatıyla siz (klinik) sorumlusunuz; biz veri işleyen sıfatıyla sadece sizin talimatlarınız doğrultusunda işleriz. Randevox her aramanın başında, yapay zekâ asistanıyla görüşüldüğünü ve görüşmenin kaydedilip işlendiğini bildiren varsayılan açılış bildirimini okur. Arayanlara KVKK kapsamında aydınlatma yapılmasından veri sorumlusu olarak klinik sorumludur; Randevox bunun için kliniğe bir aydınlatma metni şablonu sağlar.",
+        en: "Because your clinic provides healthcare, information callers share may qualify as special-category personal data (health data). As the data controller, your clinic is responsible for processing this data lawfully and informing callers (e.g. under Turkey's KVKK); we act only as a data processor, on your instructions. At the start of every call, Randevox reads a default opening notice telling the caller they're speaking with an AI assistant and that the call is recorded and processed. The clinic, as data controller, is responsible for informing callers under KVKK; Randevox provides the clinic with a privacy-notice template for this.",
       },
     ],
   },
@@ -28,8 +29,13 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "3. Verileri nasıl kullanıyoruz", en: "3. How we use the data" },
     body: [
       {
-        tr: "Verileri yalnızca hizmeti sunmak (çağrıları yanıtlamak, randevu almak, panelinizde göstermek), hizmeti iyileştirmek ve yasal yükümlülüklerimizi yerine getirmek için kullanırız. Verilerinizi satmayız.",
-        en: "We use data only to provide the service (answering calls, booking appointments, showing them in your panel), to improve the service, and to meet legal obligations. We do not sell your data.",
+        tr: "Hesap ve panel verilerinizi (ad, e-posta, kliniğinizin ayarları, panel kullanım kayıtları) hizmeti sunmak, güvenliği sağlamak, hizmeti iyileştirmek ve yasal yükümlülüklerimizi yerine getirmek için kullanırız.",
+        en: "We use your account and panel data (name, email, your clinic's settings, panel usage records) to provide the service, keep it secure, improve it, and meet our legal obligations.",
+      },
+      // TODO(yasal): "Modellerimizi eğitmek için kullanmayız" ifadesi, LLM sağlayıcısında eğitimin kapalı olduğu onaylanınca eklenecek.
+      {
+        tr: "Aramalar yoluyla toplanan arayan verilerini (ad, telefon, e-posta, transkript, kayıt, randevu bilgisi) yalnızca kliniğinizin talimatları doğrultusunda ve size hizmeti sunmak için işleriz. Bu verileri kendi amaçlarımız için kullanmayız, satmayız ve başka bir klinikle paylaşmayız. Hizmeti iyileştirmek için yalnızca kişiyle ilişkilendirilemeyen istatistikleri (tarih, süre, sonuç) kullanırız.",
+        en: "Caller data collected through calls (name, phone, email, transcript, recording, appointment details) is processed only on your clinic's instructions and to provide the service to you. We do not use this data for our own purposes, sell it, or share it with any other clinic. To improve the service we use only non-identifying statistics (date, duration, outcome).",
       },
     ],
   },
@@ -37,8 +43,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "4. Hukuki sebepler", en: "4. Legal grounds" },
     body: [
       {
-        tr: "Hesap ve klinik verilerinizi sizinle yaptığımız sözleşmenin kurulması ve ifası (KVKK md. 5/2-c), hukuki yükümlülüklerimiz (md. 5/2-ç) ve hizmetin güvenliği ile iyileştirilmesine ilişkin meşru menfaatimiz (md. 5/2-f) kapsamında işleriz. Demo talep formundaki bilgileri, talebiniz üzerine size dönüş yapmak için işleriz (md. 5/2-c). Arayanların verileri bakımından hukuki sebep ve gerektiğinde açık rıza, veri sorumlusu olan kliniğin sorumluluğundadır.",
-        en: "We process account and clinic data to enter into and perform our contract with you (KVKK art. 5/2-c), to meet legal obligations (art. 5/2-ç), and on our legitimate interest in securing and improving the service (art. 5/2-f). Demo-request details are used to get back to you at your request (art. 5/2-c). For callers' data, the legal ground — and explicit consent where needed — is the responsibility of the clinic as data controller.",
+        tr: "Hesap ve panel verilerinizi sizinle yaptığımız sözleşmenin kurulması ve ifası (KVKK md. 5/2-c), hukuki yükümlülüklerimiz (md. 5/2-ç) ve hesap ile panelin güvenliği ve iyileştirilmesine ilişkin meşru menfaatimiz (md. 5/2-f) kapsamında işleriz. Demo talep formundaki bilgileri, talebiniz üzerine size dönüş yapmak için işleriz (md. 5/2-c). Arayanların verilerini kendi meşru menfaatimize dayanarak işlemeyiz; bu veriler bakımından hukuki sebep ve gerektiğinde açık rıza, veri sorumlusu olan kliniğin sorumluluğundadır.",
+        en: "We process account and panel data to enter into and perform our contract with you (KVKK art. 5/2-c), to meet legal obligations (art. 5/2-ç), and on our legitimate interest in securing and improving the account and panel (art. 5/2-f). Demo-request details are used to get back to you at your request (art. 5/2-c). We do not process callers' data on the basis of our own legitimate interest; for that data, the legal ground — and explicit consent where needed — is the responsibility of the clinic as data controller.",
       },
     ],
   },
@@ -104,11 +110,11 @@ export default function V2PrivacyPage() {
         </p>
         <h1 className="mt-2 font-editorial text-4xl">{lang === "tr" ? "Gizlilik Politikası" : "Privacy Policy"}</h1>
         <p className="mt-3 text-[13px] text-muted-foreground">
-          {lang === "tr" ? "Son güncelleme: 9 Kasım 2026" : "Last updated: November 9, 2026"}
+          {lang === "tr" ? "Son güncelleme: 11 Kasım 2026" : "Last updated: November 11, 2026"}
         </p>
 
         <div className="mt-10 space-y-8">
-          {SECTIONS.map((s) => (
+          {SECTIONS.map((s, si) => (
             <section key={s.title.en} id={s.title.en === "2. Health data and KVKK" ? "kvkk" : undefined}>
               <h2 className="text-[15px] font-semibold text-foreground">{tt(s.title)}</h2>
               <div className="mt-2 space-y-3">
@@ -117,6 +123,12 @@ export default function V2PrivacyPage() {
                     {tt(p)}
                   </p>
                 ))}
+                {si === 0 && (
+                  <LegalEntityInfo
+                    lead={{ tr: "Hizmeti sunan:", en: "Service provided by:" }}
+                    className="text-[14px] leading-relaxed text-muted-foreground"
+                  />
+                )}
               </div>
             </section>
           ))}

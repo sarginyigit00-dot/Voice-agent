@@ -41,7 +41,10 @@ const COPY = {
   },
   submit: { tr: "Demo talep et", en: "Request a demo" },
   sending: { tr: "Gönderiliyor…", en: "Sending…" },
-  consentLead: { tr: "Ekibimiz sizi telefonla arayacak; bilgileriniz yalnızca bu dönüş için kullanılır. Ayrıntılar:", en: "Our team will call you; your details are used only for that. Details:" },
+  consentLead: {
+    tr: "Bilgileriniz yalnızca talebinize geri dönüş yapmak için işlenir; ekibimiz sizi telefonla arar. Ayrıntılar:",
+    en: "Your details are processed only to get back to you about your request; our team will call you. Details:",
+  },
   consentLink: { tr: "Gizlilik Politikası", en: "Privacy Policy" },
   doneTitle: { tr: "Talebiniz alındı.", en: "Your request is in." },
   doneBody: {

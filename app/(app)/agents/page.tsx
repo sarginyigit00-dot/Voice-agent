@@ -172,7 +172,7 @@ export default function AgentsPage() {
     newAgent: lang === "tr" ? "Yeni ajan" : "New agent",
     newAgentName: lang === "tr" ? "Yeni ajan" : "New agent",
     newAgentPurpose: { tr: "Henüz yapılandırılmadı — aşağıdan düzenle.", en: "Not configured yet — edit it below." },
-    newAgentGreeting: { tr: "Merhaba, size nasıl yardımcı olabilirim?", en: "Hi, how can I help you today?" },
+    newAgentGreeting: { tr: "Merhaba, {klinik}. Size nasıl yardımcı olabilirim?", en: "Hello, {klinik}. How can I help you?" },
     callsToday: lang === "tr" ? "bugün arama" : "calls today",
     active: lang === "tr" ? "Aktif" : "Active",
     paused: lang === "tr" ? "Duraklatıldı" : "Paused",

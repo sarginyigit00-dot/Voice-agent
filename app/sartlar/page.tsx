@@ -2,6 +2,7 @@
 
 import appConfig from "@/app.config";
 import { useLang } from "@/components/i18n/language-provider";
+import { LegalEntityInfo } from "@/components/marketing/legal-entity-info";
 import { LegalShell } from "../legal-shell";
 
 type LL = { tr: string; en: string };
@@ -88,7 +89,7 @@ export default function V2TermsPage() {
         </p>
 
         <div className="mt-10 space-y-8">
-          {SECTIONS.map((s) => (
+          {SECTIONS.map((s, si) => (
             <section key={s.title.en}>
               <h2 className="text-[15px] font-semibold text-foreground">{tt(s.title)}</h2>
               <div className="mt-2 space-y-3">
@@ -97,6 +98,12 @@ export default function V2TermsPage() {
                     {tt(p)}
                   </p>
                 ))}
+                {si === 0 && (
+                  <LegalEntityInfo
+                    lead={{ tr: "Hizmeti sunan:", en: "Service provided by:" }}
+                    className="text-[14px] leading-relaxed text-muted-foreground"
+                  />
+                )}
               </div>
             </section>
           ))}

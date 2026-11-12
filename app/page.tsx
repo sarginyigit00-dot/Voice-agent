@@ -708,8 +708,8 @@ function Faq() {
     {
       q: { tr: "Hasta verileri ne oluyor? KVKK açısından durum nedir?", en: "What happens to patient data?" },
       a: {
-        tr: "Kayıtlar ve transkriptler yalnızca sizin hesabınızda görünür. Ses kayıtları 14 gün içinde otomatik silinir, dilerseniz panelden hemen silebilirsiniz; transkriptler 12 ay sonra silinir. Her aramanın başında arayana yapay zekâ ile görüştüğü ve görüşmenin kaydedilip işlendiği otomatik olarak söylenir. Web siteniz için hazır aydınlatma metni şablonunu biz veriyoruz.",
-        en: "Recordings and transcripts are visible only in your account. Call recordings are deleted automatically within 14 days, or right away from the panel; transcripts after 12 months. Every call opens by telling the caller they're speaking with an AI and that the call is recorded and processed. We provide a ready privacy-notice template for your website.",
+        tr: "Kayıtlar ve transkriptler yalnızca sizin hesabınızda görünür. Ses kayıtları 14 gün içinde otomatik silinir, dilerseniz panelden hemen silebilirsiniz; transkriptler 12 ay sonra silinir. Her aramanın başında arayana yapay zekâ ile görüştüğü ve görüşmenin kaydedilip işlendiği otomatik olarak söylenir; arayan sorarsa asistan aydınlatma bilgisini telefonda okur. Web siteniz için hazır aydınlatma metni şablonunu biz veriyoruz.",
+        en: "Recordings and transcripts are visible only in your account. Call recordings are deleted automatically within 14 days, or right away from the panel; transcripts after 12 months. Every call opens by telling the caller they're speaking with an AI and that the call is recorded and processed; if the caller asks, the assistant reads out the privacy notice on the call. We provide a ready privacy-notice template for your website.",
       },
     },
   ];

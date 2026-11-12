@@ -4,11 +4,14 @@ import { speakHours } from "@/lib/speech/tr";
 import { knowledgeSection, type ClinicKnowledge } from "@/lib/clinics/knowledge-shape";
 import type { L } from "@/lib/i18n/config";
 import type { WorkingHours } from "@/lib/agents/hours";
+import { spokenPrivacyNotice } from "@/lib/agents/privacy-notice";
 
 /** What the prompt needs to know about the line it runs on, beyond the agent itself. */
 export interface PromptContext {
   /** The clinic's facts from /klinik — shared by all of its agents. */
   knowledge?: ClinicKnowledge | null;
+  /** The clinic's name — the data controller named in the spoken privacy notice. */
+  clinicName?: string;
   /**
    * Whether a live transfer tool is actually on the assistant (transfer action
    * on AND a transfer number set). The prompt must never promise a hand-over
@@ -61,6 +64,14 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr", ctx:
     tr
       ? `# Açılış\nGörüşmeyi şu cümleyle zaten açtın: "${t(agent.greeting)}"\nBu cümleyi ya da benzer bir karşılamayı tekrarlama. Doğrudan arayanın söylediğine cevap ver.`
       : `# Opening\nYou have already opened the call with: "${t(agent.greeting)}"\nDon't repeat it or greet again. Answer what the caller says directly.`,
+  );
+
+  // The second layer of the KVKK notice: read only on request, so a normal
+  // booking call stays as short as the opening line.
+  sections.push(
+    tr
+      ? `# Aydınlatma\nArayan kaydı, kişisel verilerini, KVKK'yı ya da aydınlatma metnini sorarsa şu metni kelimesi kelimesine oku; ekleme, çıkarma ya da yorum yapma:\n"${spokenPrivacyNotice(ctx.clinicName)}"\nSonra "Başka nasıl yardımcı olabilirim?" diye sor ve kaldığın yerden devam et. Arayan sormadıkça bu metni asla okuma.`
+      : `# Privacy notice\nIf the caller asks about the recording, their personal data, KVKK or the privacy notice, read this text word for word — add, drop or explain nothing:\n"${spokenPrivacyNotice(ctx.clinicName)}"\nThen ask how else you can help and carry on where you left off. Never read it unless the caller asks.`,
   );
 
   // The clinic's own instructions — the only free-prose part.

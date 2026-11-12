@@ -423,20 +423,15 @@ async function toolIdsFor(
  * olabilirim?") the opening line reads:
  * "Merhaba, {klinik}. Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu
  * oluşturmak için kaydedilir ve işlenir. Size nasıl yardımcı olabilirim?"
+ *
+ * Kept this short on purpose — a longer opening loses the caller before the
+ * booking. The rest of the KVKK notice is read only when the caller asks
+ * (`# Aydınlatma` in lib/agents/prompt.ts, text in lib/agents/privacy-notice.ts);
+ * the full written notice is the clinic's, on its site and patient forms.
  */
-// TODO(yasal): aydınlatma linki akışı yok — aydınlatma metnini hastaya SMS ile
-// gönderen bir akış kurulunca buraya "Aydınlatma metnine kısa mesajla
-// ulaşabilirsiniz." / "You can get our privacy notice by text message." yazılacak.
-// Olmayan bir özelliği ajan söylememeli; o zamana kadar boş kalır.
-const PRIVACY_NOTICE_SENTENCE = { tr: "", en: "" };
-
 const RECORDING_NOTICE = {
-  tr: ["Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu oluşturmak için kaydedilir ve işlenir.", PRIVACY_NOTICE_SENTENCE.tr]
-    .filter(Boolean)
-    .join(" "),
-  en: ["I'm an AI assistant. This call is recorded and processed to book your appointment.", PRIVACY_NOTICE_SENTENCE.en]
-    .filter(Boolean)
-    .join(" "),
+  tr: "Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu oluşturmak için kaydedilir ve işlenir.",
+  en: "I'm an AI assistant. This call is recorded and processed to book your appointment.",
 };
 
 /** Puts the notice before the closing question, so the line still ends by inviting the caller to speak. */
@@ -487,6 +482,7 @@ export function buildAssistant(
           role: "system",
           content: composeSystemPrompt(spoken, "tr", {
             knowledge,
+            clinicName: clinic.name,
             canTransfer: !openingHours && transferTarget(agent, clinic) !== null,
             afterHours: openingHours ? { openingHours } : undefined,
           }),

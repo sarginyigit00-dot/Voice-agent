@@ -11,7 +11,7 @@ type Supabase = NonNullable<ReturnType<typeof getSupabaseServer>>;
  * one-time sign-in token is minted for it. The browser redeems the token on
  * /auth/destek. RLS then shows the panel exactly as the clinic sees it.
  *
- * Every opening is written to support_access_log; the panel shows a
+ * Every opening is written to support_access_log with the operator's reason; the panel shows a
  * "Destek modu" strip (user_metadata.support), and /gizlilik says so.
  *
  * Server-only (service-role key).
@@ -31,6 +31,7 @@ export function isSupportUser(u: { email?: string | null; user_metadata?: Record
 export async function openSupportSession(
   supabase: Supabase,
   clinicId: string,
+  reason: string,
 ): Promise<{ ok: true; tokenHash: string } | { ok: false; error: string }> {
   const email = supportEmail();
   if (!email) return { ok: false, error: "SUPPORT_EMAIL ayarlı değil." };
@@ -62,7 +63,7 @@ export async function openSupportSession(
     .insert({ clinic_id: clinicId, user_id: user.id, role: "owner" });
   if (attachError) return { ok: false, error: attachError.message };
 
-  const { error: logError } = await supabase.from("support_access_log").insert({ clinic_id: clinicId });
+  const { error: logError } = await supabase.from("support_access_log").insert({ clinic_id: clinicId, reason });
   if (logError) console.error("[admin] failed to log support access:", logError.message);
 
   return { ok: true, tokenHash: link.properties.hashed_token };

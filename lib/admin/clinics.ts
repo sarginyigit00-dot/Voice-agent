@@ -640,11 +640,13 @@ export async function runClinicAction(body: unknown): Promise<ClinicActionResult
 
     case "openPanel": {
       if (!clinicId) return fail("Klinik seçilmedi.");
-      const res = await openSupportSession(supabase, clinicId);
+      const reason = typeof b.reason === "string" ? b.reason.trim().slice(0, 200) : "";
+      if (reason.length < 3) return fail("Paneli açma nedenini yaz (kayda geçer).");
+      const res = await openSupportSession(supabase, clinicId, reason);
       if (!res.ok) return fail(res.error);
       return {
         ok: true,
-        message: "Kliniğin paneli yeni sekmede açıldı (destek modu). Bu giriş kayda geçti.",
+        message: "Kliniğin paneli yeni sekmede açıldı (destek modu). Bu giriş nedeniyle birlikte kayda geçti.",
         url: `/auth/destek?token_hash=${encodeURIComponent(res.tokenHash)}`,
       };
     }

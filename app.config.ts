@@ -100,8 +100,8 @@ export const appConfig: AppConfig = {
       en: "The AI agent that answers your dental clinic's phone,",
     },
     heroAccent: {
-      tr: "hiçbir hastayı kaçırmaz.",
-      en: "and never misses a patient.",
+      tr: "kaçan aramaları randevuya çevirir.",
+      en: "and turns missed calls into bookings.",
     },
     heroSubtitle: {
       tr: "Randevox telefonu ilk çalışta açar, tedavi ve muayene görüşmelerini randevuya çevirir, hasta adaylarını nitelendirir ve doğru kişiye yönlendirir — gece, hafta sonu, hekimleriniz koltuktayken bile.",
@@ -113,13 +113,13 @@ export const appConfig: AppConfig = {
       { icon: "audio-lines", title: { tr: "İnsan gibi sesler", en: "Human-like voices" }, body: { tr: "Düşük gecikmeli, doğal duraklamalı ve araya girilebilen sesler. Doğal bir konuşma akışı sunar; istediğinizde ajan yapay zekâ olduğunu açıkça söyleyebilir.", en: "Low-latency, natural-sounding voices with real pauses and barge-in. The conversation flows naturally, and the agent can state that it is an AI whenever you want." } },
       { icon: "calendar-check", title: { tr: "Randevu alır", en: "Books appointments" }, body: { tr: "Takvimine canlı bağlanır, uygunluğu okur, slot teklif eder ve aramayı kapatmadan rezervasyonu onaylar.", en: "Connects live to your calendar, reads availability, offers slots and confirms the booking before the call ends." } },
       { icon: "filter", title: { tr: "Hasta adayını nitelendirir", en: "Qualifies patient leads" }, body: { tr: "Hangi tedaviyi, kaç diş için, ne zaman istediğini sorar ve yalnızca ciddi tedavi adaylarını hasta danışmanınıza iletir.", en: "Asks which treatment, for how many teeth and when, and passes only serious treatment leads to your patient coordinator." } },
-      { icon: "clock", title: { tr: "7/24 açık", en: "24/7 coverage" }, body: { tr: "Mesai dışı, tatil, hekimlerin koltukta olduğu yoğun saatler — fark etmez. Her arama anında karşılanır, hiçbiri sesli mesaja düşmez.", en: "After hours, holidays, dentists busy chairside — it doesn't matter. Every call is answered instantly; none drop to voicemail." } },
+      { icon: "clock", title: { tr: "7/24 açık", en: "24/7 coverage" }, body: { tr: "Mesai dışı, tatil, hekimlerin koltukta olduğu yoğun saatler — fark etmez. Ajanın çalıştığı saatlerde her arama anında karşılanır, sesli mesaja düşmez.", en: "After hours, holidays, dentists busy chairside — it doesn't matter. During the agent's hours every call is answered instantly instead of going to voicemail." } },
       { icon: "workflow", title: { tr: "Hasta kaydı", en: "Patient records" }, body: { tr: "Her arama özet, transkript ve eylem maddeleriyle hasta kaydına düşer. Kimin hangi tedaviyi sorduğunu sonradan okuyabilirsiniz.", en: "Every call lands on the patient record with a summary, transcript and action items — so you can read later who asked about which treatment." } },
     ],
     stats: [
       { value: "7/24", label: { tr: "kesintisiz açık hat", en: "line that always answers" } },
       { value: "İlk çalışta", label: { tr: "telefonu açar", en: "answers, on the first ring" } },
-      { value: "0", label: { tr: "sesli mesaja düşen arama", en: "calls dropped to voicemail" } },
+      { value: "14 gün", label: { tr: "içinde silinen ses kayıtları", en: "until recordings are deleted" } },
     ],
     // Turnkey packages (lib/admin/constants.ts PLANS holds the same prices and minutes).
     // Shown on the landing page's #fiyatlar section (app/page.tsx → Pricing).
@@ -129,8 +129,8 @@ export const appConfig: AppConfig = {
     ],
     faq: [
       { q: { tr: "Ajan gerçekten insan gibi mi konuşuyor?", en: "Does the agent really sound human?" }, a: { tr: "Evet. Düşük gecikmeli akışlı sesler, doğal duraklamalar ve araya girme (barge-in) desteği var. Arayan ajanın sözünü kesebilir, ajan da uyum sağlar — donuk bir IVR menüsü gibi değil.", en: "Yes. It uses low-latency streaming voices with natural pauses and barge-in support, so callers can interrupt and the agent adapts — nothing like a clunky IVR menu." } },
-      { q: { tr: "Randevuyu nasıl alıyor?", en: "How does it book appointments?" }, a: { tr: "Ajan, kullandığınız takvime (Google Takvim dahil) canlı bağlanır, hekimlerin gerçek uygunluğunu okur, arayana slot teklif eder ve aramayı kapatmadan randevuyu onaylayıp davet gönderir.", en: "The agent connects live to the calendar you already use (Google Calendar included), reads your dentists' real availability, offers slots to the caller and confirms the booking — sending the invite before the call ends." } },
-      { q: { tr: "Bir aramayı insana aktarabilir mi?", en: "Can it transfer a call to a human?" }, a: { tr: "Evet. Kuralı siz koyarsınız — tedavi sonrası şikâyet, acil durum, sıcak tedavi adayı veya bir anahtar ifade — Randevox aramayı canlı olarak doğru kişiye transfer eder, bağlamı da yanında taşır.", en: "Yes. You set the rules — a post-treatment complaint, an emergency, a hot treatment lead or a keyphrase — and Randevox warm-transfers the call live to the right person, carrying the context with it." } },
+      { q: { tr: "Randevuyu nasıl alıyor?", en: "How does it book appointments?" }, a: { tr: "Ajan, Cal.com randevu takvimine canlı bağlanır (Google Takvim'inizi Cal.com'a bağlayabilirsiniz), hekimlerin gerçek uygunluğunu okur, arayana slot teklif eder ve aramayı kapatmadan randevuyu onaylar.", en: "The agent connects live to a Cal.com booking calendar (you can link your Google Calendar to Cal.com), reads your dentists' real availability, offers slots to the caller and confirms the booking before the call ends." } },
+      { q: { tr: "Bir aramayı insana aktarabilir mi?", en: "Can it transfer a call to a human?" }, a: { tr: "Evet. Kuralı siz koyarsınız — tedavi sonrası şikâyet, acil durum, sıcak tedavi adayı veya bir anahtar ifade — Randevox aramayı canlı olarak doğru kişiye transfer eder; görüşmenin özeti panelinizde hazır olur.", en: "Yes. You set the rules — a post-treatment complaint, an emergency, a hot treatment lead or a keyphrase — and Randevox transfers the call live to the right person; the call summary is waiting in your panel." } },
       { q: { tr: "CRM'ime veya araçlarıma bağlanır mı?", en: "Does it connect to my CRM or tools?" }, a: { tr: "Evet — her arama özet, transkript ve çıkarılan eylem maddeleriyle panelinizdeki hasta kaydına düşer. Kendi CRM'inizi veya klinik yazılımınızı kullanıyorsanız oraya da aktarabiliriz.", en: "Yes — every call lands on the patient record in your panel with a summary, transcript and extracted action items. If you already use your own CRM or clinic software, we can forward it there too." } },
     ],
   },

@@ -1,6 +1,6 @@
 # Aydınlatma metni şablonu (klinik için)
 
-Geri arama formu ve telefon ajanı kullanan klinik, bu metni kendi sitesinde yayınlar ve
+Hızlı geri dönüş formu ve telefon ajanı kullanan klinik, bu metni kendi sitesinde yayınlar ve
 formdaki "Aydınlatma Metni" bağlantısını buraya verir. Köşeli parantezleri klinik doldurur.
 Veri sorumlusu kliniktir; Randevox veri işleyendir. Yayından önce kliniğin kendi hukukçusuna
 kontrol ettirilmesi önerilir.
@@ -32,11 +32,12 @@ bilgilendiririz.
 - Hizmet kalitesinin denetlenmesi ve iyileştirilmesi
 - Hukuki yükümlülüklerin yerine getirilmesi ve olası uyuşmazlıklarda ispat
 
-### 3. Gelen aramaları yapay zekâ asistanı karşılar
+### 3. Görüşmeyi yapay zekâ asistanı yapar
 Telefon hattımıza gelen aramalar, Klinik adına çalışan yapay zekâ destekli bir sesli asistan
-tarafından karşılanabilir. Asistan görüşmenin başında kendini ve kaydı bildirir. Talep
-etmeniz halinde görüşmeye bir Klinik çalışanı aktarılabilirsiniz. Formunuza dönüş
-aramalarını asistan değil, Klinik çalışanları yapar.
+tarafından karşılanabilir. Asistan görüşmenin başında yapay zekâ olduğunu ve görüşmenin
+kaydedildiğini bildirir; sorarsanız bu metnin özetini telefonda okur. Asistan dışarıya arama
+yapmaz: formunuza dönüş aramalarını Klinik çalışanı yapar. Talep etmeniz halinde görüşmeye bir
+Klinik çalışanı aktarılabilirsiniz.
 
 ### 4. Hukuki sebepler
 - Telefonla dönüş ve randevu işlemleri: bir sözleşmenin kurulması veya ifasıyla doğrudan
@@ -44,17 +45,24 @@ aramalarını asistan değil, Klinik çalışanları yapar.
 - Hizmet kalitesi ve ispat: veri sorumlusunun meşru menfaati (md. 5/2-f), bir hakkın tesisi,
   kullanılması veya korunması (md. 5/2-e)
 - Hukuki yükümlülükler: kanunlarda açıkça öngörülmesi, hukuki yükümlülük (md. 5/2-a, ç)
-- Sağlık verileri ve görüşmenin kaydedilmesi: açık rızanız (md. 6/2)
+- Görüşmenin ses kaydı ve yazılı dökümü: randevu talebinizin doğru kaydedilmesi ve olası
+  uyuşmazlıklarda ispat (md. 5/2-c, 5/2-e, 5/2-f)
+- Sağlık verileri (görüşmede veya formda paylaştığınız şikâyet ve tedavi bilgileri): sır saklama
+  yükümlülüğü altındaki Klinik tarafından tıbbi teşhis, tedavi ve bakım hizmetlerinin
+  yürütülmesi amacıyla gerekli olması (md. 6/3-e)
+- Geri arama formunda onay kutusunu işaretlediyseniz, form bakımından ayrıca açık rızanız
+  (md. 6/3-a)
 
 ### 5. Aktarım
 Kişisel verileriniz yalnızca yukarıdaki amaçlarla ve gerektiği ölçüde şu taraflara aktarılır:
 - Klinik adına hizmet veren yazılım sağlayıcısı (Randevox) ve onun altyapı sağlayıcıları:
-  telefon/ses altyapısı, yapay zekâ dil modeli, takvim, veri barındırma, SMS/WhatsApp ve
-  e-posta bildirimleri
+  telefon/ses altyapısı ve yapay zekâ dil modeli (Vapi, OpenAI, Deepgram, ElevenLabs), veri
+  barındırma (Supabase, Vercel), zamanlanmış işler (Modal), SMS (Netgsm), WhatsApp (Meta) ve
+  e-posta bildirimleri (Resend)
 - Kanunen yetkili kamu kurum ve kuruluşları, talep halinde
 
 **Yurt dışına aktarım:** Ses altyapısı, yapay zekâ dil modeli ve veri barındırma
-sağlayıcılarının sunucuları yurt dışında bulunduğundan, form ve görüşme verileriniz yurt
+sağlayıcılarının sunucuları yurt dışında (ABD, Japonya, AB) bulunduğundan, form ve görüşme verileriniz yurt
 dışına aktarılır. Bu aktarım, söz konusu sağlayıcıların veri işleme sözleşmeleri kapsamında,
 yalnızca yukarıdaki amaçlarla yapılır.
 
@@ -63,7 +71,7 @@ Verileriniz web sitemizdeki form, reklam platformlarındaki başvuru formları v
 görüşmeleri aracılığıyla, elektronik ortamda, otomatik yollarla toplanır.
 
 ### 7. Saklama süresi
-Görüşmelerin ses kayıtları 3 ay; yazılı dökümleri, özetleri, adınız ve telefon numaranız ile
+Görüşmelerin ses kayıtları en fazla 14 gün (talebiniz halinde daha önce); yazılı dökümleri, özetleri, adınız ve telefon numaranız ile
 form başvuruları 12 ay saklanır ve süre sonunda otomatik olarak silinir. Randevu ve tedaviye
 ilişkin kayıtlar ilgili mevzuatta öngörülen süreler boyunca saklanır; süre sonunda silinir, yok
 edilir veya anonim hale getirilir.
@@ -80,8 +88,8 @@ Klinik'e başvurarak şu haklarınızı kullanabilirsiniz:
   itiraz etme
 - Kanuna aykırı işleme sebebiyle zarara uğramanız halinde zararın giderilmesini talep etme
 
-Açık rızanızı dilediğiniz zaman geri alabilirsiniz; geri alma, o tarihe kadar yapılan
-işlemleri etkilemez.
+Açık rızaya dayanan işlemler (geri arama formundaki onay) bakımından rızanızı dilediğiniz zaman
+geri alabilirsiniz; geri alma, o tarihe kadar yapılan işlemleri etkilemez.
 
 **Başvuru:** Taleplerinizi [E-posta] adresine veya [KEP adresi] üzerinden ya da [Açık Adres]
 adresine yazılı olarak iletebilirsiniz. Başvurular en geç 30 gün içinde ücretsiz yanıtlanır.

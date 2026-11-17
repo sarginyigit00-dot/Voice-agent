@@ -14,6 +14,8 @@ import { deleteCall, isVapiConfigured } from "@/lib/vapi/client";
  *   number are wiped. CRM records and callback leads are deleted.
  *
  * - After USAGE_DAYS panel usage rows (usage_events) are deleted.
+ * - After TRANSCRIPT_DAYS demo requests and panel feedback (with its
+ *   attachment in the private bucket) are deleted too.
  *
  * Appointments are left alone: the clinic's calendar needs them.
  */
@@ -35,6 +37,8 @@ export interface RetentionResult {
   crmRecordsDeleted: number;
   leadsDeleted: number;
   usageRowsDeleted: number;
+  demoRequestsDeleted: number;
+  feedbackDeleted: number;
   errors: string[];
 }
 
@@ -48,6 +52,8 @@ export async function runRetention(): Promise<RetentionResult> {
     crmRecordsDeleted: 0,
     leadsDeleted: 0,
     usageRowsDeleted: 0,
+    demoRequestsDeleted: 0,
+    feedbackDeleted: 0,
     errors: [],
   };
   const supabase = getSupabaseServer();
@@ -116,6 +122,37 @@ export async function runRetention(): Promise<RetentionResult> {
     .select("user_id");
   if (usageError) result.errors.push(`usage_events silinemedi: ${usageError.message}`);
   else result.usageRowsDeleted = usage?.length ?? 0;
+
+  // 5. Demo requests from the marketing site.
+  const { data: demos, error: demoError } = await supabase
+    .from("demo_requests")
+    .delete()
+    .lt("created_at", cutoff)
+    .select("id");
+  if (demoError) result.errors.push(`demo_requests silinemedi: ${demoError.message}`);
+  else result.demoRequestsDeleted = demos?.length ?? 0;
+
+  // 6. Panel feedback: the attachment first (private bucket), then the row.
+  const { data: oldFeedback, error: fbReadError } = await supabase
+    .from("feedback")
+    .select("id, attachment_path")
+    .lt("created_at", cutoff)
+    .limit(500);
+  if (fbReadError) result.errors.push(`feedback okunamadı: ${fbReadError.message}`);
+  else if (oldFeedback?.length) {
+    const paths = oldFeedback.map((r) => r.attachment_path as string | null).filter((x): x is string => !!x);
+    if (paths.length) {
+      const { error: rmError } = await supabase.storage.from("feedback-attachments").remove(paths);
+      if (rmError) result.errors.push(`feedback ekleri silinemedi: ${rmError.message}`);
+    }
+    const { data: fb, error: fbError } = await supabase
+      .from("feedback")
+      .delete()
+      .in("id", oldFeedback.map((r) => r.id as string))
+      .select("id");
+    if (fbError) result.errors.push(`feedback silinemedi: ${fbError.message}`);
+    else result.feedbackDeleted = fb?.length ?? 0;
+  }
 
   if (result.errors.length) result.status = "partial";
   return result;

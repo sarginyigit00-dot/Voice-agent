@@ -605,6 +605,9 @@ create table if not exists public.support_access_log (
   created_at timestamptz not null default now()
 );
 
+-- Why the operator opened the panel (/gizlilik promises the reason is logged).
+alter table public.support_access_log add column if not exists reason text;
+
 create index if not exists support_access_log_clinic_idx on public.support_access_log (clinic_id, created_at desc);
 
 alter table public.support_access_log enable row level security;

@@ -116,7 +116,7 @@ function Hero() {
   // The value is bilingual too — "İlk çalışta" and the TR-idiomatic "7/24" were
   // leaking into the English page.
   const specs: { value: L; label: L; accent?: boolean }[] = [
-    { value: { tr: "0", en: "0" }, label: { tr: "kaçan hasta araması", en: "patients lost to a missed call" }, accent: true },
+    { value: { tr: "14 gün", en: "14 days" }, label: { tr: "içinde silinen ses kayıtları", en: "until recordings are deleted" }, accent: true },
     { value: { tr: "7/24", en: "24/7" }, label: { tr: "kesintisiz cevap veren hat", en: "line that always answers" } },
     { value: { tr: "Her arama", en: "Every call" }, label: { tr: "kayıt, transkript ve özetle", en: "recorded, transcribed, summarised" } },
     { value: { tr: "İlk çalışta", en: "First ring" }, label: { tr: "telefonu açar", en: "answers, on the first ring" } },
@@ -353,8 +353,8 @@ function Features() {
       icon: "moon",
       title: { tr: "Hekimleriniz koltukta iken açık", en: "Open while your dentists are chairside" },
       body: {
-        tr: "Tedavi, mesai dışı, hafta sonu, tatil — telefon boşta çalmaz. Her arama karşılanır, hiçbiri sesli mesaja düşmez.",
-        en: "Treatments, after hours, weekends, holidays — the phone is never left ringing and nothing drops to voicemail.",
+        tr: "Tedavi, mesai dışı, hafta sonu, tatil — ajanın çalıştığı saatlerde telefon boşta çalmaz, arama sesli mesaja düşmez.",
+        en: "Treatments, after hours, weekends, holidays — during the agent's hours the phone is never left ringing and calls don't drop to voicemail.",
       },
     },
     {
@@ -420,7 +420,7 @@ function Guardrails() {
       title: { tr: "Söyleyebilir", en: "It may say" },
       caption: { tr: "Sizin yazdığınız bilgiler", en: "The facts you write" },
       items: [
-        { tr: "İlk muayene ücretsiz.", en: "The first examination is free." },
+        { tr: "Muayene yaklaşık 20 dakika sürüyor.", en: "An examination takes about 20 minutes." },
         { tr: "Kanal tedavisi genellikle iki seans sürüyor.", en: "A root canal usually takes two visits." },
         { tr: "Gülüş tasarımı için önce panoramik film çekiyoruz.", en: "For smile design we start with a panoramic X-ray." },
         { tr: "Randevu Salı ve Perşembe günleri müsait.", en: "Appointments are open on Tuesdays and Thursdays." },
@@ -442,7 +442,7 @@ function Guardrails() {
       icon: "corner-up-right",
       tone: "text-foreground",
       title: { tr: "Size devreder", en: "It hands over" },
-      caption: { tr: "Anında, bağlamıyla birlikte", en: "Instantly, with the context" },
+      caption: { tr: "Anında, doğru kişiye", en: "Instantly, to the right person" },
       items: [
         { tr: "Tedavi sonrası ağrı veya şikâyet", en: "Post-treatment pain or a complaint" },
         { tr: "İade ve iptal talebi", en: "Refund or cancellation requests" },
@@ -701,8 +701,8 @@ function Faq() {
     {
       q: { tr: "Randevular takvimimize nasıl düşüyor?", en: "How do bookings reach our calendar?" },
       a: {
-        tr: "Kullandığınız takvime (Google Takvim dahil) canlı bağlanır, gerçek uygunluğu okur ve randevuyu telefon kapanmadan yazar. Randevu aynı anda panelinizde de görünür.",
-        en: "It connects live to the calendar you already use (Google Calendar included), reads real availability and writes the booking before the call ends. The same booking appears in your panel straight away.",
+        tr: "Randevu takvimi Cal.com üzerinden canlı bağlanır (Google Takvim'inizi Cal.com'a bağlayabilirsiniz), gerçek uygunluğu okur ve randevuyu telefon kapanmadan yazar. Randevu aynı anda panelinizde de görünür.",
+        en: "It connects live through a Cal.com booking calendar (you can link your Google Calendar to Cal.com), reads real availability and writes the booking before the call ends. The same booking appears in your panel straight away.",
       },
     },
     {

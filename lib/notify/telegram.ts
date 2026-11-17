@@ -28,6 +28,22 @@ export interface ErrorReport {
   context?: Record<string, string | number | undefined | null>;
 }
 
+/**
+ * Error text is raw (a DB error can echo a row, a client error a form value),
+ * so e-mail addresses, phone numbers and 11-digit ID numbers are masked before
+ * anything leaves for Telegram. The DPA (Ek-2) promises this.
+ */
+const MASKS: [RegExp, string][] = [
+  [/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, "[e-posta]"],
+  [/\+\d{10,14}\b/g, "[telefon]"],
+  [/(?<!\d)(?:90[\s-]?)?\(?0?[2-58]\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)/g, "[telefon]"],
+  [/(?<!\d)\d{11}(?!\d)/g, "[numara]"],
+];
+
+export function maskPersonalData(text: string): string {
+  return MASKS.reduce((t, [re, label]) => t.replace(re, label), text);
+}
+
 function shouldSend(key: string): boolean {
   const now = Date.now();
   for (const [k, t] of recent) if (now - t > DEDUPE_MS) recent.delete(k);
@@ -52,7 +68,7 @@ async function send(report: ErrorReport, opts: { header?: string; dedupe?: boole
     "",
     report.message,
   ];
-  const text = lines.join("\n").slice(0, MAX_LEN);
+  const text = maskPersonalData(lines.join("\n")).slice(0, MAX_LEN);
 
   try {
     const res = await fetch(`${TELEGRAM_URL}/bot${token}/sendMessage`, {

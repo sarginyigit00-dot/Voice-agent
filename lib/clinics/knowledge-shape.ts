@@ -165,5 +165,5 @@ export const DEMO_KNOWLEDGE: ClinicKnowledge = {
     { title: "Dt.", name: "Mehmet Demir", specialty: "Endodonti", notes: "", calcomEventTypeId: null },
   ],
   address: "Örnek Mah. Sağlık Cad. No: 12, Kadıköy / İstanbul. Metrobüs durağına 5 dakika yürüme mesafesinde.",
-  faq: "Otopark var mı? Binanın önünde ücretsiz otopark var.\nKredi kartı geçiyor mu? Evet, taksit de yapılabiliyor.\nİlk muayene ücretli mi? İlk muayene ücretsizdir.",
+  faq: "Otopark var mı? Binanın önünde ücretsiz otopark var.\nKredi kartı geçiyor mu? Evet.\nMuayene ne kadar sürüyor? Yaklaşık 20 dakika.",
 };

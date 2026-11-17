@@ -12,8 +12,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "1. Taraflar ve kabul", en: "1. Parties and acceptance" },
     body: [
       {
-        tr: `${appConfig.name} ("biz"), telefon aramalarını yanıtlayan, randevu alan ve müşteri adaylarını nitelendiren bir yapay zeka sesli ajan hizmetidir. Hizmete kaydolarak veya kullanarak bu şartları kabul etmiş sayılırsınız.`,
-        en: `${appConfig.name} ("we") is an AI voice agent service that answers calls, books appointments and qualifies leads. By signing up for or using the service you accept these terms.`,
+        tr: `${appConfig.name} ("biz"), telefon aramalarını yanıtlayan, randevu alan ve müşteri adaylarını nitelendiren bir yapay zeka sesli ajan hizmetidir. Hizmet, kliniklere hesap açılarak anahtar teslim sunulur; herkese açık kayıt yoktur. Klinikle aramızdaki ilişki, panelde kabul edilen Hizmet Sözleşmesi ve Veri İşleme Sözleşmesi ile düzenlenir; bu şartlar onların özetidir ve çelişki halinde sözleşmeler geçerlidir. Hizmeti kullanarak bu şartları kabul etmiş sayılırsınız.`,
+        en: `${appConfig.name} ("we") is an AI voice agent service that answers calls, books appointments and qualifies leads. The service is delivered turnkey by opening an account for each clinic; there is no public sign-up. Our relationship with a clinic is governed by the Service Agreement and Data Processing Agreement accepted in the panel; these terms summarise them, and the agreements prevail if they conflict. By using the service you accept these terms.`,
       },
     ],
   },
@@ -39,8 +39,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "4. Ücretlendirme", en: "4. Billing" },
     body: [
       {
-        tr: "Ücretli plan seçtiğinizde, seçtiğiniz döneme göre (aylık/yıllık) faturalandırılırsınız. İptal, bir sonraki fatura döneminden itibaren geçerli olur; geçmiş dönemler için iade yapılmaz, aksi ayrıca belirtilmedikçe.",
-        en: "If you choose a paid plan, you are billed according to your selected period (monthly/annual). Cancellation takes effect from the next billing cycle; past periods are non-refundable unless stated otherwise.",
+        tr: "Paket ücreti aylıktır ve her takvim ayının başında peşin ödenir. Fiyatlar ABD doları cinsindendir, KDV hariçtir ve fatura tarihindeki T.C. Merkez Bankası döviz satış kuru üzerinden TL olarak faturalanır. Paket dakikasını aşan kullanım, dakika başına aşım ücretiyle bir sonraki faturaya eklenir. Ücretsiz deneme süresi tanınmışsa bu süre içinde paket ücreti alınmaz. Ödenmiş dönem için iade yapılmaz.",
+        en: "The package fee is monthly and paid in advance at the start of each calendar month. Prices are in US dollars, exclude VAT (KDV), and are invoiced in Turkish lira at the Central Bank of Türkiye selling rate on the invoice date. Usage above the package minutes is added to the next invoice at the per-minute overage rate. If a free trial was agreed, no package fee is charged during it. Paid periods are non-refundable.",
       },
     ],
   },
@@ -57,8 +57,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "6. Fesih", en: "6. Termination" },
     body: [
       {
-        tr: "Hesabınızı istediğiniz zaman kapatabilirsiniz. Bu şartları ihlal etmeniz durumunda hizmete erişiminizi askıya alabilir veya sonlandırabiliriz.",
-        en: "You may close your account at any time. We may suspend or terminate your access if you breach these terms.",
+        tr: "Sözleşmeyi, içinde bulunulan ayın bitiminden en az 7 gün önce e-postayla bildirerek ay sonu itibarıyla sona erdirebilirsiniz. Ödeme 7 gün gecikirse veya bu şartlar esaslı şekilde ihlal edilirse, e-postayla bildirdikten sonra hizmeti askıya alabilir veya sona erdirebiliriz. Hesap kapandığında verileriniz 30 gün içinde iade edilir veya silinir.",
+        en: "You can end the agreement at the end of a month by emailing us at least 7 days before that month ends. If payment is 7 days late or these terms are materially breached, we may suspend or end the service after notifying you by email. When an account closes, your data is returned or deleted within 30 days.",
       },
     ],
   },
@@ -85,7 +85,7 @@ export default function V2TermsPage() {
         </p>
         <h1 className="mt-2 font-editorial text-4xl">{lang === "tr" ? "Kullanım Şartları" : "Terms of Service"}</h1>
         <p className="mt-3 text-[13px] text-muted-foreground">
-          {lang === "tr" ? "Son güncelleme: 30 Ağustos 2026" : "Last updated: August 30, 2026"}
+          {lang === "tr" ? "Son güncelleme: 17 Kasım 2026" : "Last updated: November 17, 2026"}
         </p>
 
         <div className="mt-10 space-y-8">

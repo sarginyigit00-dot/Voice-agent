@@ -13,7 +13,7 @@
  * hash changes anyway, the version is what a human reads in the records.
  */
 
-export const CONTRACT_VERSION = "2026-11-09";
+export const CONTRACT_VERSION = "2026-11-17";
 
 export interface Clause {
   title: string;
@@ -147,8 +147,8 @@ export function renderContracts(input: {
         title: "Ek-1 — İşlemenin kapsamı",
         paragraphs: [
           "İlgili kişiler: Klinik'i arayanlar ve Klinik'in geri arama formlarını dolduranlar (hasta ve hasta adayları), Klinik personeli (panel kullanıcıları).",
-          "Veri kategorileri: kimlik ve iletişim (ad soyad, telefon, e-posta); görüşme (ses kaydı — Klinik etkinleştirdiyse —, transkript, özet, duygu etiketi, görüşme süresi ve sonucu); randevu (tarih, saat, hizmet, hekim); sağlık verisi (özel nitelikli: görüşmede veya formda paylaşılan şikâyet, tedavi ilgisi); rıza kaydı (rıza metni, zamanı, IP adresi); personel (ad, e-posta, giriş kayıtları).",
-          "Amaçlar: Klinik adına gelen aramaların karşılanması ve geri arama yapılması; randevu oluşturma, değiştirme, iptal ve hatırlatma; arama kayıtlarının ve özetlerinin Klinik paneline ve Klinik'in belirlediği entegrasyonlara (CRM, takvim) aktarılması; hasta bildirimleri (SMS/WhatsApp) ve Klinik'e e-posta bildirimleri.",
+          "Veri kategorileri: kimlik ve iletişim (ad soyad, telefon, e-posta); görüşme (ses kaydı — her görüşme kaydedilir —, transkript, özet, duygu etiketi, görüşme süresi ve sonucu); randevu (tarih, saat, hizmet, hekim); sağlık verisi (özel nitelikli: görüşmede veya formda paylaşılan şikâyet, tedavi ilgisi); rıza kaydı (rıza metni, zamanı, IP adresi); personel (ad, e-posta, giriş kayıtları).",
+          "Amaçlar: Klinik adına gelen aramaların karşılanması; geri arama talebinin Klinik'e iletilmesi (geri aramayı Klinik personeli yapar, ajan dışarı arama yapmaz); randevu oluşturma, değiştirme, iptal ve hatırlatma; arama kayıtlarının ve özetlerinin Klinik paneline ve Klinik'in belirlediği entegrasyonlara (CRM, takvim) aktarılması; hasta bildirimleri (SMS/WhatsApp) ve Klinik'e e-posta bildirimleri.",
           "Süre: Ses kayıtları 14 gün içinde, Klinik dilerse daha önce panelden silinir; transkript, özet ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir (kişiyle ilişkilendirilemeyen istatistikler kalır). Geri arama formu kayıtları 12 ay sonra silinir. Randevu kayıtları ve personel bilgileri hesap kapanana kadar tutulur; sonrası madde 11'e göre.",
         ],
       },
@@ -163,7 +163,7 @@ export function renderContracts(input: {
           "Telefon altyapısından gelen isteklerin imza/gizli anahtarla doğrulanması.",
           "Geri arama formlarında kötüye kullanım sınırları (IP ve klinik bazlı).",
           "Personel hesapları yalnızca Randevox tarafından açılır; herkese açık kayıt formu yoktur.",
-          "Hata bildirimlerine hasta verisi konmaz.",
+          "Hata bildirimlerinde telefon numarası ve e-posta adresi gibi kişisel veriler maskelenir; hata bildirimlerine görüşme içeriği konmaz.",
           "Saklama süresi dolan veriler her gece otomatik olarak silinir veya anonimleştirilir (Ek-1, Süre).",
         ],
       },
@@ -173,9 +173,14 @@ export function renderContracts(input: {
           "Vapi Inc. (ve alt işleyenleri OpenAI, Deepgram, ElevenLabs) — telefon/ses altyapısı, yapay zekâ — ABD",
           "Supabase Inc. — veritabanı ve kimlik doğrulama — veritabanı Japonya, şirket ABD",
           "Vercel Inc. — uygulama barındırma — ABD",
-          "Modal Labs — zamanlanmış işler (hatırlatma, geri arama) — ABD",
+          "Modal Labs — zamanlanmış işler (randevu hatırlatma ve onay mesajları) — ABD",
+          "ElevenLabs Inc. — ses üretimi (Klinik bu sesleri seçtiyse) — ABD",
+          "Netgsm İletişim A.Ş. — hastaya SMS gönderimi (Randevox hesabı ve gönderici adıyla) — Türkiye",
+          "Meta Platforms (WhatsApp Business) — hastaya WhatsApp hatırlatma mesajları (Randevox hesabıyla) — ABD/İrlanda",
+          "Google LLC — personelin Google hesabıyla Panel girişi — ABD",
+          "Brevo (Sendinblue SAS) — Klinik personeline bilgilendirme e-postaları (hasta verisi içermez) — Fransa",
           "Resend Inc. — e-posta bildirimleri — ABD",
-          "Klinik'in kendi hesabıyla bağlanan takvim (Cal.com, Google Takvim), CRM/webhook, WhatsApp Business, SMS ve telefon operatörü hizmetleri madde 4.6 uyarınca bu listeye dahil değildir.",
+          "Klinik'in kendi hesabıyla bağlanan takvim (Cal.com, Google Takvim), CRM/webhook ve telefon operatörü hizmetleri ile Klinik'in kendi hesabıyla gönderdiği SMS/WhatsApp mesajları madde 4.6 uyarınca bu listeye dahil değildir.",
         ],
       },
     ],
@@ -205,7 +210,7 @@ export const SERVICE_CLAUSES: Clause[] = [
       "Panel: Klinik personelinin Hizmet'i izlediği ve ayarladığı web arayüzüdür (randevoxai.com).",
       "Ajan: Klinik adına telefonla konuşan yapay zekâ asistanıdır.",
       "Paket: Ek-1'de seçilen, aylık dakika hakkını ve özellikleri belirleyen hizmet paketidir.",
-      "Dakika: Ajanın gelen ve giden aramalarda konuştuğu süredir; Panel'deki arama kayıtlarına göre hesaplanır.",
+      "Dakika: Ajanın Klinik'e gelen aramalarda konuştuğu süredir; Panel'deki arama kayıtlarına göre hesaplanır.",
     ],
   },
   {
@@ -337,7 +342,7 @@ export const DPA_CLAUSES: Clause[] = [
   {
     title: "3. Talimatla işleme",
     paragraphs: [
-      "3.1. Randevox kişisel verileri yalnızca Klinik'in yazılı talimatları, Hizmet Sözleşmesi ve bu sözleşme doğrultusunda, Ek-1'deki amaçlarla işler. Klinik'in panel üzerinden yaptığı ayarlar (ajan talimatları, kayıt tercihi, entegrasyonlar, silme işlemleri) talimat sayılır.",
+      "3.1. Randevox kişisel verileri yalnızca Klinik'in yazılı talimatları, Hizmet Sözleşmesi ve bu sözleşme doğrultusunda, Ek-1'deki amaçlarla işler. Klinik'in panel üzerinden yaptığı ayarlar (ajan talimatları, entegrasyonlar, silme işlemleri) talimat sayılır.",
       "3.2. Randevox, bir talimatın mevzuata aykırı olduğu kanısındaysa Klinik'i derhal bilgilendirir.",
       "3.3. Randevox verileri kendi amaçları için kullanmaz, satmaz, üçüncü kişilerle Ek-3'te sayılanlar dışında paylaşmaz. Hizmetin işletilmesi ve iyileştirilmesi için yalnızca anonimleştirilmiş, kişiyle ilişkilendirilemeyen istatistikler kullanılabilir.",
     ],
@@ -345,12 +350,12 @@ export const DPA_CLAUSES: Clause[] = [
   {
     title: "4. Klinik'in yükümlülükleri",
     paragraphs: [
-      "4.1. Veri sorumlusu Klinik'tir. İlgili kişilerin aydınlatılması (KVKK md. 10), gerekli hallerde açık rıza alınması (md. 5, 6) ve işlemenin hukuki sebebinin bulunması Klinik'in sorumluluğundadır. Randevox, arama başında yapay zekâ ve kayıt bildirimini otomatik olarak yapar; aydınlatma metni şablonu ve rıza formu sağlar.",
+      "4.1. Veri sorumlusu Klinik'tir. İlgili kişilerin aydınlatılması (KVKK md. 10), gerekli hallerde açık rıza alınması (md. 5, 6) ve işlemenin hukuki sebebinin bulunması Klinik'in sorumluluğundadır. Randevox, arama başında yapay zekâ ve kayıt bildirimini otomatik olarak yapar; arayan sorarsa ajan Klinik'in sözlü aydınlatma metnini okur; aydınlatma metni şablonu ve rıza formu sağlar.",
       "4.2. Klinik, kendi web sitesinde aydınlatma metnini yayınlar ve geri arama formlarında Randevox'un sağladığı açık rıza düzenini kullanır veya eşdeğerini sağlar.",
       "4.3. Klinik, VERBİS kaydı dahil veri sorumlusu olarak tabi olduğu diğer yükümlülükleri yerine getirir.",
       "4.4. Klinik, Ek-3'teki alt işleyenlere ve yurt dışına aktarıma onay verir ve bu aktarımı ilgili kişilere sunduğu aydınlatma metnine ekler.",
       "4.5. Klinik, Hizmet'e randevu ve görüşme amacının gerektirdiğinden fazla kişisel veri, özellikle sağlık verisi, aktarmaz ve ajan talimatlarına bu yönde soru eklemez.",
-      "4.6. Klinik'in kendi hesabıyla bağladığı veya Randevox'tan bağlanmasını istediği üçüncü taraf hizmetler (takvim, CRM, webhook, WhatsApp Business, SMS ve telefon operatörü gibi) Randevox'un alt işleyeni değildir. Bu hizmetlere aktarım Klinik'in talimatıyla yapılır; bu hizmetlerle sözleşme yapılması ve yurt dışı aktarım yükümlülükleri Klinik'in sorumluluğundadır.",
+      "4.6. Klinik'in kendi hesabıyla bağladığı veya Randevox'tan bağlanmasını istediği üçüncü taraf hizmetler (takvim, CRM, webhook, telefon operatörü ve Klinik'in kendi WhatsApp Business veya SMS hesabı gibi) Randevox'un alt işleyeni değildir. Randevox'un kendi hesabıyla gönderilen SMS ve WhatsApp mesajlarında Netgsm ve Meta, Ek-3'teki alt işleyenlerdir. Bu hizmetlere aktarım Klinik'in talimatıyla yapılır; bu hizmetlerle sözleşme yapılması ve yurt dışı aktarım yükümlülükleri Klinik'in sorumluluğundadır.",
     ],
   },
   {
@@ -383,7 +388,7 @@ export const DPA_CLAUSES: Clause[] = [
   {
     title: "9. Veri ihlali",
     paragraphs: [
-      "Randevox, Klinik verilerini etkileyen bir ihlali öğrendiğinde Klinik'i gecikmeksizin ve en geç 48 saat içinde bilgilendirir. Bildirimde, bilinen ölçüde, ihlalin niteliği, etkilenen veri ve kişi sayısı, olası sonuçları ve alınan veya önerilen tedbirler yer alır. Kurul'a ve ilgili kişilere bildirim (KVKK md. 12/5) veri sorumlusu olarak Klinik'in yükümlülüğüdür; Randevox bu bildirim için gereken bilgileri sağlar.",
+      "Randevox, Klinik verilerini etkileyen bir ihlali öğrendiğinde Klinik'i gecikmeksizin ve en geç 24 saat içinde bilgilendirir. Bildirimde, bilinen ölçüde, ihlalin niteliği, etkilenen veri ve kişi sayısı, olası sonuçları ve alınan veya önerilen tedbirler yer alır. Kurul'a ve ilgili kişilere bildirim (KVKK md. 12/5) veri sorumlusu olarak Klinik'in yükümlülüğüdür; Randevox bu bildirim için gereken bilgileri sağlar.",
     ],
   },
   {

@@ -423,10 +423,16 @@ function SupportCard({
   supportReady: boolean;
   act: Act;
 }) {
+  // Why the panel is opened goes into support_access_log (/gizlilik promises it).
+  const [reason, setReason] = useState("");
+  const reasonOk = reason.trim().length >= 3;
+
   async function open() {
+    if (!reasonOk) return;
     // Opened inside the click, before the await — a tab opened after it is a popup the browser blocks.
     const tab = window.open("about:blank", "_blank");
-    const result = await act({ action: "openPanel", clinicId: clinic.id });
+    const result = await act({ action: "openPanel", clinicId: clinic.id, reason: reason.trim() });
+    if (result.ok) setReason("");
     if (!tab) return;
     if (result.ok && result.url) {
       tab.opener = null;
@@ -445,24 +451,37 @@ function SupportCard({
     : null;
 
   return (
-    <button
-      onClick={() => void open()}
-      disabled={busy || !supportReady}
-      title={'Kliniğin panelini yeni sekmede sahibi yetkisiyle açar. Panelde "Destek modu" şeridi görünür; her giriş kayda geçer.'}
-      className="cursor-pointer rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-foreground/40 disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      <span className="flex items-center justify-between text-sm font-semibold">
-        Destek
-        <span className="text-xs text-muted-foreground">↗</span>
-      </span>
-      <span className="mt-1.5 block text-xs text-muted-foreground">
-        {!supportReady
-          ? "SUPPORT_EMAIL ayarlı değil — .env.local'e ve Vercel'e ekle."
-          : last
-            ? `Panelini aç · son giriş ${last}`
-            : "Panelini aç · henüz giriş yok"}
-      </span>
-    </button>
+    <div className="rounded-lg border border-border bg-background p-3">
+      <button
+        onClick={() => void open()}
+        disabled={busy || !supportReady || !reasonOk}
+        title={'Kliniğin panelini yeni sekmede sahibi yetkisiyle açar. Panelde "Destek modu" şeridi görünür; her giriş nedeniyle birlikte kayda geçer.'}
+        className="block w-full cursor-pointer text-left transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span className="flex items-center justify-between text-sm font-semibold">
+          Destek
+          <span className="text-xs text-muted-foreground">↗</span>
+        </span>
+        <span className="mt-1.5 block text-xs text-muted-foreground">
+          {!supportReady
+            ? "SUPPORT_EMAIL ayarlı değil — .env.local'e ve Vercel'e ekle."
+            : last
+              ? `Panelini aç · son giriş ${last}`
+              : "Panelini aç · henüz giriş yok"}
+        </span>
+      </button>
+      {supportReady && (
+        <input
+          value={reason}
+          onChange={(e) => setReason(e.target.value.slice(0, 200))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void open();
+          }}
+          placeholder="Neden açıyorsun? (kayda geçer)"
+          className={cn(inputClass, "mt-2 h-8 text-xs")}
+        />
+      )}
+    </div>
   );
 }
 

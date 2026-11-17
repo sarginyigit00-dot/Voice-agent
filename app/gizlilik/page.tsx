@@ -11,8 +11,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "1. Hangi verileri işliyoruz", en: "1. What data we process" },
     body: [
       {
-        tr: "Hesap bilgilerinizi (ad, e-posta), kliniğinizin ayarlarını, ajan yapılandırmalarını ve ajanınızın aldığı çağrılara ait arayan bilgilerini (ad, telefon, e-posta), çağrı transkriptlerini, çağrı kayıtlarını (etkinleştirdiyseniz) ve randevu kayıtlarını işleriz.",
-        en: "We process your account information (name, email), your clinic's settings, agent configurations, and — for calls your agent handles — caller details (name, phone, email), call transcripts, call recordings (if you enable them), and appointment records.",
+        tr: "Hesap bilgilerinizi (ad, e-posta), kliniğinizin ayarlarını, ajan yapılandırmalarını ve ajanınızın aldığı çağrılara ait arayan bilgilerini (ad, telefon, e-posta), çağrı transkriptlerini, çağrı ses kayıtlarını (her görüşme kaydedilir) ve randevu kayıtlarını işleriz. Sitemizdeki demo talep formunu doldurursanız klinik adını, adınızı, telefonunuzu ve varsa e-postanızla notunuzu işleriz.",
+        en: "We process your account information (name, email), your clinic's settings, agent configurations, and — for calls your agent handles — caller details (name, phone, email), call transcripts, call recordings (every call is recorded), and appointment records. If you fill in the demo-request form on our site, we process your clinic's name, your name, phone number and, if given, your email and note.",
       },
     ],
   },
@@ -52,12 +52,12 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "5. Kiminle paylaşıyoruz", en: "5. Who we share it with" },
     body: [
       {
-        tr: "Hizmeti çalıştırmak için kullandığımız alt işleyicilerle (telefon/ses altyapısı, büyük dil modeli sağlayıcısı, takvim entegrasyonu, veritabanı barındırma, SMS/WhatsApp ve e-posta bildirimleri) sınırlı ölçüde veri paylaşırız. Kendi CRM entegrasyonunuzu (ör. bir webhook) etkinleştirirseniz, çağrı verileri sizin belirttiğiniz o adrese de gönderilir.",
-        en: "We share data on a limited basis with the sub-processors we use to run the service (telephony/voice infrastructure, the LLM provider, calendar integration, database hosting, SMS/WhatsApp and email notifications). If you enable your own CRM integration (e.g. a webhook), call data is also sent to the address you specify.",
+        tr: "Hizmeti çalıştırmak için kullandığımız alt işleyicilerle, yalnızca o hizmet için gereken ölçüde veri paylaşırız: Vapi (telefon/ses altyapısı; konuşmayı yazıya çevirme ve yapay zekâ modeli için OpenAI ve Deepgram, ses üretimi için ElevenLabs) — ABD; Supabase (veritabanı ve giriş) — veritabanı Japonya; Vercel (uygulama barındırma) — ABD; Modal (zamanlanmış hatırlatma işleri) — ABD; Resend (kliniğe e-posta bildirimleri) — ABD; Netgsm (SMS) — Türkiye; Meta / WhatsApp Business (WhatsApp hatırlatmaları) — ABD/İrlanda; Google (Google hesabıyla giriş) — ABD; Brevo (klinik personeline bilgilendirme e-postaları) — Fransa. Sistem hatalarını ekibimize Telegram üzerinden bildiririz; bu bildirimlerde telefon ve e-posta gibi kişisel veriler maskelenir. Demo talepleri ekibimize kendi otomasyon aracımız üzerinden de iletilebilir. Kendi takvim veya CRM entegrasyonunuzu (ör. bir webhook) bağlarsanız, çağrı verileri sizin belirttiğiniz o adrese de gönderilir.",
+        en: "We share data with our sub-processors only as far as each service needs: Vapi (telephony/voice; OpenAI and Deepgram for transcription and the AI model, ElevenLabs for voice) — USA; Supabase (database and sign-in) — database in Japan; Vercel (app hosting) — USA; Modal (scheduled reminder jobs) — USA; Resend (email notifications to the clinic) — USA; Netgsm (SMS) — Türkiye; Meta / WhatsApp Business (WhatsApp reminders) — USA/Ireland; Google (sign-in with a Google account) — USA; Brevo (information emails to clinic staff) — France. System errors are reported to our team via Telegram, with personal data such as phone numbers and email addresses masked. Demo requests may also reach our team through our own automation tool. If you connect your own calendar or CRM integration (e.g. a webhook), call data is also sent to the address you specify.",
       },
       {
-        tr: "Ses altyapısı, büyük dil modeli ve veritabanı barındırma sağlayıcılarının sunucuları yurt dışında bulunduğundan, hesap ve çağrı verileri yurt dışına aktarılır.",
-        en: "Because the voice infrastructure, LLM and database hosting providers' servers are located abroad, account and call data is transferred outside Türkiye.",
+        tr: "Yukarıdaki sağlayıcıların çoğunun sunucuları yurt dışında bulunduğundan, hesap ve çağrı verileri yurt dışına aktarılır.",
+        en: "Because most of the providers above have their servers abroad, account and call data is transferred outside Türkiye.",
       },
     ],
   },
@@ -65,8 +65,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
     title: { tr: "6. Saklama süresi", en: "6. Retention" },
     body: [
       {
-        tr: "Çağrı ses kayıtları 14 gün içinde (klinik dilerse daha önce panelden) silinir; transkriptler, özetler ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir; raporlar için yalnızca kişiyle ilişkilendirilemeyen istatistikler (tarih, süre, sonuç) kalır. Geri arama formu kayıtları da 12 ay sonra silinir. Panel kullanım kayıtları (hangi panel sayfasının hangi gün açıldığı) 6 ay sonra silinir. Randevu kayıtları, kliniğin takvimi için hesap kapanana kadar tutulur. Hesap kapandığında kalan veriler 30 gün içinde iade edilir veya silinir.",
-        en: "Call recordings are deleted within 14 days (or earlier, from the panel, whenever the clinic chooses); transcripts, summaries and the caller's name and number after 12 months, leaving only non-identifying statistics (date, duration, outcome) for reports. Callback-form entries are also deleted after 12 months. Panel usage records (which panel page was opened on which day) are deleted after 6 months. Appointment records are kept for the clinic's calendar until the account is closed. When an account is closed, the remaining data is returned or deleted within 30 days.",
+        tr: "Çağrı ses kayıtları 14 gün içinde (klinik dilerse daha önce panelden) silinir; transkriptler, özetler ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir; raporlar için yalnızca kişiyle ilişkilendirilemeyen istatistikler (tarih, süre, sonuç) kalır. Geri arama formu kayıtları, demo talepleri ve panelden gönderilen geri bildirimler de 12 ay sonra silinir. Panel kullanım kayıtları (hangi panel sayfasının hangi gün açıldığı) 6 ay sonra silinir. Randevu kayıtları, kliniğin takvimi için hesap kapanana kadar tutulur. Hesap kapandığında kalan veriler 30 gün içinde iade edilir veya silinir.",
+        en: "Call recordings are deleted within 14 days (or earlier, from the panel, whenever the clinic chooses); transcripts, summaries and the caller's name and number after 12 months, leaving only non-identifying statistics (date, duration, outcome) for reports. Callback-form entries, demo requests and feedback sent from the panel are also deleted after 12 months. Panel usage records (which panel page was opened on which day) are deleted after 6 months. Appointment records are kept for the clinic's calendar until the account is closed. When an account is closed, the remaining data is returned or deleted within 30 days.",
       },
     ],
   },
@@ -91,8 +91,8 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
         en: "Your data is protected with access controls and encrypted connections (HTTPS). No system is 100% secure; in the event of a breach we will notify as required by law.",
       },
       {
-        tr: "Teknik destek gerektiğinde ve yalnızca sorunu gidermek amacıyla Randevox ekibi kliniğinizin paneline erişebilir. Bu erişim sırasında panelde \"Destek modu\" uyarısı görünür ve her erişim tarih ve saatiyle kayıt altına alınır.",
-        en: "When technical support is needed, and only to resolve the issue, the Randevox team may access your clinic's panel. During such access the panel shows a \"Support mode\" notice, and every access is logged with its date and time.",
+        tr: "Teknik destek gerektiğinde ve yalnızca sorunu gidermek amacıyla Randevox ekibi kliniğinizin paneline erişebilir. Bu erişim sırasında panelde \"Destek modu\" uyarısı görünür ve her erişim tarih, saat ve erişim nedeniyle kayıt altına alınır.",
+        en: "When technical support is needed, and only to resolve the issue, the Randevox team may access your clinic's panel. During such access the panel shows a \"Support mode\" notice, and every access is logged with its date, time and reason.",
       },
     ],
   },
@@ -110,7 +110,7 @@ export default function V2PrivacyPage() {
         </p>
         <h1 className="mt-2 font-editorial text-4xl">{lang === "tr" ? "Gizlilik Politikası" : "Privacy Policy"}</h1>
         <p className="mt-3 text-[13px] text-muted-foreground">
-          {lang === "tr" ? "Son güncelleme: 11 Kasım 2026" : "Last updated: November 11, 2026"}
+          {lang === "tr" ? "Son güncelleme: 17 Kasım 2026" : "Last updated: November 17, 2026"}
         </p>
 
         <div className="mt-10 space-y-8">

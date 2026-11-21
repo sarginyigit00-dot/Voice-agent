@@ -127,3 +127,14 @@ export async function notifyFeedback(report: ErrorReport): Promise<void> {
     await send(report, opts);
   }
 }
+
+/** A clinic opened its own web trial from /demo-talep — a warm lead. No personal data. */
+export async function notifyTrialCreated(report: ErrorReport): Promise<void> {
+  if (!isTelegramConfigured()) return;
+  const opts = { header: "🧪 Yeni deneme (klinik kendi açtı)", dedupe: false };
+  try {
+    after(() => send(report, opts));
+  } catch {
+    await send(report, opts);
+  }
+}

@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
       ...[
         "/admin/:path*",
         "/demo/:path*",
+        "/dene/:path*",
         "/login",
         "/dashboard/:path*",
         "/agents/:path*",

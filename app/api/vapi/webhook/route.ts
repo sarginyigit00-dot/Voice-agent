@@ -15,6 +15,8 @@ import { localParts } from "@/lib/automation/format";
 import { markLeadCallEnded } from "@/lib/leads/callback";
 import { sendFollowUpEmail } from "@/lib/notify/email";
 import type { Outcome, Sentiment } from "@/lib/demo/data";
+import { demoToolResult, isDemoAssistant } from "@/lib/demo/try-call";
+import { recordTrialCall, trialIdForAssistant } from "@/lib/demo/trials-server";
 
 /**
  * Vapi's server URL. Every assistant provisioned by lib/vapi/client.ts points
@@ -58,6 +60,16 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const message = body?.message;
   if (!message) return NextResponse.json({ ok: true });
+
+  // Browser demos — the landing page's (lib/demo/try-call.ts) and each
+  // clinic trial's (lib/demo/trials.ts): sample answers, nothing booked, no
+  // alerts. They belong to no clinic on purpose; a trial's finished calls are
+  // only counted against its allowance.
+  if (isDemoAssistant(message.call?.assistantId)) return handleDemoCall(message, null);
+  if (message.type === "tool-calls" || message.type === "end-of-call-report") {
+    const trialId = await trialIdForAssistant(message.call?.assistantId);
+    if (trialId) return handleDemoCall(message, trialId);
+  }
 
   // Inbound call on a number in routing mode: pick the day or after-hours agent (lib/vapi/routing.ts).
   if (message.type === "assistant-request") {
@@ -159,6 +171,30 @@ function recordingUrlFrom(message: VapiEndOfCallMessage): string | undefined {
     message.recordingUrl,
   ];
   return candidates.find((c): c is string => typeof c === "string" && c.length > 0);
+}
+
+/* ──────────────────────────── web demo ──────────────────────────── */
+
+async function handleDemoCall(
+  message: { type?: string; durationSeconds?: number } & VapiToolCallsMessage,
+  trialId: string | null,
+) {
+  if (message.type === "end-of-call-report" && trialId) {
+    await recordTrialCall(trialId, message.call?.id, Number(message.durationSeconds ?? 0));
+    return NextResponse.json({ ok: true, ignored: "demo" });
+  }
+  if (message.type !== "tool-calls") return NextResponse.json({ ok: true, ignored: "demo" });
+  const list = (
+    message.toolCallList ??
+    message.toolWithToolCallList?.map((t) => ({ ...t.toolCall, name: t.name ?? t.function?.name })) ??
+    []
+  ).map(normalizeToolCall);
+  const results = list.map((toolCall) => ({
+    name: toolCall.name,
+    toolCallId: toolCall.id,
+    result: demoToolResult(toolCall.name, toolCall.arguments ?? {}),
+  }));
+  return NextResponse.json({ results });
 }
 
 /* ─────────────────────────── mid-call tools ─────────────────────────── */

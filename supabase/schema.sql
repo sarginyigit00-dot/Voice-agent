@@ -688,3 +688,72 @@ create table if not exists public.contract_acceptances (
 create index if not exists contract_acceptances_clinic_idx on public.contract_acceptances (clinic_id, accepted_at desc);
 
 alter table public.contract_acceptances enable row level security;
+
+-- ─────────────────────────────────────────────────────────────────────────
+--  demo_call_starts — one row per browser call started from the landing
+--  page's "talk to the agent" demo (app/api/try-call). It exists only to
+--  enforce the daily cap across serverless instances. No raw IP: a salted
+--  SHA-256. Deleted after 30 days by lib/privacy/retention.ts.
+--  Service-role only (RLS on, no policies).
+-- ─────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.demo_call_starts (
+  id uuid primary key default gen_random_uuid(),
+  ip_hash text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists demo_call_starts_created_at_idx on public.demo_call_starts (created_at desc);
+
+alter table public.demo_call_starts enable row level security;
+
+-- Since the clinic trials: a start may belong to one (trial_id), and the
+-- public demo's daily cap counts only rows without one.
+alter table public.demo_call_starts add column if not exists trial_id uuid;
+create index if not exists demo_call_starts_trial_idx on public.demo_call_starts (trial_id, created_at desc);
+
+-- ─────────────────────────────────────────────────────────────────────────
+--  demo_trials — a prospective clinic's own 14-day web trial
+--  (/dene/<code>): an assistant with the clinic's name and facts, called
+--  from the browser, no phone number. Created in /admin → Denemeler
+--  (app/api/admin/demo-trials). It belongs to no clinic on purpose: the
+--  webhook answers its tools with sample slots and books nothing
+--  (lib/demo/try-call.ts). Its Vapi assistant is deleted once it expires
+--  (lib/privacy/retention.ts). Service-role only (RLS on, no policies).
+-- ─────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.demo_trials (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  clinic_name text not null,
+  demo_request_id uuid references public.demo_requests (id) on delete set null,
+  knowledge jsonb not null default '{}'::jsonb,
+  vapi_assistant_id text unique,
+  max_calls int not null default 15,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.demo_trials enable row level security;
+
+-- Self-serve trials (/demo-talep → "Hemen kendiniz deneyin", app/api/trial):
+-- the link goes only to `email`, one trial per address; `ip_hash` (salted
+-- SHA-256, never the raw IP) enforces one new trial per IP per day.
+alter table public.demo_trials add column if not exists source text not null default 'admin';
+alter table public.demo_trials add column if not exists email text;
+alter table public.demo_trials add column if not exists ip_hash text;
+create unique index if not exists demo_trials_email_idx on public.demo_trials (lower(email)) where email is not null;
+create index if not exists demo_trials_created_at_idx on public.demo_trials (created_at desc);
+
+-- One row per finished trial call that counted (longer than 15 s). The
+-- primary key on call_id makes a retried end-of-call report count once.
+create table if not exists public.demo_trial_calls (
+  call_id text primary key,
+  trial_id uuid not null references public.demo_trials (id) on delete cascade,
+  duration_sec int not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists demo_trial_calls_trial_idx on public.demo_trial_calls (trial_id);
+
+alter table public.demo_trial_calls enable row level security;

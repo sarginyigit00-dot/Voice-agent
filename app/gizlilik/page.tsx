@@ -96,6 +96,23 @@ const SECTIONS: { title: LL; body: LL[] }[] = [
       },
     ],
   },
+  {
+    title: { tr: "9. Web sitesindeki demo görüşmesi", en: "9. The demo call on our website" },
+    body: [
+      {
+        tr: "Ana sayfadaki \"Ajanla şimdi konuşun\" bölümünden tarayıcınızın mikrofonuyla kurgusal bir klinik asistanıyla konuşabilirsiniz. Bu görüşmede sesiniz, yalnızca görüşme süresince ve anlık olarak Vapi ile onun ses ve yapay zekâ alt işleyicilerinde (OpenAI, Deepgram, ElevenLabs — ABD) işlenir. Bunun ve yurt dışına aktarımın hukuki sebebi, görüşmeyi başlatmadan önce verdiğiniz açık rızadır (KVKK md. 5/1 ve md. 9); rıza vermezseniz görüşme başlamaz, örnek kayıtları dinleyebilirsiniz. Görüşme kaydedilmez, panelimize ya da herhangi bir kliniğe aktarılmaz; lütfen görüşmede gerçek sağlık bilgisi paylaşmayın. Yurt dışına aktarımın olası riskleri ve rıza beyanının tam metni Açık Rıza Metni'ndedir (randevoxai.com/acik-riza).",
+        en: "From the \"Talk to the agent now\" section on our home page you can speak to a fictional clinic's assistant with your browser's microphone. Your voice is processed in real time, only for the length of the call, by Vapi and its voice and AI sub-processors (OpenAI, Deepgram, ElevenLabs — USA). The legal ground for this and for the transfer abroad is the explicit consent you give before starting the call (KVKK art. 5/1 and art. 9); without it the call doesn't start, and you can listen to the sample recordings instead. The call isn't recorded and isn't passed to our panel or to any clinic; please don't share real health information on it. The possible risks of the transfer abroad and the full consent statement are in the Explicit Consent Notice (randevoxai.com/acik-riza).",
+      },
+      {
+        tr: "Kötüye kullanımı ve maliyeti sınırlamak için her görüşme başlangıcında IP adresinizin geri çevrilemez bir özeti (tuzlanmış SHA-256) ve zaman damgası tutulur (KVKK md. 5/2-f, meşru menfaat); bu kayıtlar 30 gün sonra otomatik olarak silinir. Ham IP adresinizi saklamayız.",
+        en: "To limit abuse and cost, each call start stores a one-way digest of your IP address (salted SHA-256) and a timestamp (KVKK art. 5/2-f, legitimate interest); these are deleted automatically after 30 days. We don't store your raw IP address.",
+      },
+      {
+        tr: "Kliniğinize özel deneme linkinde (randevoxai.com/dene/…) de aynı kurallar geçerlidir. Asistanın sizi tanıması için verdiğiniz klinik bilgileri (ad, hizmetler, fiyatlar, hekim adları, adres) ve deneme hakkını saymak için her aramanın kimliği ile süresi tutulur. Denemeyi /demo-talep sayfasından kendiniz açtıysanız adınız, telefonunuz ve e-posta adresiniz de tutulur: link yalnızca bu adrese Resend (ABD) üzerinden gönderilir ve sizi denemeniz hakkında arayabilmemiz için kullanılır (KVKK md. 5/2-c); aynı adresle tek deneme ve aynı bağlantıdan günde tek deneme açılabilmesi için IP adresinizin tuzlanmış özeti saklanır (md. 5/2-f). Denemenin asistanı süre bitince silinir; bu bilgiler en geç 12 ay sonra silinir.",
+        en: "The same applies to your clinic's own trial link (randevoxai.com/dene/…). We keep the clinic details you gave us so the assistant knows your clinic (name, services, prices, doctors' names, address), and each call's ID and length to count the trial allowance. If you opened the trial yourself on /demo-talep, we also keep your name, phone number and email address: the link is sent only to that address, through Resend (USA), and we use them to call you about your trial (KVKK art. 5/2-c); a salted digest of your IP address is kept so that one address and one connection can open only one trial (per day) (art. 5/2-f). The trial's assistant is deleted when it ends; these details are deleted within 12 months at the latest.",
+      },
+    ],
+  },
 ];
 
 export default function V2PrivacyPage() {
@@ -110,12 +127,12 @@ export default function V2PrivacyPage() {
         </p>
         <h1 className="mt-2 font-editorial text-4xl">{lang === "tr" ? "Gizlilik Politikası" : "Privacy Policy"}</h1>
         <p className="mt-3 text-[13px] text-muted-foreground">
-          {lang === "tr" ? "Son güncelleme: 17 Kasım 2026" : "Last updated: November 17, 2026"}
+          {lang === "tr" ? "Son güncelleme: 21 Kasım 2026" : "Last updated: November 21, 2026"}
         </p>
 
         <div className="mt-10 space-y-8">
           {SECTIONS.map((s, si) => (
-            <section key={s.title.en} id={s.title.en === "2. Health data and KVKK" ? "kvkk" : undefined}>
+            <section key={s.title.en} id={s.title.en === "2. Health data and KVKK" ? "kvkk" : s.title.en.startsWith("9.") ? "web-demo" : undefined}>
               <h2 className="text-[15px] font-semibold text-foreground">{tt(s.title)}</h2>
               <div className="mt-2 space-y-3">
                 {s.body.map((p, i) => (

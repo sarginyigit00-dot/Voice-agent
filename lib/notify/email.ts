@@ -330,3 +330,29 @@ ${docHtml}
   const subject = `Sözleşme kopyanız: ${record.clinicName} · Randevox`;
   for (const address of to) await sendEmail(address, subject, html, text);
 }
+
+/**
+ * A self-serve clinic trial's link (/dene/<code>), sent through Resend to the
+ * address typed on /demo-talep. The link is shown nowhere else: reaching the
+ * inbox is the proof the address is real.
+ */
+export function trialLinkEmail(input: { clinicName: string; contactName: string; link: string; expiresAt: string; maxCalls: number }) {
+  const until = new Date(input.expiresAt).toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul", day: "numeric", month: "long", year: "numeric" });
+  const { html, text } = mailShell(
+    `Merhaba ${input.contactName}, ${input.clinicName} için yapay zekâ telefon asistanınız hazır. Aşağıdaki linki açıp tarayıcınızdan asistanla konuşabilirsiniz; telefon numarası ya da kurulum gerekmez.`,
+    [
+      ["Klinik", input.clinicName],
+      ["Deneme hakkı", `${input.maxCalls} görüşme, her biri en fazla 3 dakika`],
+      ["Son gün", until],
+      ["Not", "Bu bir denemedir: randevular takviminize yazılmaz, görüşmeler kaydedilmez."],
+    ],
+    "Bu linki yalnızca siz aldınız; kliniğinizden başka kimseyle paylaşmayın. Talebi siz yapmadıysanız bu e-postayı yok sayabilirsiniz. · Randevox",
+    { href: input.link, label: "Asistanınızla konuşun →" },
+  );
+  return { subject: `${input.clinicName} asistanınız hazır · Randevox deneme linki`, html, text };
+}
+
+export async function sendTrialLinkEmail(to: string, input: Parameters<typeof trialLinkEmail>[0]): Promise<boolean> {
+  const mail = trialLinkEmail(input);
+  return sendEmail(to, mail.subject, mail.html, mail.text);
+}

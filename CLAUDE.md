@@ -44,7 +44,9 @@ vars, every form submit silently falls back to the demo bypass too.
 Randevox is sold **turnkey** to clinics: the operator creates each clinic and
 its staff accounts from `/admin` (Klinikler tab, `lib/admin/clinics.ts`);
 there is no self-serve sign-up (`/signup` redirects to the demo-request form `/demo-talep`, whose
-submissions land in /admin → Demo talepleri). Every
+submissions land in /admin → Demo talepleri; the same page can also open a
+numberless 14-day *web trial* whose link is emailed — `app/api/trial`, not an
+account). Every
 operational table — `agents`, `calls`, `crm_records`, `appointments` —
 carries a NOT NULL `clinic_id`, and RLS lets a signed-in user see only the
 clinics they're in (`clinic_members`, via `my_clinic_ids()`). A signed-in

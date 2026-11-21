@@ -598,12 +598,14 @@ export async function upsertAssistant(
   existingId: string | null,
   knowledge: ClinicKnowledge | null = null,
   openingHours: WorkingHours | null = null,
+  /** Top-level fields laid over the built assistant — only the landing-page demo uses it (scripts/sync-demo-assistant.ts). */
+  overrides: Record<string, unknown> = {},
 ): Promise<VapiResult<{ id: string; created: boolean }>> {
   const secret = webhookSecret();
   if (!secret) return { ok: false, status: 0, error: "VAPI_WEBHOOK_SECRET tanımlı değil." };
   const toolIds = await toolIdsFor(agent, clinic, secret, Boolean(openingHours));
   if (!toolIds.ok) return { ...toolIds, error: `Araç kütüphanesi: ${toolIds.error}` };
-  const body = buildAssistant(agent, clinic, secret, toolIds.data, knowledge, openingHours);
+  const body = { ...buildAssistant(agent, clinic, secret, toolIds.data, knowledge, openingHours), ...overrides };
 
   if (existingId) {
     const updated = await vapi<{ id: string }>("PATCH", `/assistant/${encodeURIComponent(existingId)}`, body);

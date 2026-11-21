@@ -11,6 +11,7 @@ import type { EnvCheck, SystemHealth } from "@/lib/admin/health";
 import { ClinicsTab } from "./clinics-tab";
 import { OverviewTab } from "./overview-tab";
 import { ActionButton, EmptyRow } from "./controls";
+import { TrialsTab, type TrialPrefill } from "./trials-tab";
 
 /**
  * Operator view over Randevox's own accounts and leads.
@@ -28,9 +29,10 @@ import { ActionButton, EmptyRow } from "./controls";
 export function AdminPanel({ data, health }: { data: AdminOverview; health: SystemHealth }) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
-  const [tab, setTab] = useState<"overview" | "clinics" | "users" | "requests" | "feedback" | "health">(
+  const [tab, setTab] = useState<"overview" | "clinics" | "users" | "requests" | "trials" | "feedback" | "health">(
     "overview",
   );
+  const [trialPrefill, setTrialPrefill] = useState<TrialPrefill | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; message: string } | null>(null);
 
   async function logout() {
@@ -130,6 +132,9 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
         <Tab active={tab === "requests"} onClick={() => setTab("requests")}>
           Demo talepleri ({demoRequests.length})
         </Tab>
+        <Tab active={tab === "trials"} onClick={() => setTab("trials")}>
+          Denemeler
+        </Tab>
         <Tab active={tab === "feedback"} onClick={() => setTab("feedback")}>
           Geri bildirim ({feedback.length})
           {newFeedback > 0 && <span className="text-violet"> · {newFeedback} yeni</span>}
@@ -163,6 +168,20 @@ export function AdminPanel({ data, health }: { data: AdminOverview; health: Syst
           entries={demoRequests}
           connected={connected}
           onDelete={(id) => post("/api/admin/demo-requests", { action: "delete", id })}
+          onTrial={(e) => {
+            setTrialPrefill({ clinicName: e.clinicName, demoRequestId: e.id });
+            setTab("trials");
+          }}
+        />
+      )}
+      {tab === "trials" && (
+        <TrialsTab
+          // Remount on a new prefill so the form picks it up.
+          key={trialPrefill?.demoRequestId ?? "blank"}
+          demoRequests={demoRequests}
+          connected={connected}
+          prefill={trialPrefill}
+          onAct={(body) => post("/api/admin/demo-trials", body)}
         />
       )}
       {tab === "feedback" && (
@@ -428,10 +447,12 @@ function DemoRequestsTab({
   entries,
   connected,
   onDelete,
+  onTrial,
 }: {
   entries: DemoRequest[];
   connected: boolean;
   onDelete: (id: string) => Promise<unknown>;
+  onTrial: (entry: DemoRequest) => void;
 }) {
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -529,7 +550,8 @@ function DemoRequestsTab({
               <span className="font-mono text-xs tabular-nums text-muted-foreground">
                 {formatDate(e.createdAt)}
               </span>
-              <span className="flex justify-end">
+              <span className="flex items-center justify-end gap-2">
+                {confirmId !== e.id && <ActionButton onClick={() => onTrial(e)}>Deneme oluştur</ActionButton>}
                 <ConfirmDelete
                   open={confirmId === e.id}
                   busy={busy === e.id}

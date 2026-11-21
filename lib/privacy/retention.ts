@@ -1,5 +1,7 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { deleteCall, isVapiConfigured } from "@/lib/vapi/client";
+import { DEMO_CALL_DAYS } from "@/lib/demo/try-call-server";
+import { retireExpiredTrials } from "@/lib/demo/trials-server";
 
 /**
  * Retention policy, run nightly by app/api/cron/retention. The less patient
@@ -14,6 +16,7 @@ import { deleteCall, isVapiConfigured } from "@/lib/vapi/client";
  *   number are wiped. CRM records and callback leads are deleted.
  *
  * - After USAGE_DAYS panel usage rows (usage_events) are deleted.
+ * - After DEMO_CALL_DAYS the landing-page demo call log (hashed IPs).
  * - After TRANSCRIPT_DAYS demo requests and panel feedback (with its
  *   attachment in the private bucket) are deleted too.
  *
@@ -38,6 +41,9 @@ export interface RetentionResult {
   leadsDeleted: number;
   usageRowsDeleted: number;
   demoRequestsDeleted: number;
+  demoCallsDeleted: number;
+  trialsRetired: number;
+  trialsDeleted: number;
   feedbackDeleted: number;
   errors: string[];
 }
@@ -53,6 +59,9 @@ export async function runRetention(): Promise<RetentionResult> {
     leadsDeleted: 0,
     usageRowsDeleted: 0,
     demoRequestsDeleted: 0,
+    demoCallsDeleted: 0,
+    trialsRetired: 0,
+    trialsDeleted: 0,
     feedbackDeleted: 0,
     errors: [],
   };
@@ -131,6 +140,29 @@ export async function runRetention(): Promise<RetentionResult> {
     .select("id");
   if (demoError) result.errors.push(`demo_requests silinemedi: ${demoError.message}`);
   else result.demoRequestsDeleted = demos?.length ?? 0;
+
+  // 5b. Landing-page demo call starts (hashed IPs, only for the daily cap).
+  const { data: demoCalls, error: demoCallError } = await supabase
+    .from("demo_call_starts")
+    .delete()
+    .lt("created_at", daysAgo(DEMO_CALL_DAYS))
+    .select("id");
+  if (demoCallError) result.errors.push(`demo_call_starts silinemedi: ${demoCallError.message}`);
+  else result.demoCallsDeleted = demoCalls?.length ?? 0;
+
+  // 5c. Clinic web trials: an expired one's Vapi assistant goes the next night;
+  // the row (clinic name and the facts typed in for it) after TRANSCRIPT_DAYS.
+  const retired = await retireExpiredTrials();
+  result.trialsRetired = retired.retired;
+  result.errors.push(...retired.errors);
+  const { data: oldTrials, error: trialError } = await supabase
+    .from("demo_trials")
+    .delete()
+    .lt("created_at", cutoff)
+    .is("vapi_assistant_id", null)
+    .select("id");
+  if (trialError) result.errors.push(`demo_trials silinemedi: ${trialError.message}`);
+  else result.trialsDeleted = oldTrials?.length ?? 0;
 
   // 6. Panel feedback: the attachment first (private bucket), then the row.
   const { data: oldFeedback, error: fbReadError } = await supabase

@@ -22,6 +22,7 @@ import { LogoMark } from "@/components/ui/logo";
 import { Waveform } from "@/components/app/waveform";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 import { HeroCallDemo } from "@/components/marketing/hero-call-demo";
+import { TryCall } from "@/components/marketing/try-call";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { useLang } from "@/components/i18n/language-provider";
 import type { L } from "@/lib/i18n/config";
@@ -43,6 +44,7 @@ export default function V2Landing() {
       <ForceLightRoute />
       <Nav />
       <Hero />
+      <TryCall />
       <CostCalculator />
       <Features />
       <Guardrails />

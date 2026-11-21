@@ -30,3 +30,28 @@ export async function addDemoRequest(input: DemoRequestInput): Promise<"ok" | "d
   }
   return "ok";
 }
+
+/**
+ * Same row, returning its id — a self-serve trial links to it, so the clinic
+ * shows up in /admin → Demo talepleri with its contact details. Null on failure.
+ */
+export async function addDemoRequestReturningId(input: DemoRequestInput): Promise<string | null> {
+  const supabase = getSupabaseServer();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("demo_requests")
+    .insert({
+      clinic_name: input.clinicName,
+      contact_name: input.contactName,
+      phone: input.phone,
+      email: input.email,
+      note: input.note,
+    })
+    .select("id")
+    .single();
+  if (error || !data) {
+    console.error("[demo-request] insert failed:", error?.message);
+    return null;
+  }
+  return (data as { id: string }).id;
+}

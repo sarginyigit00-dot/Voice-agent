@@ -5,11 +5,11 @@ import appConfig from "@/app.config";
 import { LogoMark } from "@/components/ui/logo";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 import { useLang } from "@/components/i18n/language-provider";
-import { LegalEntityInfo } from "@/components/marketing/legal-entity-info";
+import { SiteFooter } from "@/components/marketing/site-footer";
 import { ForceLightRoute } from "./force-light";
 
 /**
- * Shared chrome for the legal pages (/gizlilik, /sartlar) — same `.ed-light`
+ * Shared chrome for the legal and company pages (/gizlilik, /sartlar, /iade, …) — same `.ed-light`
  * palette and header/footer language as the landing page, so clicking a
  * footer link never drops the visitor into the dark cockpit theme.
  */
@@ -19,7 +19,7 @@ export function LegalShell({ children }: { children: React.ReactNode }) {
       <ForceLightRoute />
       <LegalNav />
       <div className="flex-1">{children}</div>
-      <LegalFooter />
+      <SiteFooter />
     </div>
   );
 }
@@ -47,31 +47,5 @@ function LegalNav() {
         </div>
       </div>
     </header>
-  );
-}
-
-function LegalFooter() {
-  const { lang } = useLang();
-  return (
-    <footer className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-5 px-5 py-10">
-      <div className="flex items-center gap-2.5">
-        <LogoMark className="h-5 w-5 opacity-70" />
-        <span className="font-mono-nums text-[13px] text-muted-foreground">
-          © {new Date().getFullYear()} {appConfig.domain}
-        </span>
-      </div>
-      <div className="flex items-center gap-6">
-        {[
-          { label: { tr: "Şartlar", en: "Terms" }, href: "/sartlar" },
-          { label: { tr: "Gizlilik", en: "Privacy" }, href: "/gizlilik" },
-          { label: { tr: "KVKK", en: "Data" }, href: "/gizlilik#kvkk" },
-        ].map((l) => (
-          <Link key={l.href} href={l.href} className="text-[14px] text-muted-foreground transition-colors hover:text-foreground">
-            {l.label[lang]}
-          </Link>
-        ))}
-      </div>
-      <LegalEntityInfo className="w-full text-[12.5px] leading-relaxed text-muted-foreground" />
-    </footer>
   );
 }

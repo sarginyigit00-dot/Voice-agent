@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const claim = vi.fn();
+const createCall = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({ getSupabaseServer: () => null }));
 vi.mock("next/server", () => ({
   NextResponse: { json: (body: unknown, init?: { status?: number }) => ({ body, status: init?.status ?? 200 }) },
@@ -11,9 +12,11 @@ vi.mock("@/lib/demo/trials-server", () => ({ trialByCode: (...a: unknown[]) => t
 vi.mock("@/lib/demo/try-call-server", async (orig) => ({
   ...(await orig<typeof import("@/lib/demo/try-call-server")>()),
   claimDemoCall: (...a: unknown[]) => claim(...a),
+  createWebCall: (...a: unknown[]) => createCall(...a),
+  publicCallsLeft: async () => 2,
 }));
 
-import { demoToolResult, isDemoAssistant } from "@/lib/demo/try-call";
+import { demoToolResult, freeTimesOn, isDemoAssistant } from "@/lib/demo/try-call";
 import { hashIp, signDemoToken } from "@/lib/demo/try-call-server";
 import { POST } from "@/app/api/try-call/route";
 import { parseKnowledgeText, trialStatus } from "@/lib/demo/trials";
@@ -58,20 +61,30 @@ describe("demo tool answers", () => {
   });
 });
 
-describe("demo call token", () => {
-  it("is an HS256 JWT signed with the private key, locked to one assistant", () => {
+describe("demo free times", () => {
+  it("change from day to day but stay the same within a day", () => {
+    const week = ["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"].map((d) => freeTimesOn(d).join());
+    expect(new Set(week).size).toBeGreaterThan(3);
+    expect(freeTimesOn("2026-11-24")).toEqual(freeTimesOn("2026-11-24"));
+  });
+  it("keep Saturday before two", () => {
+    for (const t of freeTimesOn("2026-11-28")) expect(t < "14:00" && t >= "10:00").toBe(true);
+  });
+});
+
+describe("demo call token (server-side only)", () => {
+  it("is an HS256 JWT signed with the private key, locked to one assistant and origin", () => {
     const token = signDemoToken({ orgId: "org", privateKey: "priv", assistantId: "asst", origins: ["https://x.com"], now: 1_000_000 });
     const [h, p, sig] = token.split(".");
     expect(createHmac("sha256", "priv").update(`${h}.${p}`).digest("base64url")).toBe(sig);
     const payload = JSON.parse(Buffer.from(p, "base64url").toString());
-    expect(payload.orgId).toBe("org");
-    expect(payload.exp - payload.iat).toBe(300);
-    expect(payload.token.tag).toBe("public");
+    expect(payload.exp - payload.iat).toBe(60);
     expect(payload.token.restrictions.allowedAssistantIds).toEqual(["asst"]);
     expect(payload.token.restrictions.allowedOrigins).toEqual(["https://x.com"]);
-    expect(JSON.parse(Buffer.from(h, "base64url").toString()).alg).toBe("HS256");
   });
+});
 
+describe("demo IP hash", () => {
   it("hashes IPs one-way", () => {
     expect(hashIp("1.2.3.4")).toMatch(/^[0-9a-f]{64}$/);
     expect(hashIp("1.2.3.4")).not.toContain("1.2.3.4");
@@ -84,7 +97,7 @@ describe("POST /api/try-call", () => {
   const req = (body: unknown = {}, ip = `10.0.0.${++n}`) =>
     POST(new Request("http://x", { method: "POST", headers: { "x-forwarded-for": ip }, body: JSON.stringify(body) })) as unknown as Promise<{
       status: number;
-      body: { ok: boolean; error?: string; token?: string; assistantId?: string };
+      body: { ok: boolean; error?: string; call?: { webCallUrl: string }; left?: number | null };
     }>;
 
   beforeEach(() => {
@@ -94,11 +107,13 @@ describe("POST /api/try-call", () => {
       VAPI_ORG_ID: "org",
       VAPI_DEMO_ASSISTANT_ID: "asst",
     });
-    claim.mockResolvedValue("ok");
+    claim.mockResolvedValue({ result: "ok", left: 2 });
+    createCall.mockResolvedValue({ id: "call-1", webCallUrl: "https://room" });
   });
   afterEach(() => {
     process.env = { ...env };
     claim.mockReset();
+    createCall.mockReset();
   });
 
   it("is off unless switched on", async () => {
@@ -112,11 +127,26 @@ describe("POST /api/try-call", () => {
     expect(claim).not.toHaveBeenCalled();
   });
 
-  it("returns a token for the demo assistant", async () => {
+  it("starts the call on the server and returns only the room", async () => {
     const r = await req();
     expect(r.status).toBe(200);
-    expect(r.body.assistantId).toBe("asst");
-    expect(r.body.token!.split(".")).toHaveLength(3);
+    expect(r.body.call!.webCallUrl).toBe("https://room");
+    expect(r.body.left).toBe(2);
+    expect(createCall).toHaveBeenCalledWith("asst", "female");
+    expect(JSON.stringify(r.body)).not.toContain("priv");
+  });
+
+  it("passes the chosen voice, nothing else from the visitor", async () => {
+    await req({ voice: "male", assistantOverrides: { maxDurationSeconds: 3000 } });
+    expect(createCall).toHaveBeenCalledWith("asst", "male");
+  });
+
+  it("stops a visitor at their durable daily limit", async () => {
+    claim.mockResolvedValue({ result: "ip_limit", left: 0 });
+    const r = await req();
+    expect(r.status).toBe(429);
+    expect(r.body.error).toBe("rate_limited");
+    expect(createCall).not.toHaveBeenCalled();
   });
 
   it("limits one visitor to three calls a day", async () => {
@@ -128,14 +158,14 @@ describe("POST /api/try-call", () => {
   });
 
   it("stops at the daily cap", async () => {
-    claim.mockResolvedValue("cap");
+    claim.mockResolvedValue({ result: "cap" });
     const r = await req();
     expect(r.status).toBe(429);
     expect(r.body.error).toBe("daily_cap");
   });
 
   it("fails closed when the cap can't be checked", async () => {
-    claim.mockResolvedValue("error");
+    claim.mockResolvedValue({ result: "error" });
     expect((await req()).status).toBe(500);
   });
 });
@@ -181,29 +211,32 @@ describe("clinic trial rules", () => {
 
 describe("POST /api/try-call with a trial code", () => {
   const env = { ...process.env };
-  const trial = (status: object) => ({ id: "trial-1", vapiAssistantId: "trial-asst", status: { active: true, reason: "ok", ...status } });
+  const trial = (status: object) => ({ id: "trial-1", vapiAssistantId: "trial-asst", status: { active: true, reason: "ok", callsLeft: 15, ...status } });
   const req = (ip: string) =>
     POST(new Request("http://x", { method: "POST", headers: { "x-forwarded-for": ip }, body: JSON.stringify({ code: "abcdefgh23" }) })) as unknown as Promise<{
       status: number;
-      body: { ok: boolean; error?: string; assistantId?: string };
+      body: { ok: boolean; error?: string; left?: number | null };
     }>;
 
   beforeEach(() => {
     // The public demo's assistant isn't needed for a trial.
     Object.assign(process.env, { DEMO_CALL_ENABLED: "true", VAPI_API_KEY: "priv", VAPI_ORG_ID: "org", VAPI_DEMO_ASSISTANT_ID: "" });
-    claim.mockResolvedValue("ok");
+    claim.mockResolvedValue({ result: "ok" });
+    createCall.mockResolvedValue({ id: "call-1", webCallUrl: "https://room" });
   });
   afterEach(() => {
     process.env = { ...env };
     claim.mockReset();
     trialByCode.mockReset();
+    createCall.mockReset();
   });
 
-  it("hands out a token for the trial's own assistant", async () => {
-    trialByCode.mockResolvedValue(trial({}));
+  it("starts a call on the trial's own assistant and counts it down", async () => {
+    trialByCode.mockResolvedValue(trial({ callsLeft: 4 }));
     const r = await req("10.1.0.1");
-    expect(r.body.assistantId).toBe("trial-asst");
+    expect(createCall).toHaveBeenCalledWith("trial-asst", "female");
     expect(claim).toHaveBeenCalledWith("10.1.0.1", "trial-1");
+    expect(r.body.left).toBe(3);
   });
 
   it("refuses an unknown, expired or used-up trial", async () => {
@@ -218,7 +251,7 @@ describe("POST /api/try-call with a trial code", () => {
 
   it("passes on the trial's daily limit", async () => {
     trialByCode.mockResolvedValue(trial({}));
-    claim.mockResolvedValue("trial_daily");
+    claim.mockResolvedValue({ result: "trial_daily" });
     const r = await req("10.1.0.5");
     expect(r.status).toBe(429);
     expect(r.body.error).toBe("trial_daily");

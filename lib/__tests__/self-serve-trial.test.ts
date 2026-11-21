@@ -77,6 +77,7 @@ describe("POST /api/trial (self-serve)", () => {
     expect((await req({ ...valid, email: "nope" })).body.error).toBe("email");
     expect((await req({ ...valid, phone: "12" })).body.error).toBe("phone");
     expect((await req({ ...valid, clinicName: "x" })).body.error).toBe("clinic_name");
+    expect((await req({ ...valid, email: "yiğit@ornek.com" })).body.error).toBe("email_ascii");
     expect(createTrial).not.toHaveBeenCalled();
   });
 

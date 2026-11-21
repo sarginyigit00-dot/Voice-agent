@@ -116,7 +116,8 @@ async function usedCounts(ids: string[]): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
   const supabase = getSupabaseServer();
   if (!supabase || !ids.length) return counts;
-  const { data } = await supabase.from("demo_trial_calls").select("trial_id").in("trial_id", ids);
+  // Every started call counts — the visitor sees the number go down as they call.
+  const { data } = await supabase.from("demo_call_starts").select("trial_id").in("trial_id", ids);
   for (const r of (data ?? []) as { trial_id: string }[]) counts.set(r.trial_id, (counts.get(r.trial_id) ?? 0) + 1);
   return counts;
 }

@@ -8,9 +8,10 @@
  * - `TryCallCard`: the call itself, also used by a clinic's own 14-day trial
  *   page (/dene/<code>), where `code` picks that clinic's assistant.
  *
- * The token comes from app/api/try-call, which holds the master switch and
- * every cap; the SDK is loaded only when the visitor presses start, so it
- * costs the page nothing until then. Recorded sample calls
+ * app/api/try-call holds the master switch and every cap and starts the call
+ * itself; the page only joins its room (`reconnect`), so a visitor can't
+ * change the assistant. The SDK is loaded only when the visitor presses
+ * start, so it costs the page nothing until then. Recorded sample calls
  * (lib/demo/try-call.ts) stand in when a live call can't happen. Never
  * touches /demo or its sample data.
  */
@@ -31,7 +32,6 @@ export type Problem =
   | "disabled"
   | "failed"
   | "trial_daily"
-  | "trial_starts"
   | "expired"
   | "used_up"
   | "not_found"
@@ -57,7 +57,6 @@ const PROBLEM_TEXT: Record<Exclude<Problem, null>, { tr: string; en: string }> =
   disabled: { tr: "Canlı görüşme şu an kapalı.", en: "Live calls are off right now." },
   failed: { tr: "Bağlantı kurulamadı. Biraz sonra tekrar deneyin.", en: "Couldn't connect. Please try again shortly." },
   trial_daily: { tr: "Bugünlük deneme aramalarınız doldu. Yarın kaldığınız yerden devam edebilirsiniz.", en: "That's today's trial calls. You can carry on tomorrow." },
-  trial_starts: { tr: "Bu deneme için bağlantı hakkı doldu. Bizimle iletişime geçin.", en: "This trial has run out of connection attempts. Please get in touch." },
   expired: { tr: "Deneme süreniz doldu.", en: "Your trial has ended." },
   used_up: { tr: "Deneme aramalarınızın tamamını kullandınız.", en: "You've used all your trial calls." },
   not_found: { tr: "Bu deneme bulunamadı.", en: "This trial wasn't found." },
@@ -69,6 +68,7 @@ export function TryCall() {
   const { lang } = useLang();
   const tr = lang === "tr";
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [left, setLeft] = useState<number | null>(null);
   const [blocked, setBlocked] = useState(false);
 
   /* Is the live call on at all? Off → only the samples show (or nothing). */
@@ -76,7 +76,11 @@ export function TryCall() {
     let alive = true;
     fetch("/api/try-call")
       .then((r) => r.json())
-      .then((d: { enabled?: boolean }) => alive && setEnabled(Boolean(d.enabled)))
+      .then((d: { enabled?: boolean; left?: number | null }) => {
+        if (!alive) return;
+        setEnabled(Boolean(d.enabled));
+        setLeft(typeof d.left === "number" ? d.left : null);
+      })
       .catch(() => alive && setEnabled(false));
     return () => {
       alive = false;
@@ -111,7 +115,9 @@ export function TryCall() {
         <div className="flex w-full flex-col gap-4">
           {enabled && !blocked && (
             <TryCallCard
+              key={left === null ? "n" : "l"}
               title={tr ? "Örnek Diş Kliniği" : "Sample Dental Clinic"}
+              callsLeft={left}
               onProblem={(p) => setBlocked(p === "daily_cap" || p === "disabled")}
             />
           )}
@@ -179,9 +185,15 @@ export function TryCallCard({
   code,
   disabled = false,
   onProblem,
+  onStarted,
   onEnded,
+  callsLeft = null,
 }: {
   title: string;
+  /** Calls left before this one (today for the demo, in total for a trial); counts down as they call. */
+  callsLeft?: number | null;
+  /** A call was counted — a trial page re-reads its meters. */
+  onStarted?: () => void;
   /** A clinic trial's code; without it, the landing page's demo assistant. */
   code?: string;
   disabled?: boolean;
@@ -199,8 +211,13 @@ export function TryCallCard({
   const [left, setLeft] = useState(DEMO_CALL_MAX_SECONDS);
   const [speaking, setSpeaking] = useState(false);
   const [honeypot, setHoneypot] = useState("");
+  const [voice, setVoice] = useState<"female" | "male">("female");
+  const [quota, setQuota] = useState<number | null>(callsLeft);
 
   const vapi = useRef<VapiClient | null>(null);
+  // Set once we hang up or the call ends: the SDK reports the room closing as
+  // an "error", which must not read as a failed call.
+  const ending = useRef(false);
   const log = useRef<HTMLDivElement | null>(null);
 
   /* Countdown while live; Vapi ends the call itself at the cap. */
@@ -218,6 +235,8 @@ export function TryCallCard({
   /* Leaving the page hangs up — an open call keeps billing. */
   useEffect(() => () => void vapi.current?.stop(), []);
 
+  useEffect(() => setQuota(callsLeft), [callsLeft]);
+
   function fail(p: Exclude<Problem, null>) {
     setProblem(p);
     onProblem?.(p);
@@ -229,6 +248,7 @@ export function TryCallCard({
     setLines([]);
     setLeft(DEMO_CALL_MAX_SECONDS);
     setPhase("connecting");
+    ending.current = false;
 
     // Ask for the mic first: a refusal shouldn't spend one of the day's calls.
     try {
@@ -241,21 +261,25 @@ export function TryCallCard({
     const res = await fetch("/api/try-call", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ website: honeypot, ...(code ? { code } : {}) }),
+      body: JSON.stringify({ website: honeypot, voice, ...(code ? { code } : {}) }),
     }).catch(() => null);
     const data = (await res?.json().catch(() => null)) as
-      | { ok: true; token: string; assistantId: string }
-      | { ok: false; error: Exclude<Problem, null> }
+      | { ok: true; call: { id: string; webCallUrl: string; transport?: { callToken?: string } }; left: number | null }
+      | { ok: false; error: Exclude<Problem, null>; left?: number }
       | null;
+    if (data && typeof data.left === "number") setQuota(data.left);
     if (!data?.ok) return fail((data && !data.ok && data.error) || "failed");
+    onStarted?.();
 
     try {
       const { default: Vapi } = await import("@vapi-ai/web");
-      // A fresh client per call: the SDK keeps the token it was built with.
-      const client = new Vapi(data.token);
+      // The server already created the call; the client only joins its room,
+      // so it never needs a key of its own.
+      const client = new Vapi("server-created-call");
       vapi.current = client;
       client.on("call-start", () => setPhase("live"));
       client.on("call-end", () => {
+        ending.current = true;
         setPhase("ended");
         setSpeaking(false);
         // The webhook counts a trial call a moment after it ends.
@@ -263,7 +287,10 @@ export function TryCallCard({
       });
       client.on("speech-start", () => setSpeaking(true));
       client.on("speech-end", () => setSpeaking(false));
-      client.on("error", () => {
+      client.on("error", (e: unknown) => {
+        if (ending.current) return;
+        console.warn("[try-call] call error", e);
+        ending.current = true;
         setProblem("failed");
         setPhase("ended");
       });
@@ -277,13 +304,14 @@ export function TryCallCard({
           return last?.who === who ? [...prev.slice(0, -1), { who, text: `${last.text} ${text}` }] : [...prev, { who, text }];
         });
       });
-      await client.start(data.assistantId);
+      await client.reconnect(data.call);
     } catch {
       fail("failed");
     }
   }
 
   function hangUp() {
+    ending.current = true;
     void vapi.current?.stop();
     setPhase("ended");
   }
@@ -385,6 +413,33 @@ export function TryCallCard({
               </Link>
             </span>
           </label>
+        )}
+        {!live && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div role="radiogroup" aria-label={tr ? "Asistanın sesi" : "Assistant's voice"} className="flex gap-1 rounded-full border border-border p-0.5 text-[12.5px]">
+              {(["female", "male"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="radio"
+                  aria-checked={voice === v}
+                  onClick={() => setVoice(v)}
+                  className={`h-7 cursor-pointer rounded-full px-3 font-medium transition-colors ${
+                    voice === v ? "bg-violet text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {v === "female" ? (tr ? "Kadın ses" : "Female voice") : tr ? "Erkek ses" : "Male voice"}
+                </button>
+              ))}
+            </div>
+            {quota !== null && (
+              <span className="font-mono-nums text-[12px] text-muted-foreground">
+                {code
+                  ? tr ? `Kalan görüşme: ${quota}` : `Calls left: ${quota}`
+                  : tr ? `Bugün kalan: ${quota}` : `Left today: ${quota}`}
+              </span>
+            )}
+          </div>
         )}
         {/* Honeypot: hidden from people, filled by bots. */}
         <input

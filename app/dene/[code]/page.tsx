@@ -88,13 +88,13 @@ export default function TrialPage() {
 
               <p className="rounded-lg border border-border bg-muted px-3 py-2.5 text-[12.5px] leading-relaxed text-muted-foreground">
                 {tr
-                  ? "Deneme modundasınız: randevular takviminize yazılmaz, saatler örnektir. Bir arama en fazla üç dakika sürer ve günde en fazla beş arama yapılabilir. On beş saniyeden kısa aramalar haktan düşmez."
-                  : "You're in trial mode: nothing is written to your calendar and the times offered are samples. A call lasts up to three minutes, with up to five calls a day. Calls under fifteen seconds don't count."}
+                  ? "Deneme modundasınız: randevular takviminize yazılmaz, saatler örnektir. Bir arama en fazla üç dakika sürer ve günde en fazla beş arama yapılabilir. Her başlatılan görüşme bir hak kullanır."
+                  : "You're in trial mode: nothing is written to your calendar and the times offered are samples. A call lasts up to three minutes, with up to five calls a day. Every call you start uses one call."}
               </p>
             </div>
 
             <div className="flex w-full flex-col gap-4">
-              <TryCallCard title={state.clinicName ?? ""} code={code} disabled={!state.enabled} onEnded={load} />
+              <TryCallCard title={state.clinicName ?? ""} code={code} disabled={!state.enabled} callsLeft={state.callsLeft ?? null} onStarted={load} onEnded={load} />
               {!state.enabled && (
                 <p className="text-[12.5px] text-muted-foreground">
                   {tr ? "Deneme hattı şu an bakımda. Lütfen biraz sonra tekrar deneyin." : "The trial line is under maintenance. Please try again shortly."}

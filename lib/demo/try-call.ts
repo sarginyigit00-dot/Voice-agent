@@ -41,7 +41,30 @@ export function demoDailyCap(): number {
 /** Istanbul has no DST — a fixed +03:00 keeps this free of time-zone maths. */
 const OFFSET = "+03:00";
 /** Opening slots offered on any open day, local time. */
-const SLOT_TIMES = ["10:00", "11:30", "14:00", "16:30"];
+/** Every half hour the demo clinic could offer (weekday hours; Saturday ends at 14:00). */
+const ALL_TIMES = Array.from({ length: 17 }, (_, i) => {
+  const m = 9 * 60 + 30 * i; // 09:00 … 17:00
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
+});
+
+/** Small deterministic hash: the same day always gets the same free slots, another day other ones. */
+function seedOf(ymd: string): number {
+  let h = 2166136261;
+  for (const c of ymd) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return h >>> 0;
+}
+
+/** Four or five free times for that day, different from day to day, stable within it. */
+export function freeTimesOn(ymd: string): string[] {
+  const saturday = new Date(`${ymd}T12:00:00${OFFSET}`).getUTCDay() === 6;
+  const pool = saturday ? ALL_TIMES.filter((t) => t >= "10:00" && t < "14:00") : ALL_TIMES;
+  let seed = seedOf(ymd);
+  const next = () => (seed = (Math.imul(seed, 1103515245) + 12345) >>> 0);
+  const want = saturday ? 3 : 4 + (next() % 2);
+  const picked = new Set<string>();
+  while (picked.size < Math.min(want, pool.length)) picked.add(pool[next() % pool.length]);
+  return [...picked].sort();
+}
 
 function istanbulYmd(d: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: DEMO_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
@@ -59,8 +82,8 @@ function addDays(ymd: string, days: number): string {
 /** Saturday closes at 14:00 (defaultWorkingHours, which the demo agent also carries). */
 function slotsOn(ymd: string, now: Date): string[] {
   if (isClosed(ymd)) return [];
-  const saturday = new Date(`${ymd}T12:00:00${OFFSET}`).getUTCDay() === 6;
-  return (saturday ? SLOT_TIMES.filter((t) => t < "14:00") : SLOT_TIMES).map((t) => new Date(`${ymd}T${t}:00${OFFSET}`))
+  return freeTimesOn(ymd)
+    .map((t) => new Date(`${ymd}T${t}:00${OFFSET}`))
     .filter((d) => d.getTime() > now.getTime() + 60 * 60 * 1000)
     .map((d) => d.toISOString());
 }

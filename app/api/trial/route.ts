@@ -54,12 +54,15 @@ export async function POST(req: Request) {
   const clinicName = text("clinicName", 80);
   const contactName = text("contactName", 120);
   const phone = text("phone", 30);
-  const email = text("email", 200).toLowerCase();
+  // "İ".toLowerCase() is "i" + a combining dot; phones capitalise the first letter.
+  const email = text("email", 200).toLowerCase().replace(/\u0307/g, "");
   const invalid = (error: string) => NextResponse.json({ ok: false, error }, { status: 400 });
   if (clinicName.length < 2) return invalid("clinic_name");
   if (contactName.length < 2) return invalid("contact_name");
   if (!PHONE_RE.test(phone) || phone.replace(/\D/g, "").length < 7) return invalid("phone");
   if (!EMAIL_RE.test(email)) return invalid("email");
+  // Resend (and most mail servers) refuse non-ASCII addresses: ğ, ş, ı… are a typo here.
+  if (/[^\x21-\x7e]/.test(email)) return invalid("email_ascii");
 
   const origin = siteOrigin(req);
   const mailFor = (t: { code: string; clinicName: string; expiresAt: string; maxCalls: number }) =>

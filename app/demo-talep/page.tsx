@@ -96,6 +96,7 @@ const ERRORS: Record<string, L> = {
   phone: { tr: "Geçerli bir telefon numarası yazın.", en: "Please enter a valid phone number." },
   email: { tr: "E-posta adresi geçersiz.", en: "That email address isn't valid." },
   failed: { tr: "Gönderilemedi. Lütfen tekrar deneyin.", en: "Couldn't send it. Please try again." },
+  email_ascii: { tr: "E-posta adresinde Türkçe karakter (ğ, ş, ı, ö, ü, ç) olamaz.", en: "The email address can't contain Turkish characters (ğ, ş, ı, ö, ü, ç)." },
   email_failed: { tr: "E-posta gönderilemedi. Adresi kontrol edip tekrar deneyin.", en: "We couldn't send the email. Check the address and try again." },
   ip_limit: { tr: "Bu bağlantıdan bugün zaten bir deneme açıldı. Yarın tekrar deneyin ya da bizimle görüşün.", en: "A trial was already opened from this connection today. Try again tomorrow or talk to us." },
   daily_full: { tr: "Bugünkü deneme kontenjanı doldu. Yarın tekrar deneyin ya da bizimle görüşün.", en: "Today's trial slots are full. Try again tomorrow or talk to us." },

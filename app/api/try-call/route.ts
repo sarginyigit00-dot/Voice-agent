@@ -4,11 +4,11 @@ import { DEMO_CALLS_PER_IP_PER_DAY } from "@/lib/demo/try-call";
 import { TRIAL_CALLS_PER_DAY } from "@/lib/demo/trials";
 import { trialByCode } from "@/lib/demo/trials-server";
 import {
-  allowedOrigins,
   areBrowserCallsEnabled,
   claimDemoCall,
+  createWebCall,
   isDemoCallEnabled,
-  signDemoToken,
+  publicCallsLeft,
 } from "@/lib/demo/try-call-server";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,10 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: Request) {
   const code = new URL(req.url).searchParams.get("code");
-  if (!code) return NextResponse.json({ enabled: isDemoCallEnabled() });
+  if (!code) {
+    const enabled = isDemoCallEnabled();
+    return NextResponse.json({ enabled, left: enabled ? await publicCallsLeft(clientIp(req)) : null });
+  }
 
   const trial = await trialByCode(code);
   if (!trial) return NextResponse.json({ found: false }, { status: 404 });
@@ -33,12 +36,13 @@ export async function GET(req: Request) {
 }
 
 /**
- * POST { code?, website? } → { token, assistantId } for one browser call:
+ * POST { code?, voice?, website? } → { call, left } for one browser call:
  * the landing page's demo assistant, or — with a code — that clinic
  * trial's. Every call costs real minutes, so in order: the master switch, a
- * honeypot, a per-visitor limit, then the durable caps (public: per day;
- * trial: its own days, calls and per-day starts). The token works only for
- * that one assistant, from our origin, for five minutes.
+ * honeypot, a per-visitor limit, then the durable caps (public: per visitor
+ * and per day; trial: its own days, calls and per-day starts). The call is
+ * created here with the private key; the page only joins its room, so it
+ * can't change the assistant (duration, prompt). Every start counts.
  */
 export async function POST(req: Request) {
   if (!areBrowserCallsEnabled()) return NextResponse.json({ ok: false, error: "disabled" }, { status: 503 });
@@ -52,6 +56,8 @@ export async function POST(req: Request) {
   const code = typeof body?.code === "string" ? body.code.trim() : "";
   let assistantId: string;
   let trialId: string | null = null;
+  let trialLeft = 0;
+  const voice = body?.voice === "male" ? "male" : "female";
 
   if (code) {
     const trial = await trialByCode(code);
@@ -59,6 +65,7 @@ export async function POST(req: Request) {
     if (!trial.status.active) return NextResponse.json({ ok: false, error: trial.status.reason }, { status: 403 });
     assistantId = trial.vapiAssistantId;
     trialId = trial.id;
+    trialLeft = trial.status.callsLeft - 1;
   } else {
     if (!isDemoCallEnabled()) return NextResponse.json({ ok: false, error: "disabled" }, { status: 503 });
     assistantId = process.env.VAPI_DEMO_ASSISTANT_ID!.trim();
@@ -71,15 +78,12 @@ export async function POST(req: Request) {
   }
 
   const claim = await claimDemoCall(ip, trialId);
-  if (claim === "cap") return NextResponse.json({ ok: false, error: "daily_cap" }, { status: 429 });
-  if (claim === "trial_daily" || claim === "trial_starts") return NextResponse.json({ ok: false, error: claim }, { status: 429 });
-  if (claim === "error") return NextResponse.json({ ok: false, error: "failed" }, { status: 500 });
+  if (claim.result === "cap") return NextResponse.json({ ok: false, error: "daily_cap" }, { status: 429 });
+  if (claim.result === "ip_limit") return NextResponse.json({ ok: false, error: "rate_limited", left: 0 }, { status: 429 });
+  if (claim.result === "trial_daily") return NextResponse.json({ ok: false, error: "trial_daily" }, { status: 429 });
+  if (claim.result === "error") return NextResponse.json({ ok: false, error: "failed" }, { status: 500 });
 
-  const token = signDemoToken({
-    orgId: process.env.VAPI_ORG_ID!.trim(),
-    privateKey: process.env.VAPI_API_KEY!.trim(),
-    assistantId,
-    origins: allowedOrigins(),
-  });
-  return NextResponse.json({ ok: true, token, assistantId });
+  const call = await createWebCall(assistantId, voice);
+  if (!call) return NextResponse.json({ ok: false, error: "failed" }, { status: 502 });
+  return NextResponse.json({ ok: true, call, left: trialId ? Math.max(0, trialLeft) : (claim.left ?? null) });
 }

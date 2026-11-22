@@ -36,8 +36,6 @@ export interface CallActionPayload {
   callerEmail?: string;
   /** From Vapi's post-call analysis (structuredDataPlan in lib/vapi/client.ts); neutral when absent. */
   sentiment: "positive" | "neutral" | "negative";
-  /** Vapi's recording URL, when the assistant had recording enabled. */
-  recordingUrl?: string;
   transcript: { speaker: string; text: string; atSec: number }[];
 }
 

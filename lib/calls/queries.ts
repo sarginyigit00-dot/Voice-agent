@@ -17,7 +17,6 @@ interface CallRowDb {
   transcript: { speaker: string; text: string; atSec: number }[];
   actions: string[];
   sentiment: string;
-  recording_url: string | null;
 }
 
 /** Stable pseudo-random waveform sparkline derived from the call id — no real amplitude data exists past the call. */
@@ -57,7 +56,6 @@ function fromRow(r: CallRowDb): CallRow {
     sentiment: (["positive", "neutral", "negative"] as const).includes(r.sentiment as Sentiment)
       ? (r.sentiment as Sentiment)
       : "neutral",
-    recordingUrl: r.recording_url,
     wave: waveFor(r.id),
     summary: { tr: r.summary, en: r.summary },
     actions: r.actions.map((note) => ({ tr: note, en: note })),

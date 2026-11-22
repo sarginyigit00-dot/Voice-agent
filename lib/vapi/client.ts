@@ -429,31 +429,32 @@ async function toolIdsFor(
 /* ───────────────────────────── assistant ───────────────────────────── */
 
 /**
- * Every call is recorded (audio + transcript) and it carries health data, so
- * the caller is told so in the opening line — the clinic's name, said first,
- * names who is recording; that an AI is speaking, and what the recording is
- * for, are said too (KVKK aydınlatma). Added here rather than typed into each
- * greeting so no clinic can edit it away or forget it on a new agent. There is
- * deliberately no setting to turn it off.
+ * Calls are not recorded as audio (artifactPlan below), but they are
+ * transcribed, and the transcript carries health data — so the caller is told
+ * so in the opening line. The clinic's name, said first, names who processes
+ * it; that an AI is speaking, and what the transcript is for, are said too
+ * (KVKK aydınlatma). Added here rather than typed into each greeting so no
+ * clinic can edit it away or forget it on a new agent. There is deliberately
+ * no setting to turn it off.
  *
  * With the starter greeting ("Merhaba, {klinik}. Size nasıl yardımcı
  * olabilirim?") the opening line reads:
  * "Merhaba, {klinik}. Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu
- * oluşturmak için kaydedilir ve işlenir. Size nasıl yardımcı olabilirim?"
+ * oluşturmak için yazıya dökülür ve işlenir. Size nasıl yardımcı olabilirim?"
  *
  * Kept this short on purpose — a longer opening loses the caller before the
  * booking. The rest of the KVKK notice is read only when the caller asks
  * (`# Aydınlatma` in lib/agents/prompt.ts, text in lib/agents/privacy-notice.ts);
  * the full written notice is the clinic's, on its site and patient forms.
  */
-const RECORDING_NOTICE = {
-  tr: "Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu oluşturmak için kaydedilir ve işlenir.",
-  en: "I'm an AI assistant. This call is recorded and processed to book your appointment.",
+const CALL_NOTICE = {
+  tr: "Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu oluşturmak için yazıya dökülür ve işlenir.",
+  en: "I'm an AI assistant. This call is transcribed and processed to book your appointment.",
 };
 
 /** Puts the notice before the closing question, so the line still ends by inviting the caller to speak. */
-export function withRecordingNotice(opening: string, lang: "tr" | "en" = "tr"): string {
-  const notice = RECORDING_NOTICE[lang];
+export function withCallNotice(opening: string, lang: "tr" | "en" = "tr"): string {
+  const notice = CALL_NOTICE[lang];
   const text = opening.trim();
   if (!text || text.includes(notice)) return text || notice;
   const sentences = text.match(/[^.!?]+[.!?]*/g)?.map((x) => x.trim()).filter(Boolean) ?? [text];
@@ -480,20 +481,20 @@ export function buildAssistant(
   // The prompt quotes this same line as "already said", so both carry the notice.
   const spoken = {
     ...agent,
-    greeting: { tr: withRecordingNotice(fill(agent.greeting.tr), "tr"), en: withRecordingNotice(fill(agent.greeting.en), "en") },
+    greeting: { tr: withCallNotice(fill(agent.greeting.tr), "tr"), en: withCallNotice(fill(agent.greeting.en), "en") },
   };
   const voice = voiceFor(agent.voice);
   const firstMessage = spoken.greeting.tr || spoken.greeting.en;
   return {
     // Vapi caps the name at 40 characters.
     name: `${clinic.name} · ${agent.name}`.slice(0, 40),
-    // Read at full speed the recording notice ran straight into the sentence
+    // Read at full speed the notice ran straight into the sentence
     // before it. Only ElevenLabs voices with SSML on (Lyra) understand the
     // break tag — v4 (Orion) doesn't parse SSML and would read it out; the
     // prompt keeps the plain text above, so the tag is never "already said".
     firstMessage:
       voice.provider === "11labs" && voice.enableSsmlParsing
-        ? firstMessage.replace(RECORDING_NOTICE.tr, `<break time="0.6s" /> ${RECORDING_NOTICE.tr}`)
+        ? firstMessage.replace(CALL_NOTICE.tr, `<break time="0.6s" /> ${CALL_NOTICE.tr}`)
         : firstMessage,
     model: {
       ...MODEL,
@@ -553,6 +554,10 @@ export function buildAssistant(
     // said its own default — a curt, informal "Hoşça kal" to a patient the
     // model had just addressed as "siz".
     endCallMessage: "Hoşça kalın.",
+    // No audio recording (KVKK: a voice recording of a health call was more
+    // than the clinic needs). Vapi records by default, so this must be sent;
+    // the transcript is still made and is what /calls and the CRM show.
+    artifactPlan: { recordingEnabled: false, videoRecordingEnabled: false },
     analysisPlan: {
       // Sending an analysisPlan switches the summary off unless it's asked
       // for, and /calls and the CRM are built on it.
@@ -688,7 +693,7 @@ export async function startCallbackCall(opts: {
 
   const name = opts.name.trim().slice(0, 40);
   // One string for both: what Vapi says first and what the prompt says was said.
-  const opening = withRecordingNotice(
+  const opening = withCallNotice(
     `Merhaba${name ? ` ${name}` : ""}, ${opts.clinic.name} adına arıyorum. Az önce bize bir form doldurmuştunuz. Şimdi konuşmak için uygun musunuz?`,
   );
   const brief = callbackBrief(name, opts.note, opts.source, opening);
@@ -750,28 +755,10 @@ export function routePhoneNumber(id: string): Promise<VapiResult<VapiPhoneNumber
   });
 }
 
-/* ───────────────────────────── recordings ───────────────────────────── */
+/* ───────────────────────────── calls ───────────────────────────── */
 
 /**
- * A playable link to a call's recording, minted fresh on every request.
- *
- * This Vapi org stores recordings privately: the plain `recordingUrl` the
- * end-of-call report carries answers 400 to anyone who opens it, and the
- * presigned variants expire after 30 minutes. So a URL saved at call time can
- * never be played later — the panel has to ask for a new one each time.
- * Mono (both sides mixed) rather than stereo: half the size, same content.
- */
-export async function recordingLinkFor(callId: string): Promise<VapiResult<string | null>> {
-  const call = await vapi<{ artifact?: { presignedMonoUrl?: string; presignedStereoUrl?: string } }>(
-    "GET",
-    `/call/${encodeURIComponent(callId)}`,
-  );
-  if (!call.ok) return call;
-  return { ok: true, data: call.data.artifact?.presignedMonoUrl ?? call.data.artifact?.presignedStereoUrl ?? null };
-}
-
-/**
- * Deletes a call on Vapi — its recording, transcript and logs — for the
+ * Deletes a call on Vapi — its transcript and logs — for the
  * retention cron (lib/privacy/retention.ts). Already gone counts as done.
  */
 export async function deleteCall(callId: string): Promise<VapiResult<null>> {

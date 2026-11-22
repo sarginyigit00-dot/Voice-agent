@@ -71,7 +71,7 @@ export function composeSystemPrompt(agent: Agent, lang: "tr" | "en" = "tr", ctx:
   sections.push(
     tr
       ? `# Aydınlatma\nArayan kaydı, kişisel verilerini, KVKK'yı ya da aydınlatma metnini sorarsa şu metni kelimesi kelimesine oku; ekleme, çıkarma ya da yorum yapma:\n"${spokenPrivacyNotice(ctx.clinicName)}"\nSonra "Başka nasıl yardımcı olabilirim?" diye sor ve kaldığın yerden devam et. Arayan sormadıkça bu metni asla okuma.`
-      : `# Privacy notice\nIf the caller asks about the recording, their personal data, KVKK or the privacy notice, read this text word for word — add, drop or explain nothing:\n"${spokenPrivacyNotice(ctx.clinicName)}"\nThen ask how else you can help and carry on where you left off. Never read it unless the caller asks.`,
+      : `# Privacy notice\nIf the caller asks whether the call is recorded, about their personal data, KVKK or the privacy notice, read this text word for word — add, drop or explain nothing:\n"${spokenPrivacyNotice(ctx.clinicName)}"\nThen ask how else you can help and carry on where you left off. Never read it unless the caller asks.`,
   );
 
   // The clinic's own instructions — the only free-prose part.

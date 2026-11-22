@@ -118,9 +118,9 @@ function Hero() {
   // The value is bilingual too — "İlk çalışta" and the TR-idiomatic "7/24" were
   // leaking into the English page.
   const specs: { value: L; label: L; accent?: boolean }[] = [
-    { value: { tr: "14 gün", en: "14 days" }, label: { tr: "içinde silinen ses kayıtları", en: "until recordings are deleted" }, accent: true },
+    { value: { tr: "6 ay", en: "6 months" }, label: { tr: "sonra silinen transkriptler", en: "until transcripts are deleted" }, accent: true },
     { value: { tr: "7/24", en: "24/7" }, label: { tr: "kesintisiz cevap veren hat", en: "line that always answers" } },
-    { value: { tr: "Her arama", en: "Every call" }, label: { tr: "kayıt, transkript ve özetle", en: "recorded, transcribed, summarised" } },
+    { value: { tr: "Her arama", en: "Every call" }, label: { tr: "transkript ve özetle", en: "transcribed and summarised" } },
     { value: { tr: "İlk çalışta", en: "First ring" }, label: { tr: "telefonu açar", en: "answers, on the first ring" } },
   ];
 
@@ -682,8 +682,8 @@ function Faq() {
     {
       q: { tr: "Hasta karşısındakinin bot olduğunu anlar mı?", en: "Will patients realise it's a bot?" },
       a: {
-        tr: "Anlar, çünkü baştan söylüyoruz. Randevox her görüşmenin başında yapay zekâ asistanı olduğunu ve görüşmenin kayıt altına alınıp işlendiğini söyler; bu bildirim kapatılamaz. Sonrası akıcı bir telefon görüşmesi: düşük gecikmeli akışlı ses, doğal duraklamalar ve araya girme desteği var — hasta sözünü kesebilir, asistan uyum sağlar.",
-        en: "Yes — because we tell them up front. Randevox opens every call by saying it's an AI assistant and that the call is recorded and processed; this notice can't be switched off. From there it's a smooth phone conversation: low-latency streamed speech, natural pauses and barge-in, so a patient can interrupt and it adapts.",
+        tr: "Anlar, çünkü baştan söylüyoruz. Randevox her görüşmenin başında yapay zekâ asistanı olduğunu ve görüşmenin yazıya dökülüp işlendiğini söyler; bu bildirim kapatılamaz. Sonrası akıcı bir telefon görüşmesi: düşük gecikmeli akışlı ses, doğal duraklamalar ve araya girme desteği var — hasta sözünü kesebilir, asistan uyum sağlar.",
+        en: "Yes — because we tell them up front. Randevox opens every call by saying it's an AI assistant and that the call is transcribed and processed; this notice can't be switched off. From there it's a smooth phone conversation: low-latency streamed speech, natural pauses and barge-in, so a patient can interrupt and it adapts.",
       },
     },
     {
@@ -710,8 +710,8 @@ function Faq() {
     {
       q: { tr: "Hasta verileri ne oluyor? KVKK açısından durum nedir?", en: "What happens to patient data?" },
       a: {
-        tr: "Kayıtlar ve transkriptler yalnızca sizin hesabınızda görünür. Ses kayıtları 14 gün içinde otomatik silinir, dilerseniz panelden hemen silebilirsiniz; transkriptler 12 ay sonra silinir. Her aramanın başında arayana yapay zekâ ile görüştüğü ve görüşmenin kaydedilip işlendiği otomatik olarak söylenir; arayan sorarsa asistan aydınlatma bilgisini telefonda okur. Web siteniz için hazır aydınlatma metni şablonunu biz veriyoruz.",
-        en: "Recordings and transcripts are visible only in your account. Call recordings are deleted automatically within 14 days, or right away from the panel; transcripts after 12 months. Every call opens by telling the caller they're speaking with an AI and that the call is recorded and processed; if the caller asks, the assistant reads out the privacy notice on the call. We provide a ready privacy-notice template for your website.",
+        tr: "Görüşmelerin ses kaydı alınmaz. Transkriptler yalnızca sizin hesabınızda görünür ve 6 ay sonra otomatik silinir. Her aramanın başında arayana yapay zekâ ile görüştüğü ve görüşmenin yazıya dökülüp işlendiği otomatik olarak söylenir; arayan sorarsa asistan aydınlatma bilgisini telefonda okur. Web siteniz için hazır aydınlatma metni şablonunu biz veriyoruz.",
+        en: "Calls are not recorded as audio. Transcripts are visible only in your account and are deleted automatically after 6 months. Every call opens by telling the caller they're speaking with an AI and that the call is transcribed and processed; if the caller asks, the assistant reads out the privacy notice on the call. We provide a ready privacy-notice template for your website.",
       },
     },
   ];

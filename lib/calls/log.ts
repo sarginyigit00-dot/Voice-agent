@@ -29,7 +29,6 @@ export async function logCall(payload: CallActionPayload, results: ActionResult[
       transcript: payload.transcript,
       actions: results.map((r) => r.note),
       sentiment: payload.sentiment,
-      recording_url: payload.recordingUrl ?? null,
     },
     { onConflict: "id" },
   );

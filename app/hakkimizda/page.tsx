@@ -10,8 +10,8 @@ const SECTIONS: DocSection[] = [
     title: { tr: "Ne yapıyoruz", en: "What we do" },
     body: [
       {
-        tr: "Randevox, diş kliniklerinin telefonunu 7/24 açan bir yapay zekâ asistanıdır. Hastanın sorusunu Türkçe ve doğal bir dille yanıtlar, uygun saati takvimden okuyup randevuyu yazar, çözemediği aramayı klinikteki bir kişiye aktarır. Her görüşmenin kaydı, dökümü ve özeti kliniğin panelinde durur.",
-        en: "Randevox is an AI assistant that answers dental clinics' phones 24/7. It answers patients' questions in natural Turkish, reads free slots from the calendar and books the appointment, and hands calls it can't resolve to a person at the clinic. Every call's recording, transcript and summary sits in the clinic's panel.",
+        tr: "Randevox, diş kliniklerinin telefonunu 7/24 açan bir yapay zekâ asistanıdır. Hastanın sorusunu Türkçe ve doğal bir dille yanıtlar, uygun saati takvimden okuyup randevuyu yazar, çözemediği aramayı klinikteki bir kişiye aktarır. Her görüşmenin dökümü ve özeti kliniğin panelinde durur.",
+        en: "Randevox is an AI assistant that answers dental clinics' phones 24/7. It answers patients' questions in natural Turkish, reads free slots from the calendar and books the appointment, and hands calls it can't resolve to a person at the clinic. Every call's transcript and summary sits in the clinic's panel.",
       },
     ],
   },
@@ -41,8 +41,8 @@ const SECTIONS: DocSection[] = [
     body: [
       {
         list: [
-          { tr: "Şeffaflık: asistan her aramada yapay zekâ olduğunu ve görüşmenin kaydedildiğini söyler.", en: "Transparency: on every call the assistant says it's an AI and that the call is recorded." },
-          { tr: "Gizlilik: hastaların verisi yalnızca o kliniğindir; kayıtlar 14 gün içinde silinir.", en: "Privacy: patients' data belongs only to their clinic; recordings are deleted within 14 days." },
+          { tr: "Şeffaflık: asistan her aramada yapay zekâ olduğunu ve görüşmenin yazıya döküldüğünü söyler.", en: "Transparency: on every call the assistant says it's an AI and that the call is transcribed." },
+          { tr: "Gizlilik: hastaların verisi yalnızca o kliniğindir; ses kaydı alınmaz, transkriptler 6 ayda silinir.", en: "Privacy: patients' data belongs only to their clinic; calls aren't recorded as audio and transcripts are deleted after 6 months." },
           { tr: "İnsan her zaman devrede: asistan teşhis koymaz, hekimin yerine geçmez; gerektiğinde aramayı size aktarır.", en: "A human stays in the loop: the assistant doesn't diagnose or replace the dentist, and transfers the call to you when needed." },
           { tr: "Sadece gelen aramalar: asistan hiçbir zaman hastaları kendisi aramaz.", en: "Inbound only: the assistant never calls patients itself." },
         ],

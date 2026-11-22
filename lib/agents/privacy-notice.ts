@@ -1,8 +1,8 @@
 /**
  * The spoken privacy notice (KVKK aydınlatma) the agent reads ONLY when the
- * caller asks about the recording, their data or KVKK — never on its own.
+ * caller asks about the transcript, their data or KVKK — never on its own.
  * The opening line stays short on purpose: every caller already hears that
- * an AI is speaking and that the call is recorded and processed; this is the
+ * an AI is speaking and that the call is transcribed and processed; this is the
  * second layer for whoever wants more.
  *
  * Built only from the clinic notice template (KVKK-AYDINLATMA-SABLONU.md, a copy
@@ -13,10 +13,10 @@
  */
 export const SPOKEN_PRIVACY_NOTICE =
   "Kişisel verileriniz, veri sorumlusu olarak {klinik} adına işlenir. " +
-  "Adınız, telefon numaranız, görüşmede ilettiğiniz talep ve sağlıkla ilgili bilgiler ile görüşmenin ses kaydı ve yazılı dökümü; " +
+  "Adınız, telefon numaranız, görüşmede ilettiğiniz talep ve sağlıkla ilgili bilgiler ile görüşmenin yazılı dökümü; " +
   "randevunuzu oluşturmak, talebinize dönüş yapmak ve hizmet kalitesi için işlenir. " +
   "Hukuki sebep, randevu talebinizin yerine getirilmesi ve sağlık hizmetinin yürütülmesidir. " +
-  "Ses kaydı en fazla on dört gün; yazılı döküm, adınız ve telefon numaranız on iki ay saklanır, sonra silinir. " +
+  "Görüşmenin ses kaydı alınmaz. Yazılı döküm, adınız ve telefon numaranız altı ay saklanır, sonra silinir. " +
   "Ses altyapısı, yapay zekâ ve veri barındırma sağlayıcılarının sunucuları yurt dışında olduğu için verileriniz yurt dışına aktarılır. " +
   "Verileriniz hakkında bilgi isteme, düzeltilmesini ya da silinmesini isteme gibi haklarınız var; bunun için kliniğe başvurabilirsiniz. " +
   "Ayrıntılı aydınlatma metnini klinikten isteyebilirsiniz.";

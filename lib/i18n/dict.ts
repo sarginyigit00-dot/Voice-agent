@@ -78,8 +78,6 @@ export const ui = {
     // preferences
     preferences: "Kokpit tercihleri",
     preferencesHint: "Kokpitin nasıl davranacağını seç.",
-    prefRecording: "Aramaları kaydet",
-    prefRecordingHint: "Her arama için transkript ve ses kaydı sakla.",
     prefNotifications: "Masaüstü bildirimleri",
     prefNotificationsHint: "Yeni randevu, transfer ve sesli mesajlarda uyar.",
     prefLiveTicker: "Canlı arama akışı",
@@ -164,8 +162,6 @@ export const ui = {
     language: "Language",
     preferences: "Cockpit preferences",
     preferencesHint: "Choose how the cockpit behaves.",
-    prefRecording: "Record calls",
-    prefRecordingHint: "Keep a transcript and audio recording for every call.",
     prefNotifications: "Desktop notifications",
     prefNotificationsHint: "Alert me on new bookings, transfers and voicemails.",
     prefLiveTicker: "Live call ticker",

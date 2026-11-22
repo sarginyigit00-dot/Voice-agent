@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { composeSystemPrompt } from "@/lib/agents/prompt";
 import { STARTER_AGENTS } from "@/lib/agents/starter";
-import { withRecordingNotice } from "@/lib/vapi/client";
+import { withCallNotice } from "@/lib/vapi/client";
 
 describe("KVKK notice", () => {
-  it("keeps the opening line short — nothing beyond the AI + recording notice", () => {
-    expect(withRecordingNotice("Merhaba, Örnek Diş Kliniği. Size nasıl yardımcı olabilirim?", "tr")).toBe(
-      "Merhaba, Örnek Diş Kliniği. Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu oluşturmak için kaydedilir ve işlenir. Size nasıl yardımcı olabilirim?",
+  it("keeps the opening line short — nothing beyond the AI + transcript notice", () => {
+    expect(withCallNotice("Merhaba, Örnek Diş Kliniği. Size nasıl yardımcı olabilirim?", "tr")).toBe(
+      "Merhaba, Örnek Diş Kliniği. Ben yapay zekâ asistanıyım. Görüşmeniz randevunuzu oluşturmak için yazıya dökülür ve işlenir. Size nasıl yardımcı olabilirim?",
     );
   });
 

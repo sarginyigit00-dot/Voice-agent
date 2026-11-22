@@ -85,26 +85,11 @@ export async function POST(req: Request) {
 
 /* ───────────────────────── Vapi payload shapes ───────────────────────── */
 
-/**
- * Vapi's own docs disagree on the exact shape of a recorded call's artifact
- * (a flat `recordingUrl`, or `artifact.recording.stereoUrl`, or
- * `artifact.recording.mono.combinedUrl`) — this project has no Vapi
- * connection yet to check a real payload against. `recordingUrlFrom` below
- * tries every candidate path rather than committing to one; verify against a
- * real end-of-call-report once Vapi is connected and narrow this if needed.
- */
-interface VapiArtifact {
-  recordingUrl?: string;
-  recording?: { stereoUrl?: string; mono?: { combinedUrl?: string } };
-}
-
 interface VapiCall {
   id?: string;
   assistantId?: string;
   startedAt?: string;
   customer?: { number?: string; name?: string };
-  artifact?: VapiArtifact;
-  recordingUrl?: string;
 }
 
 interface VapiToolCall {
@@ -154,23 +139,6 @@ interface VapiEndOfCallMessage {
   summary?: string;
   analysis?: { structuredData?: Record<string, unknown> };
   messages?: { role: string; message: string; time?: number }[];
-  artifact?: VapiArtifact;
-  recordingUrl?: string;
-}
-
-/** Tries every documented shape Vapi might have put the recording URL under. */
-function recordingUrlFrom(message: VapiEndOfCallMessage): string | undefined {
-  const candidates = [
-    message.call?.artifact?.recording?.stereoUrl,
-    message.call?.artifact?.recording?.mono?.combinedUrl,
-    message.call?.artifact?.recordingUrl,
-    message.call?.recordingUrl,
-    message.artifact?.recording?.stereoUrl,
-    message.artifact?.recording?.mono?.combinedUrl,
-    message.artifact?.recordingUrl,
-    message.recordingUrl,
-  ];
-  return candidates.find((c): c is string => typeof c === "string" && c.length > 0);
 }
 
 /* ──────────────────────────── web demo ──────────────────────────── */
@@ -360,7 +328,6 @@ async function handleEndOfCall(message: VapiEndOfCallMessage) {
     durationSec: Math.round(message.durationSeconds ?? 0),
     outcome: outcomeFrom(message.endedReason),
     summary: message.summary ?? "",
-    recordingUrl: recordingUrlFrom(message),
     ...extracted(message),
     transcript,
   };

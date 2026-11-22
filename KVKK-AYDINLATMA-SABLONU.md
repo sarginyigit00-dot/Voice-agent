@@ -21,7 +21,8 @@ bilgilendiririz.
 - Talep bilgisi: formda yazdığınız not, görüşmede ilettiğiniz talep
 - Sağlık verisi (özel nitelikli): form notunda veya görüşmede paylaştığınız şikâyet, tedavi
   ilgisi ve benzeri bilgiler
-- Görüşme kayıtları: telefon görüşmesinin ses kaydı, yazılı dökümü (transkript) ve özeti
+- Görüşme dökümü: telefon görüşmesinin yazılı dökümü (transkript) ve özeti. Görüşmenin ses
+  kaydı alınmaz.
 - Randevu bilgileri: tarih, saat, hizmet, hekim
 - İşlem güvenliği: form gönderim zamanı, IP adresi, onay verdiğiniz metin
 
@@ -35,7 +36,7 @@ bilgilendiririz.
 ### 3. Görüşmeyi yapay zekâ asistanı yapar
 Telefon hattımıza gelen aramalar, Klinik adına çalışan yapay zekâ destekli bir sesli asistan
 tarafından karşılanabilir. Asistan görüşmenin başında yapay zekâ olduğunu ve görüşmenin
-kaydedildiğini bildirir; sorarsanız bu metnin özetini telefonda okur. Asistan dışarıya arama
+yazıya döküldüğünü bildirir; sorarsanız bu metnin özetini telefonda okur. Asistan dışarıya arama
 yapmaz: formunuza dönüş aramalarını Klinik çalışanı yapar. Talep etmeniz halinde görüşmeye bir
 Klinik çalışanı aktarılabilirsiniz.
 
@@ -45,7 +46,7 @@ Klinik çalışanı aktarılabilirsiniz.
 - Hizmet kalitesi ve ispat: veri sorumlusunun meşru menfaati (md. 5/2-f), bir hakkın tesisi,
   kullanılması veya korunması (md. 5/2-e)
 - Hukuki yükümlülükler: kanunlarda açıkça öngörülmesi, hukuki yükümlülük (md. 5/2-a, ç)
-- Görüşmenin ses kaydı ve yazılı dökümü: randevu talebinizin doğru kaydedilmesi ve olası
+- Görüşmenin yazılı dökümü: randevu talebinizin doğru kaydedilmesi ve olası
   uyuşmazlıklarda ispat (md. 5/2-c, 5/2-e, 5/2-f)
 - Sağlık verileri (görüşmede veya formda paylaştığınız şikâyet ve tedavi bilgileri): sır saklama
   yükümlülüğü altındaki Klinik tarafından tıbbi teşhis, tedavi ve bakım hizmetlerinin
@@ -71,8 +72,8 @@ Verileriniz web sitemizdeki form, reklam platformlarındaki başvuru formları v
 görüşmeleri aracılığıyla, elektronik ortamda, otomatik yollarla toplanır.
 
 ### 7. Saklama süresi
-Görüşmelerin ses kayıtları en fazla 14 gün (talebiniz halinde daha önce); yazılı dökümleri, özetleri, adınız ve telefon numaranız ile
-form başvuruları 12 ay saklanır ve süre sonunda otomatik olarak silinir. Randevu ve tedaviye
+Görüşmelerin ses kaydı alınmaz. Yazılı dökümleri, özetleri, adınız ve telefon numaranız ile
+form başvuruları 6 ay saklanır ve süre sonunda otomatik olarak silinir. Randevu ve tedaviye
 ilişkin kayıtlar ilgili mevzuatta öngörülen süreler boyunca saklanır; süre sonunda silinir, yok
 edilir veya anonim hale getirilir.
 

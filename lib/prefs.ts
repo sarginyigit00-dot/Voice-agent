@@ -12,13 +12,11 @@ export const PREFS_KEY = "randevox:prefs";
 const PREFS_EVENT = "randevox:prefs-change";
 
 export interface Prefs {
-  recording: boolean;
   notifications: boolean;
   liveTicker: boolean;
 }
 
 export const DEFAULT_PREFS: Prefs = {
-  recording: true,
   notifications: true,
   liveTicker: true,
 };

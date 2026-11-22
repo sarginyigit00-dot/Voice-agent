@@ -1,23 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { Waveform } from "@/components/app/waveform";
 import { OutcomePill } from "@/components/app/outcome-pill";
 import { OUTCOME_TINT, type CallRow } from "@/lib/demo/data";
 import { cn } from "@/lib/utils";
-import { authedFetch } from "@/lib/supabase/authed-fetch";
 
 /**
- * The transcript + recording drawer, shared by /calls and /dashboard — they
- * used to each define their own byte-for-byte identical copy (same problem
- * as OutcomePill before it was extracted to outcome-pill.tsx).
+ * The transcript drawer, shared by /calls and /dashboard — they used to each
+ * define their own byte-for-byte identical copy (same problem as OutcomePill
+ * before it was extracted to outcome-pill.tsx).
  *
- * Two playback modes, picked per call: a real `<audio>` element when
- * `call.recordingUrl` is set (a genuine Vapi recording), or the original
- * simulated scrubber otherwise (demo rows, or a real call Vapi didn't
- * record). Simulating for demo data is fine — that's what a demo is for.
- * Simulating for *real* call rows was the actual problem this replaces.
+ * There is no audio player: calls aren't recorded (KVKK — see artifactPlan in
+ * lib/vapi/client.ts), so the transcript is the record of the call.
  */
 export function TranscriptDrawer({
   call,
@@ -53,11 +48,10 @@ export function TranscriptDrawer({
         </header>
 
         <div className="border-b border-border px-4 py-3">
-          {call.recordingUrl ? (
-            <RealPlayer callId={call.id} tint={tint} lang={lang} />
-          ) : (
-            <SimulatedPlayer call={call} tint={tint} />
-          )}
+          <div className="flex items-center gap-2.5">
+            <Waveform data={call.wave} width={300} height={22} color={tint} className="min-w-0 flex-1" />
+            <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{call.duration}</span>
+          </div>
           <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {lang === "tr" ? "Ajan" : "Agent"}: <span className="text-violet">{agentName}</span> · {t(call.summary)}
           </p>
@@ -98,154 +92,6 @@ export function TranscriptDrawer({
         </footer>
       </div>
     </div>
-  );
-}
-
-/** A genuine recording — native browser controls drive real playback. */
-/**
- * The stored `recordingUrl` only says a recording exists — it can't be played:
- * Vapi keeps recordings private and its playable links expire in 30 minutes.
- * So the player asks the server for a fresh link each time the drawer opens
- * (app/api/calls/[id]/recording).
- */
-function RealPlayer({ callId, tint, lang }: { callId: string; tint: string; lang: "tr" | "en" }) {
-  const ref = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [src, setSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  // Deleting takes two clicks — "Sil" arms it, "Emin misiniz?" sends it — so a
-  // stray click can't destroy a recording, and no browser confirm() is needed.
-  const [del, setDel] = useState<"idle" | "confirm" | "busy" | "done" | "error">("idle");
-
-  const remove = () => {
-    if (del === "idle" || del === "error") return setDel("confirm");
-    setDel("busy");
-    ref.current?.pause();
-    authedFetch(`/api/calls/${encodeURIComponent(callId)}/recording`, { method: "DELETE" })
-      .then((res) => setDel(res.ok ? "done" : "error"))
-      .catch(() => setDel("error"));
-  };
-
-  useEffect(() => {
-    let alive = true;
-    authedFetch(`/api/calls/${encodeURIComponent(callId)}/recording`)
-      .then(async (res) => {
-        const body = (await res.json().catch(() => null)) as { url?: string } | null;
-        if (!alive) return;
-        if (res.ok && body?.url) setSrc(body.url);
-        else setFailed(true);
-      })
-      .catch(() => alive && setFailed(true));
-    return () => {
-      alive = false;
-    };
-  }, [callId]);
-
-  if (del === "done") {
-    return (
-      <p className="py-1.5 font-mono text-[11px] text-muted-foreground">
-        {lang === "tr" ? "Ses kaydı silindi." : "The recording was deleted."}
-      </p>
-    );
-  }
-
-  if (failed) {
-    return (
-      <p className="py-1.5 font-mono text-[11px] text-muted-foreground">
-        {lang === "tr" ? "Ses kaydı şu an açılamadı." : "The recording couldn't be loaded right now."}
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2.5">
-      <button
-        // play() rejects with AbortError when a pause (or closing the drawer) lands
-        // before playback starts — harmless, but unhandled it reaches the error alerts.
-        onClick={() => (playing ? ref.current?.pause() : void ref.current?.play().catch(() => {}))}
-        disabled={!src}
-        className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-50"
-        style={{ background: tint, color: "var(--color-primary-foreground)" }}
-      >
-        <Icon name={playing ? "pause" : "play"} className="h-3.5 w-3.5" />
-      </button>
-      <audio
-        ref={ref}
-        src={src ?? undefined}
-        controls
-        preload="metadata"
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
-        className="h-8 flex-1"
-      />
-      <button
-        onClick={remove}
-        onBlur={() => del === "confirm" && setDel("idle")}
-        disabled={del === "busy"}
-        title={lang === "tr" ? "Ses kaydını kalıcı olarak sil" : "Delete the recording permanently"}
-        className={cn(
-          "flex h-8 shrink-0 items-center gap-1 rounded-md px-2 font-mono text-[10.5px] transition-colors disabled:cursor-wait disabled:opacity-50",
-          del === "confirm" ? "bg-destructive text-destructive-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        )}
-      >
-        <Icon name="trash-2" className="h-3.5 w-3.5" />
-        {del === "confirm"
-          ? lang === "tr" ? "Emin misiniz?" : "Sure?"
-          : del === "error"
-            ? lang === "tr" ? "Silinemedi, tekrar" : "Failed, retry"
-            : lang === "tr" ? "Sil" : "Delete"}
-      </button>
-    </div>
-  );
-}
-
-/** No recording exists for this call (demo data, or Vapi didn't record it) — the original illustrative animation. */
-function SimulatedPlayer({ call, tint }: { call: CallRow; tint: string }) {
-  const [scrub, setScrub] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const pct = (scrub / call.durationSec) * 100;
-
-  useEffect(() => {
-    if (!playing) return;
-    const id = setInterval(() => {
-      setScrub((s) => {
-        if (s >= call.durationSec) {
-          setPlaying(false);
-          return call.durationSec;
-        }
-        return s + 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, [playing, call.durationSec]);
-
-  return (
-    <>
-      <div className="flex items-center gap-2.5">
-        <button
-          onClick={() => {
-            if (scrub >= call.durationSec) setScrub(0);
-            setPlaying((p) => !p);
-          }}
-          className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full transition-opacity hover:opacity-90"
-          style={{ background: "var(--color-violet)", color: "var(--color-primary-foreground)" }}
-        >
-          <Icon name={playing ? "pause" : "play"} className="h-3.5 w-3.5" />
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={call.durationSec}
-          value={scrub}
-          onChange={(e) => setScrub(Number(e.target.value))}
-          className="h-1 flex-1 cursor-pointer appearance-none rounded-full"
-          style={{ background: `linear-gradient(to right, ${tint} ${pct}%, var(--color-muted) ${pct}%)` }}
-        />
-        <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{fmt(scrub)} / {call.duration}</span>
-      </div>
-      <Waveform data={call.wave.concat(call.wave)} animated playing={playing} width={420} height={28} color="var(--color-muted-foreground)" className="mt-2 w-full" />
-    </>
   );
 }
 

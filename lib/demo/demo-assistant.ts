@@ -71,7 +71,7 @@ export function upsertDemoAssistant(opts: {
   return upsertAssistant(agent, clinic, existingId, knowledge, null, {
     // Vapi caps the name at 40 characters.
     name: (trial ? `Deneme · ${clinicName}` : "Randevox · Web demo").slice(0, 40),
-    // The standard notice says the call is recorded — this one isn't (unless record).
+    // The standard notice says the call is transcribed — this one isn't kept at all.
     firstMessage: `Merhaba, ${clinicName}. Ben yapay zekâ asistanıyım. ${notice} Size nasıl yardımcı olabilirim?`,
     maxDurationSeconds: DEMO_CALL_MAX_SECONDS,
     artifactPlan: { recordingEnabled: record },

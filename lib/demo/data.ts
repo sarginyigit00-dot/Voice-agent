@@ -81,8 +81,6 @@ export interface CallRow {
   durationSec: number;
   outcome: Outcome;
   sentiment: Sentiment;
-  /** Vapi's recording URL. Always null for demo rows — there is no real audio behind them. */
-  recordingUrl: string | null;
   /** waveform amplitude samples (0..1) for the mini-viz */
   wave: number[];
   summary: L;
@@ -97,7 +95,7 @@ const wC = [0.3, 0.6, 0.4, 0.7, 0.5, 0.9, 0.6, 0.8, 0.4, 0.7, 0.5, 0.6, 0.3];
 export const CALLS: CallRow[] = [
   {
     id: "c1", caller: "Ayşe Yıldırım", number: "+90 532 555 0241", agentId: "ag1",
-    time: "14:32", duration: "3:12", durationSec: 192, outcome: "booked", sentiment: "positive", wave: wA, recordingUrl: null,
+    time: "14:32", duration: "3:12", durationSec: 192, outcome: "booked", sentiment: "positive", wave: wA,
     summary: { tr: "Salı 10:00 için ilk muayene randevusu aldı, telefonu doğrulandı.", en: "Booked a first examination for Tue 10:00, phone number confirmed." },
     actions: [
       { tr: "Takvime randevu eklendi — Sal 10:00", en: "Calendar event created — Tue 10:00" },
@@ -116,7 +114,7 @@ export const CALLS: CallRow[] = [
   },
   {
     id: "c2", caller: "Emre Doğan", number: "+90 533 555 0316", agentId: "ag2",
-    time: "14:18", duration: "1:54", durationSec: 114, outcome: "resolved", sentiment: "positive", wave: wB, recordingUrl: null,
+    time: "14:18", duration: "1:54", durationSec: 114, outcome: "resolved", sentiment: "positive", wave: wB,
     summary: { tr: "Sıcak aday — 6 diş için gülüş tasarımı istiyor, bu ay başlamak istiyor. Hasta danışmanına iletildi.", en: "Hot lead — wants smile design for 6 teeth, wants to start this month. Forwarded to the patient coordinator." },
     actions: [
       { tr: "Aday sıcak olarak puanlandı (87/100)", en: "Lead scored hot (87/100)" },
@@ -134,7 +132,7 @@ export const CALLS: CallRow[] = [
   },
   {
     id: "c3", caller: "Unknown", number: "+90 216 555 0187", agentId: "ag1",
-    time: "13:55", duration: "0:48", durationSec: 48, outcome: "transferred", sentiment: "neutral", wave: wC, recordingUrl: null,
+    time: "13:55", duration: "0:48", durationSec: 48, outcome: "transferred", sentiment: "neutral", wave: wC,
     summary: { tr: "Tedavi sonrası şikâyet — ajan resepsiyona canlı transfer etti.", en: "Post-treatment complaint — agent warm-transferred to the front desk." },
     actions: [{ tr: "Resepsiyona transfer", en: "Transferred to front desk" }],
     transcript: [
@@ -145,7 +143,7 @@ export const CALLS: CallRow[] = [
   },
   {
     id: "c4", caller: "Hakan Aksoy", number: "+90 535 555 0472", agentId: "ag3",
-    time: "13:40", duration: "2:21", durationSec: 141, outcome: "booked", sentiment: "positive", wave: wA, recordingUrl: null,
+    time: "13:40", duration: "2:21", durationSec: 141, outcome: "booked", sentiment: "positive", wave: wA,
     summary: { tr: "Diş kontrolü için Perşembe 15:30 randevusu aldı.", en: "Booked a dental check-up for Thursday 15:30." },
     actions: [
       { tr: "Randevu eklendi — Per 15:30", en: "Appointment created — Thu 15:30" },
@@ -161,7 +159,7 @@ export const CALLS: CallRow[] = [
   },
   {
     id: "c5", caller: "Kaan Erdem", number: "+90 542 555 0523", agentId: "ag2",
-    time: "13:12", duration: "0:32", durationSec: 32, outcome: "voicemail", sentiment: "neutral", wave: wB, recordingUrl: null,
+    time: "13:12", duration: "0:32", durationSec: 32, outcome: "voicemail", sentiment: "neutral", wave: wB,
     summary: { tr: "Arayan mesaj bıraktı — geri arama talep etti.", en: "Caller left a message — requested a callback." },
     actions: [{ tr: "Geri arama görevi oluşturuldu", en: "Callback task created" }],
     transcript: [
@@ -171,7 +169,7 @@ export const CALLS: CallRow[] = [
   },
   {
     id: "c6", caller: "Merve Çetin", number: "+90 536 555 0619", agentId: "ag3",
-    time: "12:48", duration: "4:05", durationSec: 245, outcome: "resolved", sentiment: "positive", wave: wC, recordingUrl: null,
+    time: "12:48", duration: "4:05", durationSec: 245, outcome: "resolved", sentiment: "positive", wave: wC,
     summary: { tr: "Randevu erteleme talebini ajan kendi başına çözdü.", en: "Agent resolved an appointment-reschedule request end to end." },
     actions: [
       { tr: "Randevu Cuma 11:00'e taşındı", en: "Appointment moved to Fri 11:00" },
@@ -187,7 +185,7 @@ export const CALLS: CallRow[] = [
   },
   {
     id: "c7", caller: "Onur Bilgin", number: "+90 505 555 0744", agentId: "ag1",
-    time: "12:20", duration: "1:38", durationSec: 98, outcome: "missed", sentiment: "negative", wave: wA, recordingUrl: null,
+    time: "12:20", duration: "1:38", durationSec: 98, outcome: "missed", sentiment: "negative", wave: wA,
     summary: { tr: "Arayan beklemede kaldı ve kapattı — geri arama için işaretlendi.", en: "Caller dropped while on hold — flagged for callback." },
     actions: [{ tr: "Acil geri arama olarak işaretlendi", en: "Flagged as priority callback" }],
     transcript: [
@@ -197,7 +195,7 @@ export const CALLS: CallRow[] = [
   },
   {
     id: "c8", caller: "Ceren Aydın", number: "+90 545 555 0852", agentId: "ag2",
-    time: "11:54", duration: "2:57", durationSec: 177, outcome: "booked", sentiment: "positive", wave: wB, recordingUrl: null,
+    time: "11:54", duration: "2:57", durationSec: 177, outcome: "booked", sentiment: "positive", wave: wB,
     summary: { tr: "Diş beyazlatma randevusu aldı — Cumartesi 11:00.", en: "Booked a teeth-whitening appointment — Saturday 11:00." },
     actions: [
       { tr: "Beyazlatma planlandı — Cmt 11:00", en: "Whitening scheduled — Sat 11:00" },

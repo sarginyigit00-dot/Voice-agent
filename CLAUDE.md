@@ -159,7 +159,7 @@ the pipeline so a user can confirm it without a live phone call.
 
 The **dashboard** (`app/(app)/dashboard`) is the voice cockpit: KPI row, recent
 calls log → click a row to open the **transcript drawer** (turn-by-turn,
-recording scrubber, extracted action items), a **live calls** panel with a
+duration, extracted action items; calls are never recorded as audio), a **live calls** panel with a
 play/pause, a **voice agents** list with toggles, an **agent-builder preview**,
 the **call-volume** area chart, the **outcomes** donut and a **minutes** meter.
 `app/(app)/calls` and `app/(app)/agents` are the feature pages.

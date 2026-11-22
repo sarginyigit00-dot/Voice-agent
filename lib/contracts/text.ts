@@ -13,7 +13,7 @@
  * hash changes anyway, the version is what a human reads in the records.
  */
 
-export const CONTRACT_VERSION = "2026-11-17";
+export const CONTRACT_VERSION = "2026-11-22";
 
 export interface Clause {
   title: string;
@@ -66,7 +66,7 @@ export interface ContractDocument {
 
 const PACKAGE_SCOPE: Record<string, string> = {
   klinik:
-    "1–3 hekimli klinikler. 7/24 telefon karşılama (tüm hat ya da yalnızca meşgul / mesai dışı), takvime randevu, ses kaydı, döküm ve özet, randevusuz aramada kliniğe e-posta, canlı aktarma, mesai dışı ajanı, hızlı geri dönüş, dahili CRM, aylık performans raporu.",
+    "1–3 hekimli klinikler. 7/24 telefon karşılama (tüm hat ya da yalnızca meşgul / mesai dışı), takvime randevu, görüşme dökümü ve özet, randevusuz aramada kliniğe e-posta, canlı aktarma, mesai dışı ajanı, hızlı geri dönüş, dahili CRM, aylık performans raporu.",
   poliklinik:
     "4+ hekimli poliklinikler. Klinik paketindeki her şey; haftalık performans raporu, kendi CRM / klinik yazılımına aktarım, hekim bazlı takvim, öncelikli destek, aylık optimizasyon görüşmesi.",
 };
@@ -147,9 +147,9 @@ export function renderContracts(input: {
         title: "Ek-1 — İşlemenin kapsamı",
         paragraphs: [
           "İlgili kişiler: Klinik'i arayanlar ve Klinik'in geri arama formlarını dolduranlar (hasta ve hasta adayları), Klinik personeli (panel kullanıcıları).",
-          "Veri kategorileri: kimlik ve iletişim (ad soyad, telefon, e-posta); görüşme (ses kaydı — her görüşme kaydedilir —, transkript, özet, duygu etiketi, görüşme süresi ve sonucu); randevu (tarih, saat, hizmet, hekim); sağlık verisi (özel nitelikli: görüşmede veya formda paylaşılan şikâyet, tedavi ilgisi); rıza kaydı (rıza metni, zamanı, IP adresi); personel (ad, e-posta, giriş kayıtları).",
+          "Veri kategorileri: kimlik ve iletişim (ad soyad, telefon, e-posta); görüşme (transkript — ses kaydı alınmaz —, özet, duygu etiketi, görüşme süresi ve sonucu); randevu (tarih, saat, hizmet, hekim); sağlık verisi (özel nitelikli: görüşmede veya formda paylaşılan şikâyet, tedavi ilgisi); rıza kaydı (rıza metni, zamanı, IP adresi); personel (ad, e-posta, giriş kayıtları).",
           "Amaçlar: Klinik adına gelen aramaların karşılanması; geri arama talebinin Klinik'e iletilmesi (geri aramayı Klinik personeli yapar, ajan dışarı arama yapmaz); randevu oluşturma, değiştirme, iptal ve hatırlatma; arama kayıtlarının ve özetlerinin Klinik paneline ve Klinik'in belirlediği entegrasyonlara (CRM, takvim) aktarılması; hasta bildirimleri (SMS/WhatsApp) ve Klinik'e e-posta bildirimleri.",
-          "Süre: Ses kayıtları 14 gün içinde, Klinik dilerse daha önce panelden silinir; transkript, özet ve arayanın adı ile telefonu 12 ay sonra otomatik olarak silinir (kişiyle ilişkilendirilemeyen istatistikler kalır). Geri arama formu kayıtları 12 ay sonra silinir. Randevu kayıtları ve personel bilgileri hesap kapanana kadar tutulur; sonrası madde 11'e göre.",
+          "Süre: Görüşmelerin ses kaydı alınmaz; ses yalnızca görüşme süresince anlık işlenir. Transkript, özet ve arayanın adı ile telefonu 6 ay sonra otomatik olarak silinir (kişiyle ilişkilendirilemeyen istatistikler kalır); alt işleyicideki (Vapi) görüşme kopyası 14 gün içinde silinir. Geri arama formu kayıtları 6 ay sonra silinir. Randevu kayıtları ve personel bilgileri hesap kapanana kadar tutulur; sonrası madde 11'e göre.",
         ],
       },
       {
@@ -159,7 +159,7 @@ export function renderContracts(input: {
           "Veritabanında satır düzeyinde erişim kontrolü: her kullanıcı yalnızca bağlı olduğu kliniğin verisini görür.",
           "Sunucu tarafı gizli anahtarlar yalnızca sunucuda tutulur, tarayıcıya gönderilmez.",
           "Klinik bazlı entegrasyon anahtarları kullanıcıların okuyamadığı ayrı bir tabloda saklanır.",
-          "Ses kayıtları herkese açık bağlantıyla değil, her istekte yeniden üretilen süreli bağlantılarla sunulur.",
+          "Görüşmelerin ses kaydı alınmaz; yalnızca yazılı döküm saklanır.",
           "Telefon altyapısından gelen isteklerin imza/gizli anahtarla doğrulanması.",
           "Geri arama formlarında kötüye kullanım sınırları (IP ve klinik bazlı).",
           "Personel hesapları yalnızca Randevox tarafından açılır; herkese açık kayıt formu yoktur.",
@@ -350,7 +350,7 @@ export const DPA_CLAUSES: Clause[] = [
   {
     title: "4. Klinik'in yükümlülükleri",
     paragraphs: [
-      "4.1. Veri sorumlusu Klinik'tir. İlgili kişilerin aydınlatılması (KVKK md. 10), gerekli hallerde açık rıza alınması (md. 5, 6) ve işlemenin hukuki sebebinin bulunması Klinik'in sorumluluğundadır. Randevox, arama başında yapay zekâ ve kayıt bildirimini otomatik olarak yapar; arayan sorarsa ajan Klinik'in sözlü aydınlatma metnini okur; aydınlatma metni şablonu ve rıza formu sağlar.",
+      "4.1. Veri sorumlusu Klinik'tir. İlgili kişilerin aydınlatılması (KVKK md. 10), gerekli hallerde açık rıza alınması (md. 5, 6) ve işlemenin hukuki sebebinin bulunması Klinik'in sorumluluğundadır. Randevox, arama başında yapay zekâ ve döküm bildirimini otomatik olarak yapar; arayan sorarsa ajan Klinik'in sözlü aydınlatma metnini okur; aydınlatma metni şablonu ve rıza formu sağlar.",
       "4.2. Klinik, kendi web sitesinde aydınlatma metnini yayınlar ve geri arama formlarında Randevox'un sağladığı açık rıza düzenini kullanır veya eşdeğerini sağlar.",
       "4.3. Klinik, VERBİS kaydı dahil veri sorumlusu olarak tabi olduğu diğer yükümlülükleri yerine getirir.",
       "4.4. Klinik, Ek-3'teki alt işleyenlere ve yurt dışına aktarıma onay verir ve bu aktarımı ilgili kişilere sunduğu aydınlatma metnine ekler.",

@@ -190,12 +190,6 @@ export function SettingsClient({
         </CardHeader>
         <CardContent className="space-y-3">
           <ToggleRow
-            title={ui.prefRecording}
-            hint={ui.prefRecordingHint}
-            checked={prefs.recording}
-            onChange={(v) => setPref({recording: v })}
-          />
-          <ToggleRow
             title={ui.prefNotifications}
             hint={ui.prefNotificationsHint}
             checked={prefs.notifications}

@@ -25,10 +25,10 @@ const SECTIONS: DocSection[] = [
     body: [
       {
         list: [
-          { tr: "Arama, kliniğin telefon hattından ses altyapımıza (Vapi) ulaşır. Asistan açılışta yapay zekâ olduğunu ve görüşmenin kaydedildiğini söyler; arayan sorarsa aydınlatma bilgisini telefonda okur.", en: "The call reaches our voice platform (Vapi) from the clinic's phone line. The assistant says up front that it's an AI and the call is recorded; if the caller asks, it reads the privacy notice on the call." },
+          { tr: "Arama, kliniğin telefon hattından ses altyapımıza (Vapi) ulaşır. Asistan açılışta yapay zekâ olduğunu ve görüşmenin yazıya döküldüğünü söyler; arayan sorarsa aydınlatma bilgisini telefonda okur.", en: "The call reaches our voice platform (Vapi) from the clinic's phone line. The assistant says up front that it's an AI and the call is transcribed; if the caller asks, it reads the privacy notice on the call." },
           { tr: "Konuşma anlık olarak yazıya çevrilir (Deepgram), yapay zekâ modeli (OpenAI) yanıtı üretir ve yanıt seslendirilir (ElevenLabs).", en: "Speech is transcribed in real time (Deepgram), the AI model (OpenAI) writes the reply, and the reply is voiced (ElevenLabs)." },
           { tr: "Randevu, kliniğin takvimine canlı yazılır; asistan uygun saati takvimden okur.", en: "The appointment is written live into the clinic's calendar; the assistant reads free slots from it." },
-          { tr: "Görüşme bitince ses kaydı, transkript ve özet yalnızca o kliniğin panelinde görünür.", en: "When the call ends, the recording, transcript and summary appear only in that clinic's panel." },
+          { tr: "Görüşmenin ses kaydı alınmaz. Görüşme bitince transkript ve özet yalnızca o kliniğin panelinde görünür.", en: "Calls are not recorded as audio. When the call ends, the transcript and summary appear only in that clinic's panel." },
         ],
       },
     ],
@@ -71,8 +71,7 @@ const SECTIONS: DocSection[] = [
     body: [
       {
         list: [
-          { tr: "Ses kayıtları 14 gün içinde otomatik silinir; klinik dilerse panelden daha önce silebilir.", en: "Recordings are deleted automatically within 14 days; the clinic can delete them earlier from the panel." },
-          { tr: "Transkript, özet ve arayanın adı ile telefonu 12 ay sonra silinir; raporlar için yalnızca kişiyle ilişkilendirilemeyen istatistik (tarih, süre, sonuç) kalır.", en: "Transcripts, summaries and the caller's name and number are deleted after 12 months, leaving only non-identifying statistics (date, duration, outcome) for reports." },
+          { tr: "Transkript, özet ve arayanın adı ile telefonu 6 ay sonra silinir; raporlar için yalnızca kişiyle ilişkilendirilemeyen istatistik (tarih, süre, sonuç) kalır.", en: "Transcripts, summaries and the caller's name and number are deleted after 6 months, leaving only non-identifying statistics (date, duration, outcome) for reports." },
           { tr: "Randevu kayıtları, kliniğin takvimi için hesap kapanana kadar tutulur.", en: "Appointment records are kept for the clinic's calendar until the account closes." },
           { tr: "Hesap kapandığında kalan veriler 30 gün içinde kliniğe iade edilir veya silinir. Fatura gibi yasal kayıtlar mevzuattaki süre boyunca saklanır.", en: "When the account closes, remaining data is returned to the clinic or deleted within 30 days. Legal records such as invoices are kept for the period the law requires." },
         ],

@@ -64,12 +64,11 @@ const ELEVEN_VOICES: Record<string, string> = {
   Lyra: "xyqF3vGMQlPk3e7yA4DI",
 };
 /**
- * Turkish sample per voice id, played by the /agents preview button: a file
- * in public/voices, or the voice's own Turkish v4 preview on ElevenLabs.
+ * Turkish sample clip per voice id (public/voices), played by the /agents
+ * preview button. orion.mp3 was generated on Eleven v4 at stability 0.5.
  */
 const ELEVEN_SAMPLES: Record<string, string> = {
-  t2OF8bTMamJQneB9gk1S:
-    "https://storage.googleapis.com/eleven-public-prod/database/workspace/0b703275c77d4d1488ce4a6622c56912/voices/t2OF8bTMamJQneB9gk1S/f5UgxoLvDn0KpX4tupCY.mp3",
+  t2OF8bTMamJQneB9gk1S: "/voices/orion.mp3",
   xyqF3vGMQlPk3e7yA4DI: "/voices/lyra.mp3",
 };
 /**

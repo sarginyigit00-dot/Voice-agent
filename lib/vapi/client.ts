@@ -57,29 +57,46 @@ const DEFAULT_VOICE = "Savannah";
  * Keys) — it is billed on that account, not on Vapi's per-minute price.
  */
 const ELEVEN_VOICES: Record<string, string> = {
-  Orion: "Q5n6GDIjpN0pLOlycRFT",
+  // Evren (voice library) — warm, conversational Istanbul male, verified for
+  // Turkish on Eleven v4. Must stay added under My Voices on the ElevenLabs
+  // account whose key is saved in Vapi.
+  Orion: "t2OF8bTMamJQneB9gk1S",
   Lyra: "xyqF3vGMQlPk3e7yA4DI",
 };
-/** Turkish sample clip per voice id (public/voices), played by the /agents preview button. */
+/**
+ * Turkish sample per voice id, played by the /agents preview button: a file
+ * in public/voices, or the voice's own Turkish v4 preview on ElevenLabs.
+ */
 const ELEVEN_SAMPLES: Record<string, string> = {
-  Q5n6GDIjpN0pLOlycRFT: "/voices/orion.mp3",
+  t2OF8bTMamJQneB9gk1S:
+    "https://storage.googleapis.com/eleven-public-prod/database/workspace/0b703275c77d4d1488ce4a6622c56912/voices/t2OF8bTMamJQneB9gk1S/f5UgxoLvDn0KpX4tupCY.mp3",
   xyqF3vGMQlPk3e7yA4DI: "/voices/lyra.mp3",
 };
-const ELEVEN_MODEL = "eleven_turbo_v2_5";
 /**
- * Voice settings per ElevenLabs voice. Vapi does not read a voice's saved
- * ElevenLabs settings; it sends these per call. Lower stability if calls
- * sound flat, raise it if they sound unsteady.
+ * Model + settings per ElevenLabs persona. Vapi does not read a voice's saved
+ * ElevenLabs settings; it sends these per call.
  *
- * At speed 1.05 both voices rushed long stock lines ("Notunuzu alayım,
- * klinik sizi en kısa sürede arasın") and swallowed syllables, so both run
- * slightly under 1. Lyra gets more stability to stay even; Orion gets less
- * stability and more style so the deep voice doesn't go monotone.
+ * Lyra (turbo v2.5): at speed 1.05 it rushed long stock lines and swallowed
+ * syllables, so it runs slightly under 1 with fairly high stability.
+ *
+ * Orion (Eleven v4 Turbo, the v4 variant built for real-time agents): Vapi
+ * sends only `stability` for v4 Turbo — speed, style and similarity are
+ * ignored, so they're not set. 0.5 is the middle ground: lower sounds more
+ * expressive but drifts between turns, higher goes flat. v4 doesn't parse
+ * SSML, so the greeting gets no <break> tag (see `pauseBeforeNotice`).
  */
-type ElevenSettings = { speed: number; stability: number; similarityBoost: number; style: number; useSpeakerBoost: boolean };
+type ElevenSettings = {
+  model: string;
+  ssml: boolean;
+  stability: number;
+  speed?: number;
+  similarityBoost?: number;
+  style?: number;
+  useSpeakerBoost?: boolean;
+};
 const ELEVEN_SETTINGS: Record<string, ElevenSettings> = {
-  Lyra: { speed: 0.95, stability: 0.45, similarityBoost: 0.75, style: 0.2, useSpeakerBoost: true },
-  Orion: { speed: 0.97, stability: 0.35, similarityBoost: 0.8, style: 0.35, useSpeakerBoost: true },
+  Lyra: { model: "eleven_turbo_v2_5", ssml: true, speed: 0.95, stability: 0.45, similarityBoost: 0.75, style: 0.2, useSpeakerBoost: true },
+  Orion: { model: "eleven_v4_turbo", ssml: false, stability: 0.5 },
 };
 
 /**
@@ -97,7 +114,7 @@ type VoiceConfig =
       language: string;
       enableSsmlParsing: boolean;
       chunkPlan: typeof ELEVEN_CHUNK_PLAN;
-    } & ElevenSettings);
+    } & Omit<ElevenSettings, "model" | "ssml">);
 
 const DEFAULT_MALE_VOICE = "Nico";
 
@@ -106,14 +123,15 @@ export function voiceFor(label: string): VoiceConfig {
   const persona = label.split("·")[0].trim();
   const eleven = ELEVEN_VOICES[persona];
   if (eleven) {
+    const { model, ssml, ...settings } = ELEVEN_SETTINGS[persona];
     return {
       provider: "11labs",
       voiceId: eleven,
-      model: ELEVEN_MODEL,
+      model,
       language: "tr",
-      enableSsmlParsing: true,
+      enableSsmlParsing: ssml,
       chunkPlan: ELEVEN_CHUNK_PLAN,
-      ...ELEVEN_SETTINGS[persona],
+      ...settings,
     };
   }
   // Rows saved before the persona list was renamed still carry the old names
@@ -471,10 +489,13 @@ export function buildAssistant(
     // Vapi caps the name at 40 characters.
     name: `${clinic.name} · ${agent.name}`.slice(0, 40),
     // Read at full speed the recording notice ran straight into the sentence
-    // before it. Only ElevenLabs (both Lyra and Orion) understands the break tag;
-    // the prompt keeps the plain text above, so the tag is never "already said".
+    // before it. Only ElevenLabs voices with SSML on (Lyra) understand the
+    // break tag — v4 (Orion) doesn't parse SSML and would read it out; the
+    // prompt keeps the plain text above, so the tag is never "already said".
     firstMessage:
-      voice.provider === "11labs" ? firstMessage.replace(RECORDING_NOTICE.tr, `<break time="0.6s" /> ${RECORDING_NOTICE.tr}`) : firstMessage,
+      voice.provider === "11labs" && voice.enableSsmlParsing
+        ? firstMessage.replace(RECORDING_NOTICE.tr, `<break time="0.6s" /> ${RECORDING_NOTICE.tr}`)
+        : firstMessage,
     model: {
       ...MODEL,
       messages: [
@@ -768,7 +789,7 @@ export async function deleteCall(callId: string): Promise<VapiResult<null>> {
  * the link is presigned for an hour, so it is fetched per click, never stored.
  */
 export async function voicePreviewUrl(voiceId: string): Promise<VapiResult<string | null>> {
-  // ElevenLabs voices aren't in Vapi's library — their Turkish samples ship in /public/voices.
+  // ElevenLabs voices aren't in Vapi's library — their Turkish samples are listed in ELEVEN_SAMPLES.
   const sample = ELEVEN_SAMPLES[voiceId];
   if (sample) return { ok: true, data: sample };
   const list = await vapi<{ name?: string; slug?: string; providerId?: string; previewUrl?: string }[]>(

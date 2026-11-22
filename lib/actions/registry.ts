@@ -32,9 +32,11 @@ export const ACTION_HINT: Partial<Record<ActionId, L>> = {
 
 /**
  * Actions kept in the pipeline but not offered in the builder. "sms" (patient
- * confirmation) stays hidden until a message channel is part of the package.
+ * confirmation) stays hidden until a message channel is part of the package;
+ * "qualify" until lead scoring is actually wired (its executor only reports
+ * "demo" — see lib/actions/executors/qualify.ts).
  */
-export const HIDDEN_ACTIONS: readonly ActionId[] = ["sms"];
+export const HIDDEN_ACTIONS: readonly ActionId[] = ["sms", "qualify"];
 
 export const DEFAULT_ACTIONS_ON: Record<ActionId, boolean> = {
   book: true,

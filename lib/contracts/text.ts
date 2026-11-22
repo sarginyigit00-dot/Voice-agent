@@ -13,7 +13,7 @@
  * hash changes anyway, the version is what a human reads in the records.
  */
 
-export const CONTRACT_VERSION = "2026-11-22";
+export const CONTRACT_VERSION = "2026-11-22.2";
 
 export interface Clause {
   title: string;
@@ -178,8 +178,7 @@ export function renderContracts(input: {
           "Netgsm İletişim A.Ş. — hastaya SMS gönderimi (Randevox hesabı ve gönderici adıyla) — Türkiye",
           "Meta Platforms (WhatsApp Business) — hastaya WhatsApp hatırlatma mesajları (Randevox hesabıyla) — ABD/İrlanda",
           "Google LLC — personelin Google hesabıyla Panel girişi — ABD",
-          "Brevo (Sendinblue SAS) — Klinik personeline bilgilendirme e-postaları (hasta verisi içermez) — Fransa",
-          "Resend Inc. — e-posta bildirimleri — ABD",
+          "Resend Inc. — e-posta bildirimleri (Klinik personeline bilgilendirme e-postaları dahil) — ABD",
           "Klinik'in kendi hesabıyla bağlanan takvim (Cal.com, Google Takvim), CRM/webhook ve telefon operatörü hizmetleri ile Klinik'in kendi hesabıyla gönderdiği SMS/WhatsApp mesajları madde 4.6 uyarınca bu listeye dahil değildir.",
         ],
       },

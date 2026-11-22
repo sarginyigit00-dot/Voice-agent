@@ -234,6 +234,14 @@ export const BOOKING_TOOLS = [
             type: "string",
             description: "Arayan belirli bir doktor istediyse doktorun adı, klinik bilgilerindeki yazımıyla. Yanıttaki saatler o doktorun takvimindendir; book_appointment'ı aynı doktorla çağır. İstemediyse boş bırak.",
           },
+          from: {
+            type: "string",
+            description: "Arayan bir saat aralığı söylediyse en erken saat, SS:DD biçiminde. Sabah: 09:00, öğleden sonra: 12:00, akşamüstü: 16:00, 'üçten sonra': 15:00. Söylemediyse boş bırak.",
+          },
+          to: {
+            type: "string",
+            description: "Arayan bir üst sınır söylediyse en geç saat, SS:DD biçiminde. Sabah: 12:00, 'öğlene kadar': 12:00, 'beşten önce': 17:00. Söylemediyse boş bırak.",
+          },
         },
       },
     },

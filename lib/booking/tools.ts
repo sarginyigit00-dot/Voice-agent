@@ -71,6 +71,52 @@ const DEFAULT_LOOKAHEAD_DAYS = 7;
 
 type ToolArgs = Record<string, unknown>;
 
+/** "14:30" / "9" → minutes since midnight; null for anything else. */
+function clockToMinutes(v: string | null): number | null {
+  const m = v?.match(/^(\d{1,2})(?::(\d{2}))?$/);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2] ?? 0);
+  return h <= 24 && min < 60 ? h * 60 + min : null;
+}
+
+function localMinutes(iso: string, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date(iso));
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
+  return get("hour") * 60 + get("minute");
+}
+
+/**
+ * Which openings to read out. A `from`/`to` window ("öğleden sonra" → from
+ * 12:00) narrows the list; a single asked-about day is sampled across the
+ * whole day instead of returning its first few morning slots, which used to
+ * leave an afternoon caller with nothing but 9–10:30. `outsideWindow` is set
+ * when the window had nothing free and the day's other openings are offered.
+ */
+export function pickSlots(
+  slots: string[],
+  opts: { from?: string | null; to?: string | null; singleDay: boolean; timeZone: string; max?: number },
+): { offered: string[]; outsideWindow: boolean } {
+  const max = opts.max ?? MAX_SPOKEN_SLOTS;
+  const from = clockToMinutes(opts.from ?? null);
+  const to = clockToMinutes(opts.to ?? null);
+  let pool = slots;
+  let outsideWindow = false;
+  if (from !== null || to !== null) {
+    const inWindow = slots.filter((s) => {
+      const m = localMinutes(s, opts.timeZone);
+      return (from === null || m >= from) && (to === null || m < to);
+    });
+    if (inWindow.length) pool = inWindow;
+    else outsideWindow = true;
+  }
+  if (!opts.singleDay || pool.length <= max) return { offered: pool.slice(0, max), outsideWindow };
+  // Evenly spaced picks, first and last included, in time order.
+  const offered = Array.from({ length: max }, (_, i) => pool[Math.round((i * (pool.length - 1)) / (max - 1))]);
+  return { offered: [...new Set(offered)], outsideWindow };
+}
+
 function str(args: ToolArgs, key: string): string | null {
   const v = args?.[key];
   return typeof v === "string" && v.trim() ? v.trim() : null;
@@ -169,7 +215,12 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
     });
   }
 
-  const offered = upcoming.slice(0, MAX_SPOKEN_SLOTS);
+  const { offered, outsideWindow } = pickSlots(upcoming, {
+    from: str(args, "from"),
+    to: str(args, "to"),
+    singleDay: Boolean(date),
+    timeZone: cfg.timeZone,
+  });
   // The line doesn't always pass the caller's number (Netgsm today), and an
   // appointment without one leaves the clinic unable to reach the patient.
   const askPhone = !toE164(ctx.callerNumber);
@@ -181,6 +232,9 @@ export async function checkAvailability(args: ToolArgs, ctx: ToolContext): Promi
     spoken: offered.map((s) => speakInstantTr(new Date(s), cfg.timeZone)),
     // Echoed so book_appointment is called with the same doctor these slots belong to.
     ...(own && doctor ? { doctor } : {}),
+    ...(outsideWindow
+      ? { outsideWindow: true, windowNote: "İstenen saat aralığında boş yer yok. Bunu arayana söyle, sonra bu saatleri öner." }
+      : {}),
     askPhone,
     note: askPhone
       ? "Hastaya bu saatleri oku. Saati seçince, randevuyu oluşturmadan önce cep telefonu numarasını sor, rakamları gruplayarak tekrar edip teyit al. Seçilen saati slots dizisindeki ISO değeriyle, numarayı phone olarak book_appointment'a gönder."

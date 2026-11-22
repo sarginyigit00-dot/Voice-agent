@@ -336,7 +336,7 @@ def quota_alerts():
     print(f"[quota-alerts] sent {sent}/{len(alerts)}")
 
     # Rides on this daily job: Modal's plan caps scheduled functions at five.
-    # Day-3 / day-7 onboarding mails, sent by Randevox through Brevo.
+    # Day-3 / day-7 onboarding mails, sent by Randevox through Resend.
     res = httpx.post(randevox_url("/api/automation/onboarding"), headers=randevox_headers(), timeout=60.0)
     res.raise_for_status()
     print(f"[onboarding] {res.json()}")

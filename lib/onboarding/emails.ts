@@ -1,63 +1,115 @@
 import { after } from "next/server";
 import appConfig from "@/app.config";
+import { isEmailConfigured, sendEmail } from "@/lib/notify/email";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 /**
- * Onboarding emails to a clinic, sent through Brevo with templates kept in the
- * Brevo account (Transactional → Templates, tag "onboarding"):
+ * Onboarding emails to a clinic, sent through Resend like the rest of the
+ * mail (lib/notify/email.ts). The wording lives here (it was moved over from
+ * the old Brevo templates 1–4):
  *
  *  · welcome — the operator marks the clinic "Aktif" in /admin (payment came in)
  *  · ready   — the operator runs "Numaraya bağla": the line answers, setup is done
  *  · day3    — 3 days after `ready`: look through the call log
  *  · day7    — 7 days after `ready`: a tip (fill in /klinik) and a question
  *
+ * Every mail asks the clinic to "just reply", so replies go to the support
+ * inbox (REPLY_TO), not to the no-reply sender.
+ *
  * day3/day7 are sent by /api/automation/onboarding, polled daily by the
  * automation app. Each kind goes to a clinic at most once: the row in
  * `onboarding_emails` is claimed before sending and released if the send fails.
  * Best effort like the other mail here — never throws, and without
- * BREVO_API_KEY it simply doesn't send.
+ * RESEND_API_KEY it simply doesn't send.
  */
 
 export type OnboardingKind = "welcome" | "ready" | "day3" | "day7";
 
-/** Brevo template ids (Transactional → Templates). */
-const TEMPLATE_IDS: Record<OnboardingKind, number> = {
-  welcome: 1,
-  ready: 2,
-  day3: 3,
-  day7: 4,
+const DAY = 24 * 60 * 60 * 1000;
+const REPLY_TO = `destek@${appConfig.domain}`;
+
+const escape = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+interface OnboardingCopy {
+  subject: string;
+  paragraphs: string[];
+  link?: { path: string; label: string };
+  /** A paragraph after the link. */
+  after?: string;
+}
+
+const COPY: Record<OnboardingKind, OnboardingCopy> = {
+  welcome: {
+    subject: "Randevox'a hoş geldiniz",
+    paragraphs: [
+      "Randevox'u tercih ettiğiniz için teşekkür ederiz. Kliniğinizin sesli asistanını şu an sizin için hazırlıyoruz. Kurulum en geç 1 hafta içinde tamamlanır; hazır olduğunda size ayrıca haber vereceğiz.",
+      "Bu süre içinde sizin bir şey yapmanıza gerek yok. Bir sorunuz olursa bu maile cevap vermeniz yeterli.",
+    ],
+  },
+  ready: {
+    subject: "Asistanınız hazır: kendi numaranızı arayıp deneyin",
+    paragraphs: [
+      "Kurulum tamamlandı: sesli asistanınız artık kliniğinizin telefonunu açıyor.",
+      "İlk iş olarak kendi numaranızı arayıp bir randevu almayı deneyin. 2 dakika sürer; aldığınız randevu panelinizde hemen görünür.",
+    ],
+    link: { path: "/randevular", label: "Randevuları panelde aç →" },
+    after: "Bir şey beklediğiniz gibi gitmezse bu maile cevap vermeniz yeterli.",
+  },
+  day3: {
+    subject: "Asistanınız aramaları nasıl karşılıyor?",
+    paragraphs: [
+      "Asistanınız birkaç gündür telefonlarınızı açıyor. Arama kayıtlarına göz atmanızı öneririz: her aramanın özetini, konuşmanın tamamını ve sonucunu (randevu, geri arama, aktarma) tek ekranda görebilirsiniz.",
+    ],
+    link: { path: "/calls", label: "Aramaları panelde aç →" },
+    after: "Asistanın bir soruya yanlış ya da eksik cevap verdiğini görürseniz bu maile yazın, birlikte düzeltelim.",
+  },
+  day7: {
+    subject: "Bir ipucu ve bir sorumuz var",
+    paragraphs: [
+      "Asistanınız bir haftadır sizinle. Bir ipucu: panelde Klinik bilgileri sayfasına hizmetlerinizi, fiyatlarınızı ve sık sorulan soruları eklerseniz asistan hastalara çok daha net cevap verir.",
+    ],
+    link: { path: "/klinik", label: "Klinik bilgilerini aç →" },
+    after: "Bir de sorumuz var: Randevox'un en çok hangi kısmı işinize yaradı? Bu maile kısa bir cevap bile bizim için çok değerli.",
+  },
 };
 
-const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
-const DAY = 24 * 60 * 60 * 1000;
+/** The email for one kind, addressed to one clinic. Pure, so it can be tested without sending. */
+export function onboardingEmail(kind: OnboardingKind, clinicName: string): { subject: string; html: string; text: string } {
+  const copy = COPY[kind];
+  const greeting = `Merhaba ${clinicName} ekibi,`;
+  const href = copy.link ? `https://www.${appConfig.domain}${copy.link.path}` : null;
+  const p = (s: string) => `<p style="margin:0 0 14px">${escape(s)}</p>`;
 
-async function sendTemplate(to: string, kind: OnboardingKind, clinicName: string): Promise<boolean> {
-  const key = process.env.BREVO_API_KEY?.trim();
-  if (!key) return false;
-  try {
-    const res = await fetch(BREVO_URL, {
-      method: "POST",
-      headers: { "api-key": key, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        templateId: TEMPLATE_IDS[kind],
-        to: [{ email: to }],
-        params: { CLINIC: clinicName, PANEL_URL: `https://www.${appConfig.domain}` },
-        tags: ["onboarding", kind],
-      }),
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!res.ok) console.error(`[onboarding] Brevo rejected ${kind}: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
-    return res.ok;
-  } catch (e) {
-    console.error("[onboarding] could not reach Brevo:", e instanceof Error ? e.message : e);
-    return false;
-  }
+  const html = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.6;color:#1f1d2b;max-width:560px">
+${p(greeting)}
+${copy.paragraphs.map(p).join("\n")}
+${href && copy.link ? `<p style="margin:0 0 14px"><a href="${href}" style="color:#2f6fed;font-weight:600">${escape(copy.link.label)}</a></p>` : ""}
+${copy.after ? p(copy.after) : ""}
+<p style="margin:0">Randevox Ekibi</p>
+</div>`;
+
+  const text = [
+    greeting,
+    "",
+    ...copy.paragraphs.flatMap((s) => [s, ""]),
+    ...(href && copy.link ? [`${copy.link.label.replace(" →", "")}: ${href}`, ""] : []),
+    ...(copy.after ? [copy.after, ""] : []),
+    "Randevox Ekibi",
+  ].join("\n");
+
+  return { subject: copy.subject, html, text };
+}
+
+async function sendKind(to: string, kind: OnboardingKind, clinicName: string): Promise<boolean> {
+  const mail = onboardingEmail(kind, clinicName);
+  return sendEmail(to, mail.subject, mail.html, mail.text, REPLY_TO);
 }
 
 /** Sends one onboarding email unless this clinic already got it. True when it went out now. */
 export async function sendOnboardingEmail(clinicId: string, kind: OnboardingKind): Promise<boolean> {
   const supabase = getSupabaseServer();
-  if (!supabase || !process.env.BREVO_API_KEY?.trim()) return false;
+  if (!supabase || !isEmailConfigured()) return false;
 
   const { data: clinic } = await supabase
     .from("clinics")
@@ -74,12 +126,12 @@ export async function sendOnboardingEmail(clinicId: string, kind: OnboardingKind
     .select("clinic_id");
   if (error || !claimed?.length) return false;
 
-  if (await sendTemplate(to, kind, clinic.name)) return true;
+  if (await sendKind(to, kind, clinic.name)) return true;
   await supabase.from("onboarding_emails").delete().eq("clinic_id", clinicId).eq("kind", kind);
   return false;
 }
 
-/** Sends after the response inside a request (the admin panel never waits on Brevo), straight away otherwise. */
+/** Sends after the response inside a request (the admin panel never waits on the mail server), straight away otherwise. */
 export function queueOnboardingEmail(clinicId: string, kind: OnboardingKind): void {
   const run = () => sendOnboardingEmail(clinicId, kind).catch((e) => console.error(`[onboarding] ${kind} failed:`, e));
   try {

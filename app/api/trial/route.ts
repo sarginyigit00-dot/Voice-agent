@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   const knowledge = parseKnowledgeText({
     services: text("services", 4000),
     doctors: text("doctors", 2000),
-    address: text("address", 500),
+    address: "",
     faq: "",
   });
 

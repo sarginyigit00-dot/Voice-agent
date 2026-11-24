@@ -52,7 +52,6 @@ export function TrialsTab({
     demoRequestId: prefill?.demoRequestId ?? "",
     services: "",
     doctors: "",
-    address: "",
     faq: "",
   });
   const [busy, setBusy] = useState(false);
@@ -76,7 +75,7 @@ export function TrialsTab({
     const res = await onAct({ action: "create", ...form });
     setBusy(false);
     if (res.ok) {
-      setForm({ clinicName: "", demoRequestId: "", services: "", doctors: "", address: "", faq: "" });
+      setForm({ clinicName: "", demoRequestId: "", services: "", doctors: "", faq: "" });
       load();
     }
   }
@@ -126,13 +125,9 @@ export function TrialsTab({
             Hizmetler — her satıra bir tane: <span className="font-mono">Ad | fiyat TL | süre dk | açıklama</span> (fiyat boşsa muayeneden sonra söylenir)
             <textarea rows={5} value={form.services} onChange={set("services")} className={`${FIELD} font-mono text-xs`} placeholder={"Diş taşı temizliği | 1500 | 30\nİmplant | | 60 | Fiyat muayeneden sonra belirlenir\nDiş beyazlatma | 3500 | 45"} />
           </label>
-          <label className="flex flex-col gap-1 text-xs">
+          <label className="flex flex-col gap-1 text-xs sm:col-span-2">
             Hekimler — her satıra bir: <span className="font-mono">Dt. Ad Soyad | uzmanlık</span>
             <textarea rows={3} value={form.doctors} onChange={set("doctors")} className={`${FIELD} font-mono text-xs`} placeholder={"Dt. Ayşe Yılmaz | Ortodonti"} />
-          </label>
-          <label className="flex flex-col gap-1 text-xs">
-            Adres
-            <textarea rows={3} maxLength={500} value={form.address} onChange={set("address")} className={FIELD} placeholder="Mahalle, cadde, no, ilçe / il" />
           </label>
           <label className="flex flex-col gap-1 text-xs sm:col-span-2">
             Sık sorulanlar / ek bilgi (çalışma saatleri, otopark, ödeme…)

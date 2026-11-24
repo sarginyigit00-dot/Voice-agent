@@ -76,7 +76,6 @@ const COPY = {
     tr: "Her satıra bir hizmet: ad | fiyat TL. Boş bırakırsanız asistan fiyatları muayeneye yönlendirir.",
     en: "One service per line: name | price TL. Leave it empty and the assistant refers price questions to the examination.",
   },
-  address: { tr: "Adres (isteğe bağlı)", en: "Address (optional)" },
   selfSubmit: { tr: "Deneme linkimi gönder", en: "Send my trial link" },
   creating: { tr: "Asistanınız hazırlanıyor…", en: "Getting your assistant ready…" },
   selfConsent: {
@@ -88,6 +87,9 @@ const COPY = {
     tr: "Deneme linkini e-posta adresinize gönderdik. Birkaç dakika içinde gelmezse gereksiz (spam) klasörüne bakın.",
     en: "We've emailed your trial link. If it doesn't arrive within a few minutes, check your spam folder.",
   },
+  resend: { tr: "Mail gelmedi mi? Tekrar gönder", en: "No email? Send it again" },
+  resending: { tr: "Gönderiliyor…", en: "Sending…" },
+  resent: { tr: "Tekrar gönderdik. Gereksiz (spam) klasörüne de bakın.", en: "Sent again. Check your spam folder too." },
 };
 
 const ERRORS: Record<string, L> = {
@@ -111,9 +113,12 @@ export default function DemoRequestPage() {
   const { lang } = useLang();
   const t = (l: L) => l[lang];
 
-  const [form, setForm] = useState({ clinicName: "", contactName: "", phone: "", email: "", note: "", services: "", address: "", website: "" });
+  const [form, setForm] = useState({ clinicName: "", contactName: "", phone: "", email: "", note: "", services: "", website: "" });
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+  // The "send it again" button on the done screen: same request, the server re-sends the existing link.
+  const [resend, setResend] = useState<"idle" | "sending" | "sent">("idle");
+  const [resendError, setResendError] = useState<string | null>(null);
   // Self-serve shows only once the server says it can work (calls + email configured).
   const [selfEnabled, setSelfEnabled] = useState(false);
   const [mode, setMode] = useState<"self" | "talk">("talk");
@@ -161,6 +166,27 @@ export default function DemoRequestPage() {
     setState("idle");
   }
 
+  async function resendLink() {
+    setResend("sending");
+    setResendError(null);
+    try {
+      const res = await fetch("/api/trial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (body.ok) {
+        setResend("sent");
+        return;
+      }
+      setResendError(body.error && ERRORS[body.error] ? body.error : "failed");
+    } catch {
+      setResendError("failed");
+    }
+    setResend("idle");
+  }
+
   return (
     <LegalShell>
       <div className="mx-auto grid max-w-6xl gap-12 px-5 py-16 lg:grid-cols-[1fr_minmax(0,460px)] lg:gap-16 lg:py-24">
@@ -194,6 +220,24 @@ export default function DemoRequestPage() {
               </span>
               <h2 className="font-editorial text-[28px] leading-tight">{t(self ? COPY.selfDoneTitle : COPY.doneTitle)}</h2>
               <p className="text-[15px] leading-relaxed text-muted-foreground">{t(self ? COPY.selfDoneBody : COPY.doneBody)}</p>
+              {self &&
+                (resend === "sent" ? (
+                  <p className="text-[14px] text-muted-foreground">{t(COPY.resent)}</p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={resendLink}
+                    disabled={resend === "sending"}
+                    className="text-[14.5px] font-medium text-violet underline-offset-4 hover:underline disabled:opacity-60"
+                  >
+                    {t(resend === "sending" ? COPY.resending : COPY.resend)}
+                  </button>
+                ))}
+              {resendError && (
+                <p role="alert" className="rounded-lg bg-missed/10 px-3 py-2 text-[14px] text-missed">
+                  {t(ERRORS[resendError])}
+                </p>
+              )}
               <Link href="/" className="ed-pill ed-pill-ghost mt-2 h-11 px-5 text-[14.5px]">
                 {t(COPY.home)}
               </Link>
@@ -252,9 +296,6 @@ export default function DemoRequestPage() {
                     />
                     <span className="text-[12.5px] leading-relaxed text-muted-foreground">{t(COPY.servicesHint)}</span>
                   </Field>
-                  <Field label={t(COPY.address)}>
-                    <input value={form.address} onChange={set("address")} autoComplete="street-address" className={inputClass} />
-                  </Field>
                 </>
               ) : (
               <Field label={t(COPY.note)}>
@@ -268,11 +309,13 @@ export default function DemoRequestPage() {
               </Field>
               )}
 
-              {/* Honeypot: invisible to people, filled in by form bots. */}
+              {/* Honeypot: invisible to people, filled in by form bots. Its name must
+                  not look like a real field: browser autofill once filled "website",
+                  and the server then silently dropped a real request. */}
               <input
                 value={form.website}
                 onChange={set("website")}
-                name="website"
+                name="rx_hp_field"
                 tabIndex={-1}
                 autoComplete="off"
                 aria-hidden="true"

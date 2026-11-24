@@ -15,7 +15,7 @@ export async function GET() {
 }
 
 /**
- * POST { action: "create", clinicName, demoRequestId?, services, doctors, address, faq }
+ * POST { action: "create", clinicName, demoRequestId?, services, doctors, faq }
  * POST { action: "delete", id }
  * Same cookie gate as the rest of /admin.
  */
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   const knowledge = parseKnowledgeText({
     services: str("services", 20_000),
     doctors: str("doctors", 10_000),
-    address: str("address", 500),
+    address: "",
     faq: str("faq", 4000),
   });
   if (isEmptyKnowledge(knowledge)) {

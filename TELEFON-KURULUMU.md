@@ -46,8 +46,9 @@ Vapi panelinde **ajan oluşturulmaz**, ajana talimat da yapıştırılmaz.
 ## 3. Randevox admin paneli (/admin → Klinikler → Yönet)
 
 1. **Ayarlar** bölümünde **Vapi numara ID** alanına 2. bölümde kopyalanan ID yazılır.
-   Aynı yerde **Aktarma numarası** da doldurulur; arayan "bir insanla konuşmak istiyorum"
-   derse bu numaraya aktarılır. Sonra **Ayarları kaydet**'e basılır.
+   Sonra **Ayarları kaydet**'e basılır. Aktarma numarası panelde yok: Claude'a söylenir,
+   veritabanında `clinics.transfer_number` alanına yazılır (arayan "bir insanla konuşmak
+   istiyorum" derse bu numaraya aktarılır).
 2. **Takvim** bölümünde Cal.com API anahtarı ve event type id girilir.
 3. **Telefon** bölümünde:
    1. **Ajanları Vapi'ye kur** butonuna basılır. Kliniğin tüm ajanları Vapi'de oluşur.

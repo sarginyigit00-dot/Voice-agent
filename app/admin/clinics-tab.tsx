@@ -534,7 +534,8 @@ function PlanForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; a
 function ContactForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean; act: Act }) {
   const [f, setF] = useState({
     notifyEmail: clinic.notifyEmail ?? "",
-    transferNumber: clinic.transferNumber ?? "",
+    // No transfer number here on purpose: it's set in the database
+    // (clinics.transfer_number), and leaving it out of `fields` keeps saves from touching it.
     messageChannel: clinic.messageChannel,
     crmWebhookUrl: clinic.crmWebhookUrl ?? "",
     timeZone: clinic.timeZone,
@@ -554,9 +555,6 @@ function ContactForm({ clinic, busy, act }: { clinic: AdminClinic; busy: boolean
         <div className="grid gap-2 sm:grid-cols-3">
           <Field label="Bildirim e-postası">
             <input value={f.notifyEmail} onChange={set("notifyEmail")} placeholder="klinik@ornek.com" className={inputClass} />
-          </Field>
-          <Field label="Aktarma numarası">
-            <input value={f.transferNumber} onChange={set("transferNumber")} placeholder="+90 212 555 00 00" className={inputClass} />
           </Field>
           <Field label="Hasta mesajları (onay, hatırlatma)">
             {/* SMS needs the NETGSM_* variables on the automation app; WhatsApp needs Meta-approved templates. */}

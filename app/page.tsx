@@ -546,8 +546,8 @@ function HowItWorks() {
       n: "02",
       title: { tr: "Bilgilerinizi verin", en: "Give it your information" },
       body: {
-        tr: "Tedavileriniz, hekimleriniz, çalışma saatleriniz ve hangi soruda kime aktaracağı — bir formda anlatırsınız.",
-        en: "Your treatments, dentists, opening hours and who to transfer to for what — described once in a form.",
+        tr: "Tedavileriniz, fiyatlarınız, hekimleriniz ve çalışma saatleriniz — bir formda anlatırsınız.",
+        en: "Your treatments, prices, dentists and opening hours — described once in a form.",
       },
     },
     {

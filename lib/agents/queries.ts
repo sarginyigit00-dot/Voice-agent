@@ -45,7 +45,7 @@ function agentFromRow(r: AgentRow): Agent {
  * No vapi_assistant_id: only the server writes it (lib/vapi/sync.ts), and a
  * save from the browser must never overwrite or clear it.
  */
-function toRow(a: Agent): Omit<AgentRow, "vapi_assistant_id"> {
+function toRow(a: Agent): Omit<AgentRow, "vapi_assistant_id" | "calls_today"> {
   return {
     id: a.id,
     name: a.name,
@@ -53,7 +53,7 @@ function toRow(a: Agent): Omit<AgentRow, "vapi_assistant_id"> {
     purpose: a.purpose,
     greeting: a.greeting,
     active: a.active,
-    calls_today: a.callsToday,
+    // calls_today is never written: the count comes from the call log (fetchAgents).
     action_ids: a.actionIds,
     system_prompt: a.systemPrompt,
     working_hours: a.workingHours,
@@ -68,12 +68,40 @@ export async function fetchAgents(): Promise<Agent[] | null> {
   const supabase = getSupabaseBrowser();
   if (!supabase) return null;
 
-  const { data, error } = await supabase.from("agents").select("*").order("created_at", { ascending: true });
+  const [{ data, error }, today] = await Promise.all([
+    supabase.from("agents").select("*").order("created_at", { ascending: true }),
+    callsTodayByAgent(),
+  ]);
   if (error) {
     console.error("[agents] failed to list agents:", error.message);
     return null;
   }
-  return (data as AgentRow[]).map(agentFromRow);
+  return (data as AgentRow[]).map((r) => ({ ...agentFromRow(r), callsToday: today.get(r.id) ?? 0 }));
+}
+
+/** Midnight in Istanbul (UTC+3, no DST) as an ISO instant — "today" for a clinic there. */
+export function istanbulDayStart(now: Date = new Date()): string {
+  const shifted = new Date(now.getTime() + 3 * 3_600_000);
+  return new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()) - 3 * 3_600_000).toISOString();
+}
+
+/**
+ * Today's calls per agent, counted from the call log. The agents table's own
+ * calls_today column held seed numbers nothing ever updated.
+ */
+async function callsTodayByAgent(): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const supabase = getSupabaseBrowser();
+  if (!supabase) return counts;
+  const { data, error } = await supabase.from("calls").select("agent_id").gte("started_at", istanbulDayStart());
+  if (error) {
+    console.error("[agents] failed to count today's calls:", error.message);
+    return counts;
+  }
+  for (const r of (data ?? []) as { agent_id: string | null }[]) {
+    if (r.agent_id) counts.set(r.agent_id, (counts.get(r.agent_id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 /**
@@ -105,7 +133,10 @@ export async function insertAgent(agent: Agent): Promise<void> {
 export async function saveAgent(agent: Agent): Promise<boolean> {
   const supabase = getSupabaseBrowser();
   if (!supabase) return false;
-  const { error } = await supabase.from("agents").update(toRow(agent)).eq("id", agent.id);
+  const { error } = await supabase
+    .from("agents")
+    .update({ ...toRow(agent), updated_at: new Date().toISOString() })
+    .eq("id", agent.id);
   if (error) console.error("[agents] failed to save agent:", error.message);
   return !error;
 }

@@ -50,6 +50,8 @@ export default function AppointmentsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rescheduling, setRescheduling] = useState(false);
+  // Cancelling removes the booking from the calendar too, so it takes a second, explicit click.
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [slots, setSlots] = useState<AvailableSlot[] | null>(null);
   const [slotsError, setSlotsError] = useState<string | null>(null);
   // "New appointment" form. `newSlots` is the same Cal.com list the reschedule picker uses.
@@ -149,6 +151,8 @@ export default function AppointmentsPage() {
     loadingSlots: lang === "tr" ? "Uygun saatler yükleniyor…" : "Loading open slots…",
     noSlots: lang === "tr" ? "Önümüzdeki 7 gün için boş yer görünmüyor." : "No openings in the next 7 days.",
     dismiss: lang === "tr" ? "Vazgeç" : "Cancel",
+    confirmCancel: lang === "tr" ? "Bu randevu iptal edilsin mi? Takvimden de silinir." : "Cancel this appointment? It's removed from the calendar too.",
+    yesCancel: lang === "tr" ? "Evet, iptal et" : "Yes, cancel",
   };
 
   const filtered = useMemo(() => {
@@ -192,6 +196,7 @@ export default function AppointmentsPage() {
   const selectAppointment = (id: string | null) => {
     setOpenId(id);
     setRescheduling(false);
+    setConfirmCancel(false);
     setSlots(null);
     setSlotsError(null);
   };
@@ -704,6 +709,27 @@ export default function AppointmentsPage() {
                   </ul>
                 )}
               </div>
+            ) : confirmCancel ? (
+              <div className="mt-4 rounded-md border px-3 py-2.5" style={{ borderColor: "color-mix(in oklch, var(--color-destructive) 45%, transparent)" }}>
+                <p className="text-[12.5px] text-foreground">{L.confirmCancel}</p>
+                <div className="mt-2.5 flex gap-2">
+                  <button
+                    onClick={() => setConfirmCancel(false)}
+                    disabled={busyId === open.id}
+                    className="flex-1 rounded-md border border-border px-3 py-2 text-[12.5px] font-semibold text-foreground transition-colors hover:border-violet/50 disabled:opacity-50"
+                  >
+                    {L.dismiss}
+                  </button>
+                  <button
+                    onClick={() => handleCancel(open).finally(() => setConfirmCancel(false))}
+                    disabled={busyId === open.id}
+                    className="flex-1 rounded-md px-3 py-2 text-[12.5px] font-semibold text-white transition-opacity disabled:opacity-50"
+                    style={{ background: "var(--color-destructive)" }}
+                  >
+                    {busyId === open.id ? L.cancelling : L.yesCancel}
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="mt-4 flex gap-2">
                 <button
@@ -715,7 +741,7 @@ export default function AppointmentsPage() {
                   {L.reschedule}
                 </button>
                 <button
-                  onClick={() => handleCancel(open)}
+                  onClick={() => setConfirmCancel(true)}
                   disabled={busyId === open.id}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[12.5px] font-semibold transition-colors disabled:opacity-50"
                   style={{ borderColor: "color-mix(in oklch, var(--color-destructive) 45%, transparent)", color: "var(--color-destructive)" }}

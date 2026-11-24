@@ -17,6 +17,8 @@ import { TRIAL_CALLS_PER_DAY, TRIAL_CALLS_PER_VOICE } from "@/lib/demo/trial-lim
 
 interface TrialState {
   found: boolean;
+  /** The request itself failed (network, server) — not the same as an unknown code. */
+  error?: boolean;
   enabled?: boolean;
   clinicName?: string;
   active?: boolean;
@@ -35,9 +37,14 @@ export default function TrialPage() {
 
   const load = useCallback(() => {
     fetch(`/api/try-call?code=${encodeURIComponent(code)}`)
-      .then((r) => r.json())
-      .then((d: TrialState) => setState(d))
-      .catch(() => setState({ found: false }));
+      .then(async (r) => {
+        if (r.status === 404) return { found: false } as TrialState;
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return (await r.json()) as TrialState;
+      })
+      .then((d) => setState(d))
+      // A failed refresh keeps a trial that already loaded; a failed first load says so, not "not found".
+      .catch(() => setState((prev) => (prev?.found ? prev : { found: false, error: true })));
   }, [code]);
 
   useEffect(load, [load]);
@@ -47,6 +54,15 @@ export default function TrialPage() {
       <div className="mx-auto max-w-5xl px-5 py-16 lg:py-20">
         {!state ? (
           <p className="text-[14px] text-muted-foreground">{tr ? "Yükleniyor…" : "Loading…"}</p>
+        ) : state.error ? (
+          <Notice
+            title={tr ? "Bağlantı kurulamadı." : "Couldn't connect."}
+            body={tr ? "İnternet bağlantınızı kontrol edip tekrar deneyin." : "Check your internet connection and try again."}
+            retry={() => {
+              setState(null);
+              load();
+            }}
+          />
         ) : !state.found ? (
           <Notice
             title={tr ? "Bu deneme bulunamadı." : "This trial wasn't found."}
@@ -120,12 +136,17 @@ function Meter({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Notice({ title, body, cta = false }: { title: string; body: string; cta?: boolean }) {
+function Notice({ title, body, cta = false, retry }: { title: string; body: string; cta?: boolean; retry?: () => void }) {
   const { lang } = useLang();
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
       <h1 className="font-editorial ed-h2 text-pretty">{title}</h1>
       <p className="text-[15px] leading-relaxed text-muted-foreground">{body}</p>
+      {retry && (
+        <button type="button" onClick={retry} className="ed-pill ed-pill-primary cursor-pointer px-7 text-[15px]" style={{ height: 48 }}>
+          {lang === "tr" ? "Tekrar dene" : "Try again"}
+        </button>
+      )}
       {cta && (
         <Link href="/demo-talep" className="ed-pill ed-pill-primary px-7 text-[15px]" style={{ height: 48 }}>
           {lang === "tr" ? "Kendi hattımda başlat" : "Start on my own line"}

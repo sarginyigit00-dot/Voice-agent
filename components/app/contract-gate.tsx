@@ -33,12 +33,39 @@ type State =
  * what keeps data apart. The support account sees a strip instead, and can't
  * accept on the clinic's behalf.
  */
+/**
+ * Remembers, per user, that the last check let them in, so the next page load
+ * opens the panel straight away while the check runs again in the background.
+ * A new contract version still brings the acceptance screen back.
+ */
+const OPEN_KEY = (userId: string) => `rx-contract-open:${userId}`;
+function rememberedOpen(userId: string | undefined): boolean {
+  if (!userId) return false;
+  try {
+    return localStorage.getItem(OPEN_KEY(userId)) === "1";
+  } catch {
+    return false;
+  }
+}
+function rememberOpen(userId: string | undefined, open: boolean) {
+  if (!userId) return;
+  try {
+    if (open) localStorage.setItem(OPEN_KEY(userId), "1");
+    else localStorage.removeItem(OPEN_KEY(userId));
+  } catch {
+    /* storage blocked: the panel just waits for the check, as before */
+  }
+}
+
 export function ContractGate({ children }: { children: React.ReactNode }) {
   const { session, demo } = useSession();
   const { lang } = useLang();
   const tr = lang === "tr";
   const real = isSupabaseConfigured && !demo && !!session;
-  const [state, setState] = useState<State>(() => (real ? { status: "loading" } : { status: "open" }));
+  const userId = session?.user?.id;
+  const [state, setState] = useState<State>(() =>
+    real && !rememberedOpen(userId) ? { status: "loading" } : { status: "open" },
+  );
 
   useEffect(() => {
     if (!real) return;
@@ -47,6 +74,7 @@ export function ContractGate({ children }: { children: React.ReactNode }) {
       .then((res) => (res.ok ? res.json() : null))
       .then((body) => {
         if (cancelled) return;
+        rememberOpen(userId, body?.status !== "required");
         if (body?.status !== "required") return setState({ status: "open" });
         setState({
           status: "required",
@@ -60,7 +88,7 @@ export function ContractGate({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [real]);
+  }, [real, userId]);
 
   if (!real || state.status === "open") return <>{children}</>;
   if (state.status === "loading") {
@@ -78,7 +106,15 @@ export function ContractGate({ children }: { children: React.ReactNode }) {
       </>
     );
   }
-  return <AcceptScreen {...state} onAccepted={() => setState({ status: "open" })} />;
+  return (
+    <AcceptScreen
+      {...state}
+      onAccepted={() => {
+        rememberOpen(userId, true);
+        setState({ status: "open" });
+      }}
+    />
+  );
 }
 
 function AcceptScreen({

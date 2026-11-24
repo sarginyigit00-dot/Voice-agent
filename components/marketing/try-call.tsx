@@ -35,6 +35,7 @@ export type Problem =
   | "expired"
   | "used_up"
   | "not_found"
+  | "voice_used_up"
   | null;
 
 interface Line {
@@ -60,6 +61,7 @@ const PROBLEM_TEXT: Record<Exclude<Problem, null>, { tr: string; en: string }> =
   expired: { tr: "Deneme süreniz doldu.", en: "Your trial has ended." },
   used_up: { tr: "Deneme aramalarınızın tamamını kullandınız.", en: "You've used all your trial calls." },
   not_found: { tr: "Bu deneme bulunamadı.", en: "This trial wasn't found." },
+  voice_used_up: { tr: "Bu sesle deneme hakkınız doldu. Diğer sesle devam edebilirsiniz.", en: "You've used this voice's trial calls. Carry on with the other voice." },
 };
 
 /* ═══════════════════════ landing-page section ═══════════════════════ */
@@ -188,8 +190,11 @@ export function TryCallCard({
   onStarted,
   onEnded,
   callsLeft = null,
+  voiceLeft = null,
 }: {
   title: string;
+  /** A trial: calls left for each voice. The counter then follows the chosen voice. */
+  voiceLeft?: { female: number; male: number } | null;
   /** Calls left before this one (today for the demo, in total for a trial); counts down as they call. */
   callsLeft?: number | null;
   /** A call was counted — a trial page re-reads its meters. */
@@ -212,7 +217,7 @@ export function TryCallCard({
   const [speaking, setSpeaking] = useState(false);
   const [honeypot, setHoneypot] = useState("");
   const [voice, setVoice] = useState<"female" | "male">("female");
-  const [quota, setQuota] = useState<number | null>(callsLeft);
+  const [quota, setQuota] = useState<number | null>(voiceLeft ? voiceLeft.female : callsLeft);
 
   const vapi = useRef<VapiClient | null>(null);
   // Set once we hang up or the call ends: the SDK reports the room closing as
@@ -235,7 +240,7 @@ export function TryCallCard({
   /* Leaving the page hangs up — an open call keeps billing. */
   useEffect(() => () => void vapi.current?.stop(), []);
 
-  useEffect(() => setQuota(callsLeft), [callsLeft]);
+  useEffect(() => setQuota(voiceLeft ? voiceLeft[voice] : callsLeft), [callsLeft, voiceLeft, voice]);
 
   function fail(p: Exclude<Problem, null>) {
     setProblem(p);
@@ -435,7 +440,9 @@ export function TryCallCard({
             {quota !== null && (
               <span className="font-mono-nums text-[12px] text-muted-foreground">
                 {code
-                  ? tr ? `Kalan görüşme: ${quota}` : `Calls left: ${quota}`
+                  ? voiceLeft
+                    ? tr ? `Bu sesle kalan: ${quota}` : `Left with this voice: ${quota}`
+                    : tr ? `Kalan görüşme: ${quota}` : `Calls left: ${quota}`
                   : tr ? `Bugün kalan: ${quota}` : `Left today: ${quota}`}
               </span>
             )}
@@ -444,7 +451,7 @@ export function TryCallCard({
         {/* Honeypot: hidden from people, filled by bots. */}
         <input
           type="text"
-          name="website"
+          name="rx_hp_field"
           tabIndex={-1}
           autoComplete="off"
           aria-hidden="true"

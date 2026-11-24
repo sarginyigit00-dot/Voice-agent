@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLang } from "@/components/i18n/language-provider";
 import { TryCallCard, TryPrompts } from "@/components/marketing/try-call";
 import { LegalShell } from "../../legal-shell";
+import { TRIAL_CALLS_PER_DAY, TRIAL_CALLS_PER_VOICE } from "@/lib/demo/trial-limits";
 
 /**
  * /dene/<code> — a prospective clinic's own 14-day web trial: its name and
@@ -21,6 +22,7 @@ interface TrialState {
   active?: boolean;
   reason?: "ok" | "expired" | "used_up";
   callsLeft?: number;
+  voiceLeft?: { female: number; male: number };
   daysLeft?: number;
   maxCalls?: number;
 }
@@ -75,12 +77,13 @@ export default function TrialPage() {
               </h1>
               <p className="text-[15px] leading-relaxed text-muted-foreground">
                 {tr
-                  ? "Bu asistan kliniğinizin adıyla açılır; hizmetlerinizi, fiyatlarınızı ve adresinizi bilir. Tarayıcınızın mikrofonuyla arayın, bir hasta gibi konuşun. Ekibinizle de paylaşabilirsiniz."
-                  : "This assistant answers in your clinic's name and knows your services, prices and address. Call it from your browser's microphone and talk like a patient would. Share it with your team too."}
+                  ? "Bu asistan kliniğinizin adıyla açılır; hizmetlerinizi ve fiyatlarınızı bilir. Tarayıcınızın mikrofonuyla arayın, bir hasta gibi konuşun. Ekibinizle de paylaşabilirsiniz."
+                  : "This assistant answers in your clinic's name and knows your services and prices. Call it from your browser's microphone and talk like a patient would. Share it with your team too."}
               </p>
 
-              <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
-                <Meter label={tr ? "Kalan arama" : "Calls left"} value={`${state.callsLeft} / ${state.maxCalls}`} />
+              <div className="grid grid-cols-3 gap-3 sm:max-w-md">
+                <Meter label={tr ? "Kadın ses" : "Female voice"} value={`${state.voiceLeft?.female ?? 0} / ${TRIAL_CALLS_PER_VOICE}`} />
+                <Meter label={tr ? "Erkek ses" : "Male voice"} value={`${state.voiceLeft?.male ?? 0} / ${TRIAL_CALLS_PER_VOICE}`} />
                 <Meter label={tr ? "Kalan süre" : "Time left"} value={tr ? `${state.daysLeft} gün` : `${state.daysLeft} days`} />
               </div>
 
@@ -88,13 +91,13 @@ export default function TrialPage() {
 
               <p className="rounded-lg border border-border bg-muted px-3 py-2.5 text-[12.5px] leading-relaxed text-muted-foreground">
                 {tr
-                  ? "Deneme modundasınız: randevular takviminize yazılmaz, saatler örnektir. Bir arama en fazla üç dakika sürer ve günde en fazla beş arama yapılabilir. Her başlatılan görüşme bir hak kullanır."
-                  : "You're in trial mode: nothing is written to your calendar and the times offered are samples. A call lasts up to three minutes, with up to five calls a day. Every call you start uses one call."}
+                  ? `Deneme modundasınız: randevular takviminize yazılmaz, saatler örnektir. Kadın sesle ${TRIAL_CALLS_PER_VOICE}, erkek sesle ${TRIAL_CALLS_PER_VOICE} arama hakkınız var; ikisinden toplam en fazla ${TRIAL_CALLS_PER_DAY} tanesini aynı gün kullanabilirsiniz. Bir arama en fazla üç dakika sürer. Her başlatılan görüşme bir hak kullanır.`
+                  : `You're in trial mode: nothing is written to your calendar and the times offered are samples. You have ${TRIAL_CALLS_PER_VOICE} calls with the female voice and ${TRIAL_CALLS_PER_VOICE} with the male voice, up to ${TRIAL_CALLS_PER_DAY} in total on the same day. A call lasts up to three minutes. Every call you start uses one call.`}
               </p>
             </div>
 
             <div className="flex w-full flex-col gap-4">
-              <TryCallCard title={state.clinicName ?? ""} code={code} disabled={!state.enabled} callsLeft={state.callsLeft ?? null} onStarted={load} onEnded={load} />
+              <TryCallCard title={state.clinicName ?? ""} code={code} disabled={!state.enabled} callsLeft={state.callsLeft ?? null} voiceLeft={state.voiceLeft ?? null} onStarted={load} onEnded={load} />
               {!state.enabled && (
                 <p className="text-[12.5px] text-muted-foreground">
                   {tr ? "Deneme hattı şu an bakımda. Lütfen biraz sonra tekrar deneyin." : "The trial line is under maintenance. Please try again shortly."}

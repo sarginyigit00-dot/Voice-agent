@@ -131,6 +131,7 @@ function istanbulDayStart(now: Date): string {
 export async function claimDemoCall(
   ip: string,
   trialId: string | null = null,
+  voice: DemoVoice = "female",
   now: Date = new Date(),
 ): Promise<{ result: "ok" | "cap" | "ip_limit" | "trial_daily" | "error"; left?: number }> {
   const supabase = getSupabaseServer();
@@ -163,7 +164,7 @@ export async function claimDemoCall(
     left = DEMO_CALLS_PER_IP_PER_DAY - (mine.count ?? 0) - 1;
   }
 
-  const { error: insertError } = await supabase.from("demo_call_starts").insert({ ip_hash: ipHash, trial_id: trialId });
+  const { error: insertError } = await supabase.from("demo_call_starts").insert({ ip_hash: ipHash, trial_id: trialId, voice });
   if (insertError) {
     console.error("[try-call] insert failed:", insertError.message);
     return { result: "error" };

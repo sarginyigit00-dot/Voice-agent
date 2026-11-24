@@ -182,15 +182,24 @@ describe("isDemoAssistant", () => {
 });
 
 describe("clinic trial rules", () => {
-  const t = { expiresAt: "2026-12-02T06:00:00Z", maxCalls: 15 };
-  it("counts down calls and days", () => {
-    expect(trialStatus(t, 4, NOW)).toEqual({ active: true, reason: "ok", callsLeft: 11, daysLeft: 14 });
+  const t = { expiresAt: "2026-12-02T06:00:00Z" };
+  it("counts down each voice and the days", () => {
+    expect(trialStatus(t, { female: 4, male: 1 }, NOW)).toEqual({
+      active: true,
+      reason: "ok",
+      callsLeft: 15,
+      voiceLeft: { female: 6, male: 9 },
+      daysLeft: 14,
+    });
   });
-  it("ends when the calls run out", () => {
-    expect(trialStatus(t, 15, NOW)).toMatchObject({ active: false, reason: "used_up", callsLeft: 0 });
+  it("stays open while the other voice has calls", () => {
+    expect(trialStatus(t, { female: 10, male: 3 }, NOW)).toMatchObject({ active: true, voiceLeft: { female: 0, male: 7 } });
+  });
+  it("ends when both voices run out", () => {
+    expect(trialStatus(t, { female: 10, male: 12 }, NOW)).toMatchObject({ active: false, reason: "used_up", callsLeft: 0 });
   });
   it("ends on the date", () => {
-    expect(trialStatus(t, 0, new Date("2026-12-02T06:00:01Z"))).toMatchObject({ active: false, reason: "expired" });
+    expect(trialStatus(t, { female: 0, male: 0 }, new Date("2026-12-02T06:00:01Z"))).toMatchObject({ active: false, reason: "expired" });
   });
   it("reads the operator's plain lines", () => {
     const k = parseKnowledgeText({
@@ -211,9 +220,9 @@ describe("clinic trial rules", () => {
 
 describe("POST /api/try-call with a trial code", () => {
   const env = { ...process.env };
-  const trial = (status: object) => ({ id: "trial-1", vapiAssistantId: "trial-asst", status: { active: true, reason: "ok", callsLeft: 15, ...status } });
-  const req = (ip: string) =>
-    POST(new Request("http://x", { method: "POST", headers: { "x-forwarded-for": ip }, body: JSON.stringify({ code: "abcdefgh23" }) })) as unknown as Promise<{
+  const trial = (status: object) => ({ id: "trial-1", vapiAssistantId: "trial-asst", status: { active: true, reason: "ok", callsLeft: 20, voiceLeft: { female: 10, male: 10 }, ...status } });
+  const req = (ip: string, voice?: "female" | "male") =>
+    POST(new Request("http://x", { method: "POST", headers: { "x-forwarded-for": ip }, body: JSON.stringify({ code: "abcdefgh23", voice }) })) as unknown as Promise<{
       status: number;
       body: { ok: boolean; error?: string; left?: number | null };
     }>;
@@ -232,11 +241,24 @@ describe("POST /api/try-call with a trial code", () => {
   });
 
   it("starts a call on the trial's own assistant and counts it down", async () => {
-    trialByCode.mockResolvedValue(trial({ callsLeft: 4 }));
+    trialByCode.mockResolvedValue(trial({ voiceLeft: { female: 4, male: 10 } }));
     const r = await req("10.1.0.1");
     expect(createCall).toHaveBeenCalledWith("trial-asst", "female");
-    expect(claim).toHaveBeenCalledWith("10.1.0.1", "trial-1");
+    expect(claim).toHaveBeenCalledWith("10.1.0.1", "trial-1", "female");
     expect(r.body.left).toBe(3);
+  });
+
+  it("counts each voice on its own", async () => {
+    trialByCode.mockResolvedValue(trial({ voiceLeft: { female: 0, male: 2 } }));
+    const female = await req("10.1.0.6", "female");
+    expect(female.status).toBe(403);
+    expect(female.body.error).toBe("voice_used_up");
+    expect(claim).not.toHaveBeenCalled();
+
+    const male = await req("10.1.0.7", "male");
+    expect(createCall).toHaveBeenCalledWith("trial-asst", "male");
+    expect(claim).toHaveBeenCalledWith("10.1.0.7", "trial-1", "male");
+    expect(male.body.left).toBe(1);
   });
 
   it("refuses an unknown, expired or used-up trial", async () => {

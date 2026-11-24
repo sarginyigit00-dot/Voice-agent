@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { DemoRequest } from "@/lib/admin/queries";
-import { TRIAL_CALLS_PER_DAY, TRIAL_DAYS, TRIAL_MAX_CALLS } from "@/lib/demo/trial-limits";
+import { TRIAL_CALLS_PER_DAY, TRIAL_CALLS_PER_VOICE, TRIAL_DAYS } from "@/lib/demo/trial-limits";
 import { ActionButton, EmptyRow } from "./controls";
 
 /**
@@ -23,7 +23,7 @@ interface TrialRow {
   createdAt: string;
   source: "admin" | "self";
   email: string | null;
-  used: number;
+  used: { female: number; male: number };
   status: { active: boolean; reason: "ok" | "expired" | "used_up"; callsLeft: number; daysLeft: number };
 }
 
@@ -101,7 +101,7 @@ export function TrialsTab({
         <header className="border-b border-border px-3 py-2">
           <h2 className="text-sm font-semibold">Yeni deneme</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {TRIAL_DAYS} gün, {TRIAL_MAX_CALLS} arama (günde en fazla {TRIAL_CALLS_PER_DAY}, her biri en fazla 3 dk). Numara gerekmez; klinik
+            {TRIAL_DAYS} gün, kadın ve erkek sesle {TRIAL_CALLS_PER_VOICE}&apos;ar arama (ikisinden günde toplam en fazla {TRIAL_CALLS_PER_DAY}, her biri en fazla 3 dk). Numara gerekmez; klinik
             linkten tarayıcıyla arar. Randevular takvime yazılmaz.
           </p>
         </header>
@@ -162,7 +162,7 @@ export function TrialsTab({
                   )}
                 </span>
                 <span className="font-mono text-xs tabular-nums">
-                  {t.used}/{t.maxCalls} arama
+                  Kadın {t.used.female}/{TRIAL_CALLS_PER_VOICE} · Erkek {t.used.male}/{TRIAL_CALLS_PER_VOICE}
                 </span>
                 <span className="text-xs">
                   {t.status.active ? (

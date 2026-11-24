@@ -712,6 +712,10 @@ alter table public.demo_call_starts enable row level security;
 alter table public.demo_call_starts add column if not exists trial_id uuid;
 create index if not exists demo_call_starts_trial_idx on public.demo_call_starts (trial_id, created_at desc);
 
+-- Which voice the call used ("female" | "male"): a trial has a separate
+-- allowance per voice. Older rows are null and count as female.
+alter table public.demo_call_starts add column if not exists voice text;
+
 -- ─────────────────────────────────────────────────────────────────────────
 --  demo_trials — a prospective clinic's own 14-day web trial
 --  (/dene/<code>): an assistant with the clinic's name and facts, called

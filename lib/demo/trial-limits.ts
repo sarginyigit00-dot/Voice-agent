@@ -1,6 +1,8 @@
 /** Clinic web-trial allowances — client-safe, shared by /admin and the server (lib/demo/trials.ts). */
 export const TRIAL_DAYS = 14;
-export const TRIAL_MAX_CALLS = 15;
+/** Calls per voice: the clinic can try the female and the male voice, this many each. */
+export const TRIAL_CALLS_PER_VOICE = 10;
+export const TRIAL_MAX_CALLS = 2 * TRIAL_CALLS_PER_VOICE;
 /** So the whole allowance can't go in one sitting. */
 export const TRIAL_CALLS_PER_DAY = 5;
 /**

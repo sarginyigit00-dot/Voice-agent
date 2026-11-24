@@ -9,6 +9,7 @@ import {
   TRIAL_MAX_CALLS,
   trialStatus,
   type TrialStatus,
+  type VoiceCounts,
 } from "@/lib/demo/trials";
 
 /** Storage for clinic web trials (schema: demo_trials, demo_trial_calls). Service role only. */
@@ -27,7 +28,7 @@ export interface Trial {
 }
 
 export interface TrialWithUsage extends Trial {
-  used: number;
+  used: VoiceCounts;
   status: TrialStatus;
 }
 
@@ -52,7 +53,8 @@ const fromRow = (r: TrialRow): Trial => ({
   clinicName: r.clinic_name,
   demoRequestId: r.demo_request_id,
   vapiAssistantId: r.vapi_assistant_id,
-  maxCalls: r.max_calls,
+  // The allowance is per voice now (TRIAL_CALLS_PER_VOICE each); older rows still hold 15 in max_calls.
+  maxCalls: TRIAL_MAX_CALLS,
   expiresAt: r.expires_at,
   createdAt: r.created_at,
   source: r.source === "self" ? "self" : "admin",
@@ -112,17 +114,24 @@ export async function createTrial(input: {
   return { ok: true, data: { ...trial, vapiAssistantId: assistant.data.id } };
 }
 
-async function usedCounts(ids: string[]): Promise<Map<string, number>> {
-  const counts = new Map<string, number>();
+const NONE: VoiceCounts = { female: 0, male: 0 };
+
+async function usedCounts(ids: string[]): Promise<Map<string, VoiceCounts>> {
+  const counts = new Map<string, VoiceCounts>();
   const supabase = getSupabaseServer();
   if (!supabase || !ids.length) return counts;
   // Every started call counts — the visitor sees the number go down as they call.
-  const { data } = await supabase.from("demo_call_starts").select("trial_id").in("trial_id", ids);
-  for (const r of (data ?? []) as { trial_id: string }[]) counts.set(r.trial_id, (counts.get(r.trial_id) ?? 0) + 1);
+  // Starts from before the voice was stored count as female (the default voice).
+  const { data } = await supabase.from("demo_call_starts").select("trial_id, voice").in("trial_id", ids);
+  for (const r of (data ?? []) as { trial_id: string; voice: string | null }[]) {
+    const c = counts.get(r.trial_id) ?? { ...NONE };
+    c[r.voice === "male" ? "male" : "female"]++;
+    counts.set(r.trial_id, c);
+  }
   return counts;
 }
 
-const withUsage = (t: Trial, used: number): TrialWithUsage => ({ ...t, used, status: trialStatus(t, used) });
+const withUsage = (t: Trial, used: VoiceCounts): TrialWithUsage => ({ ...t, used, status: trialStatus(t, used) });
 
 export async function listTrials(): Promise<TrialWithUsage[]> {
   const supabase = getSupabaseServer();
@@ -134,7 +143,7 @@ export async function listTrials(): Promise<TrialWithUsage[]> {
   }
   const trials = (data as TrialRow[]).map(fromRow);
   const counts = await usedCounts(trials.map((t) => t.id));
-  return trials.map((t) => withUsage(t, counts.get(t.id) ?? 0));
+  return trials.map((t) => withUsage(t, counts.get(t.id) ?? NONE));
 }
 
 export async function trialByCode(code: string): Promise<TrialWithUsage | null> {
@@ -144,7 +153,7 @@ export async function trialByCode(code: string): Promise<TrialWithUsage | null> 
   if (!data) return null;
   const trial = fromRow(data as TrialRow);
   const counts = await usedCounts([trial.id]);
-  return withUsage(trial, counts.get(trial.id) ?? 0);
+  return withUsage(trial, counts.get(trial.id) ?? NONE);
 }
 
 /** Self-serve: the trial already opened with this address, if any (one per address). */

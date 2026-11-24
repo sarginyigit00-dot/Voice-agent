@@ -124,6 +124,6 @@ describe("trial link email", () => {
     const m = trialLinkEmail({ clinicName: "<b>X</b>", contactName: "A", link: "https://www.randevoxai.com/dene/abc", expiresAt: trial.expiresAt, maxCalls: 15 });
     expect(m.html).not.toContain("<b>X</b>");
     expect(m.html).toContain("https://www.randevoxai.com/dene/abc");
-    expect(m.text).toContain("15 görüşme");
+    expect(m.text).toContain("Kadın sesle 10, erkek sesle 10 görüşme");
   });
 });

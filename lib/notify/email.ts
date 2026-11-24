@@ -2,6 +2,7 @@ import { after } from "next/server";
 import appConfig from "@/app.config";
 import { localParts } from "@/lib/automation/format";
 import { toE164 } from "@/lib/vapi/client";
+import { TRIAL_CALLS_PER_VOICE } from "@/lib/demo/trial-limits";
 import type { ClinicContext } from "@/lib/clinics/server";
 
 /**
@@ -349,7 +350,7 @@ export function trialLinkEmail(input: { clinicName: string; contactName: string;
     `Merhaba ${input.contactName}, ${input.clinicName} için yapay zekâ telefon asistanınız hazır. Aşağıdaki linki açıp tarayıcınızdan asistanla konuşabilirsiniz; telefon numarası ya da kurulum gerekmez.`,
     [
       ["Klinik", input.clinicName],
-      ["Deneme hakkı", `${input.maxCalls} görüşme, her biri en fazla 3 dakika`],
+      ["Deneme hakkı", `Kadın sesle ${TRIAL_CALLS_PER_VOICE}, erkek sesle ${TRIAL_CALLS_PER_VOICE} görüşme; her biri en fazla 3 dakika`],
       ["Son gün", until],
       ["Not", "Bu bir denemedir: randevular takviminize yazılmaz, görüşmeler kaydedilmez."],
     ],

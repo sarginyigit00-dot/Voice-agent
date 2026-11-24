@@ -7,22 +7,35 @@ import { normalizeKnowledge, type ClinicKnowledge } from "@/lib/clinics/knowledg
  * lib/demo/trials-server.ts.
  */
 
+import { TRIAL_CALLS_PER_VOICE } from "@/lib/demo/trial-limits";
+
 export * from "@/lib/demo/trial-limits";
+
+export type TrialVoice = "female" | "male";
+export type VoiceCounts = Record<TrialVoice, number>;
 
 export interface TrialStatus {
   active: boolean;
   reason: "ok" | "expired" | "used_up";
+  /** Both voices together. */
   callsLeft: number;
+  /** Each voice has its own TRIAL_CALLS_PER_VOICE. */
+  voiceLeft: VoiceCounts;
   daysLeft: number;
 }
 
-export function trialStatus(t: { expiresAt: string; maxCalls: number }, used: number, now: Date = new Date()): TrialStatus {
+/** `used`: started calls per voice. Over only when both voices are used up (or the days run out). */
+export function trialStatus(t: { expiresAt: string }, used: VoiceCounts, now: Date = new Date()): TrialStatus {
   const msLeft = Date.parse(t.expiresAt) - now.getTime();
-  const callsLeft = Math.max(0, t.maxCalls - used);
+  const voiceLeft: VoiceCounts = {
+    female: Math.max(0, TRIAL_CALLS_PER_VOICE - used.female),
+    male: Math.max(0, TRIAL_CALLS_PER_VOICE - used.male),
+  };
+  const callsLeft = voiceLeft.female + voiceLeft.male;
   const daysLeft = Math.max(0, Math.ceil(msLeft / 86_400_000));
-  if (msLeft <= 0) return { active: false, reason: "expired", callsLeft, daysLeft: 0 };
-  if (callsLeft === 0) return { active: false, reason: "used_up", callsLeft, daysLeft };
-  return { active: true, reason: "ok", callsLeft, daysLeft };
+  if (msLeft <= 0) return { active: false, reason: "expired", callsLeft, voiceLeft, daysLeft: 0 };
+  if (callsLeft === 0) return { active: false, reason: "used_up", callsLeft, voiceLeft, daysLeft };
+  return { active: true, reason: "ok", callsLeft, voiceLeft, daysLeft };
 }
 
 /** Unguessable but short enough to read out: 10 chars of a-z0-9 without look-alikes. */
